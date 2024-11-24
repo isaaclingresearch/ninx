@@ -2,5 +2,10 @@
 *~
 #*
 *#
+db/db/*
 *.fasl
+tmp/*
 logs/*
+apps/decklm/geoip/*.mmdb
+apps/decklm/geoip/*.mmdb
+apps/decklm/src/py/__pycache__/*

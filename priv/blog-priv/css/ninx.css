@@ -1,0 +1,26 @@
+.blue-text {
+    color: blue;
+}
+
+.green-text {
+    color: green;
+}
+
+.red-text {
+    color: red;
+}
+
+.gold-text {
+    color: #ffd700;
+}
+
+.blog-post {
+    white-space: pre-wrap;
+    color: grey;
+    text-align: justify;
+}
+
+
+.scrollarea {
+    overflow-y: auto;
+}

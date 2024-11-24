@@ -1,0 +1,125 @@
+Comparison of space occupied by Binary Large Object (BLOB) stored in the database for KVRocks.
+
+The problem: storing a blob in a database for synchronisation.
+
+We are going to store a single PDF file of size 10256 bytes (10.2Kb). When read into memory as a byte array, it still occupies the same amount of space.
+
+KVROCKS:
+KVROCKS is a redis compatible distributed NoSQL database, built with persistence over Rocksdb. It is supported by Apache software foundation.
+
+There are two ways to store data: a string or a binary safe string. When the byte array is saved with set, it is converted to a string. The resulting string is 129312 bytes large about 12.6 times larger than the PDF. The string here is "#(....)"
+
+It is suggested that I can use binary safe strings to store the binary data. I don't know how to implement those in common lisp yet.
+
+When the data is converted to a string with flexi-streams:octets-to-string, the data is 3.99x larger than the original PDF.
+
+When the array is compressed with cl-zstd, and then converted to a string with flexi-streams, the resulting data is 0.37x smaller than the PDF. This is really good.
+
+Algorothms and libs tried: zstd: very fast, good compression (0.37x - 0.5x)
+Cl-z: very slow.
+Huffman: fast but is about 18.3x larger
+Snappy: fast but is about 4.67x larger
+Zlib: fast, about 0.6x smaller
+Gzip: fast, about 0.6x smaller
+Deflate: fast, about 0.6x smaller
+For now we shall zstd for compression and with that, we can save the documents like we want in the database. i suspect this will also be very good as rocksdb further compresses the data. It might also be good for postgresql, where we store the string in the db instead of bytes. and then we can decode it as neccessary. but for now, i prefer kvrocks.
+
+I have tested with documents having images, and zstd doesn't seem to be much better than just using octets-to-string, both are near 4x the pdf size. Maybe I should explore more compression algorithms.
+
+I think, since it will be long before we add images to our documents, the compression is just fine for us. Let me see if I can even take it futher before by adding on snappy.
+
+
+ :cl-z :huffman :snappy :salza2, you will need to add packages to use the function
+
+Combining zstd and zlib lead to increased size of the data.
+
+
+Bytes Size: 24912
+Redis Bytes Size: 320544
+Ratio: 12.87
+String Octets: 99568
+Redis Octets: 99568
+Ratio: 4.00
+Zstd: 12016
+Zstd Ratio: 0.48
+Huffman: 468992
+Huffman Ratio: 18.83
+Snappy: 116272
+Snappy ratio: 4.67
+Zlib: 15440
+Zlib Ratio: 0.62
+GZIP: 15488
+Gzip ratio: 0.62
+Deflate: 15424
+Deflate ratio: 0.62
+Zstd-Zlib: 12672
+ZZ Ratio: 0.51
+ZZ1: 15488
+ZZ1 Ratio: 0.62
+
+(defun test-data ()
+  "function written to check how to efficiently store data in the database"
+  (let* ((path #p"~/common-lisp/decklm/test2.pdf")
+	 (bytes (llms::read-binary-file-to-octets path))
+	 (octets-string (flexi-streams::octets-to-string bytes))
+
+	 (zstd-bytes (zstd:compress-buffer bytes))
+	 (zstd-string (flexi-streams::octets-to-string  zstd-bytes))
+	 
+	 (r-zstd-bytes (flexi-streams::string-to-octets zstd-string))
+	 (r-bytes (zstd:decompress-buffer r-zstd-bytes))
+
+	 (huffman-bytes (huffman-coding-sequence (huffman-encode bytes)))
+	 (huffman-string (flexi-streams::octets-to-string huffman-bytes))
+
+	 (snappy-bytes (snappy:compress bytes 0 (length bytes)))
+	 (snappy-string (flexi-streams::octets-to-string snappy-bytes))
+
+	 (zlib-bytes (compress-data bytes 'zlib-compressor))
+	 (zlib-string (flexi-streams::octets-to-string zlib-bytes))
+
+         (gzip-bytes (compress-data bytes 'gzip-compressor))
+	 (gzip-string (flexi-streams::octets-to-string gzip-bytes))
+
+	 (deflate-bytes (compress-data bytes 'deflate-compressor))
+	 (deflate-string (flexi-streams::octets-to-string deflate-bytes))
+
+	 (zstd-zlib (compress-data zstd-bytes 'zlib-compressor))
+	 (zstd-zlib-string (flexi-streams::octets-to-string zstd-zlib))
+
+	 (zlib-zstd (zstd:compress-buffer zlib-bytes))
+	 (zlib-zstd-string (flexi-streams::octets-to-string zlib-zstd))
+	)
+    (llms::write-octets-to-binary-file r-bytes "~/common-lisp/decklm/ad.pdf")
+    (redis:red-set "test-bytes" bytes)
+   (redis:red-set "test-octets" octets-string)
+    (let* ((bytes-size (sb-ext:primitive-object-size bytes))
+	   (redis-bytes-size (sb-ext:primitive-object-size (redis:red-get "test-bytes")))
+	   (bytes-ratio (/ redis-bytes-size bytes-size))
+	   (octets-size (sb-ext:primitive-object-size octets-string))
+	   (redis-octets-size (sb-ext:primitive-object-size (redis:red-get "test-octets")))
+	   (octets-ratio (/ redis-octets-size bytes-size))
+	   (zstd-size (sb-ext:primitive-object-size zstd-string))
+	   (zstd-ratio (/ zstd-size bytes-size))
+	   (huffman-size (sb-ext:primitive-object-size huffman-string))
+	   (huffman-ratio (/ huffman-size bytes-size))
+	   (snappy-size (sb-ext:primitive-object-size snappy-string))
+	   (snappy-ratio (/ snappy-size bytes-size))
+	   (zlib-size (sb-ext:primitive-object-size zlib-string))
+	   (zlib-ratio (/ zlib-size bytes-size))
+
+	   (gzip-size (sb-ext:primitive-object-size gzip-string))
+	   (gzip-ratio (/ gzip-size bytes-size))
+
+	     (deflate-size (sb-ext:primitive-object-size deflate-string))
+	   (deflate-ratio (/ deflate-size bytes-size))
+	   
+	     (zstd-zlib-size (sb-ext:primitive-object-size zstd-zlib-string))
+	   (zstd-zlib-ratio (/ zstd-zlib-size bytes-size))
+	
+	     (zlib-zstd-size (sb-ext:primitive-object-size zlib-zstd-string))
+	   (zlib-zstd-ratio (/ zlib-zstd-size bytes-size))
+	 )
+      (format t "~%Bytes Size: ~a~%Redis Bytes Size: ~a~%Ratio: ~,2f~%String Octets: ~a~%Redis Octets: ~a~%Ratio: ~,2f~%Zstd: ~a~%Zstd Ratio: ~,2f~%Huffman: ~a~%Huffman Ratio: ~,2f~%Snappy: ~a~%Snappy ratio: ~,2f~%Zlib: ~a~%Zlib Ratio: ~,2f~%GZIP: ~a~%Gzip ratio: ~,2f~%Deflate: ~a~%Deflate ratio: ~,2f~%Zstd-Zlib: ~a~%ZZ Ratio: ~,2f~%ZZ1: ~a~%ZZ1 Ratio: ~,2f~%"
+	      bytes-size redis-bytes-size bytes-ratio octets-size redis-octets-size octets-ratio zstd-size zstd-ratio huffman-size huffman-ratio snappy-size snappy-ratio zlib-size zlib-ratio gzip-size gzip-ratio deflate-size deflate-ratio zstd-zlib-size zstd-zlib-ratio zlib-zstd-size zlib-zstd-ratio))
+    ))
