@@ -1,11 +1,11 @@
 (defpackage :ninx-blog
-  (:use :cl :hunchentoot :cl-who :sqlite :cl-pass :cl-html-parse :cl-css :cl-base64 :str :cl-ppcre :trivia)
+  (:use :cl :ninx :hunchentoot :cl-who :sqlite :cl-pass :cl-html-parse :cl-css :cl-base64 :str :cl-ppcre :trivia)
   (:shadow cl-who:fmt str:match str:split)
   (:documentation "The main package of the website blog")
   (:export :start-server :restart-server :create-tables))
 
 (in-package :ninx-blog)
-(defvar *ninx-blog-host* (format nil "~a:~a" (uiop:getenv "NINX_HOST") (uiop:getenv "NINX_HTTPS_PORT")))
+(defvar *ninx-blog-host* (format nil "~a:~a" (uiop:getenv "NINX_BLOG_HOST") (uiop:getenv "NINX_HTTPS_PORT")))
 
 (defun get-current-year ()
   (multiple-value-bind (second minute hour date month year day-of-week dst-p tz)
@@ -59,68 +59,3 @@
   "cheacks the provided password against saved password for username.
    returns boolean."
   (cl-pass:check-password password (caar (execute-to-list *db* "select password from admin where username = ?" username))))
-
-
-(define-easy-handler (admin-login :uri "/admin/login" :host *ninx-blog-host*) ()
-  ;; displays a form to login the admin
-  (site-template "Ninx | Admin Login"
-		 :body (with-html-output (*standard-output*)
-			 (htm (:div :style (inline-css '(:text-align center))
-				    (:form :method "post" :action "/admin/process-login"
-					   (:h4 :class "" "Please sign in")
-					   (:input :style (inline-css '(:width 100% :margin-bottom 2% :height 6%)) :type "text" :id "username" :placeholder "Username" :name "username")
-					   (:input :style (inline-css '(:width 100% :height 6%)) :type "password" :id "password" :placeholder "Password" :name "password")
-					   (:button :style (inline-css '(:width 50% :margin-top 1% :background-color "#ffd700" :height 6%)) "Login")
-					   ))))))
-
-(define-easy-handler (process-admin-login :uri "/admin/process-login"
-					  :default-request-type :post
-					  :host *ninx-blog-host*)
-    (username password)
-  ;; processes admin login, redirects if details are corrected, otherwise returns an error
-  (if (cookie-in "na-cookie")
-      (hunchentoot:redirect "/admin") 
-      (site-template "Ninx | Admin Login"
-		     :body (with-html-output (*standard-output*)
-			     (if (check-admin-details username password)
-				 (progn
-				   (set-cookie* (set-cookie "na-cookie" :path "/" :value (string-to-base64-string username) :expires (+ (get-universal-time) (* 365 24 60 60))))
-				   (hunchentoot:redirect "/admin"))
-				 (htm (:div :class "container"
-					    (:form :method "post" :action "/admin/process-login"
-						   (:h1 :class "" "Please sign in")
-						   (:h2 :class "" "Incorrect username/password")
-						   (:div :class ""
-							 (:label :class "form-label" :for "username" "Username")
-							 (:input :class "form-control" :type "text" :id "username" :placeholder "Username" :name "username" :value (str username)))
-						   (:div :class "mb-3"
-							 (:label :class "form-label" :for "password" "Password")
-							 (:input :class "form-control" :type "password" :id "password" :placeholder "Password" :name "password"))
-						   (:button :class "" "Login")
-						   )))
-				 )))))
-
-
-(define-easy-handler (admin-logout :uri "/admin/logout" :host *ninx-blog-host*) ()
-  ;; logout admin, delete the cookie.
-  (site-template "Ninx | Admin logout"
-		 :body (progn (set-cookie* (set-cookie "na-cookie" :path "/" :value (cookie-in "na-cookie") :expires (- (get-universal-time) (* 2 365 24 60 60))))
-			      (hunchentoot:redirect "/admin/login"))))
-
-(define-easy-handler (admin-dashboard :uri "/admin" :host *ninx-blog-host*) ()
-  ;; display the options for admin, create new post, edit drafts or logout.
-  (if (null (cookie-in "na-cookie"))
-      (hunchentoot:redirect "/admin/login")
-      (site-template "Ninx | Admin dashboard"
-		     :body (with-html-output (*standard-output*)
-			     (htm (:div
-				   (:br)
-				   (let ((button-style '(:background-color \#ffd700 :margin "0 1% 0 1%" :height 7%))
-					 (link-style '(:text-decoration none :color black)))
-				     (htm
-				      (:div 
-				       (:button :style (inline-css `(,@button-style)) (:a :style (inline-css `(,@link-style)) :href (format nil "/blog/~a/create-blog-post" (base64-string-to-string (cookie-in "na-cookie"))) "Create new blog post"))
-				       (:button :style (inline-css `(,@button-style :background-color blue)) (:a :style (inline-css `(,@link-style)) :href (format nil "/blog/~a/drafts" (base64-string-to-string (cookie-in "na-cookie"))) "Edit drafts"))
-				       (:button :style (inline-css `(,@button-style :background-color red)) (:a :style (inline-css `(,@link-style)) :href "/admin/logout" "Logout"))
-				       )))))
-			     ))))

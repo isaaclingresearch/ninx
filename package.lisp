@@ -7,5 +7,6 @@
   (:export  :handle-ws-message
 	    *ninx-http-port* *ninx-https-port* *ninx-ssl-key* *ninx-ssl-cert* *ninx-wss-acceptor* *ninx-http-acceptor*
 	    ;; ws types
-	    decklm-ws-type
-	    ws-endpoint))
+	    decklm-ws-type 
+	    ws-endpoint
+	    :match-path :define-matching-functions))

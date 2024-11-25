@@ -54,7 +54,7 @@
                         :protocol :https :port *ninx-https-port*))
 
 (defvar *ninx-wss-acceptor* (make-instance 'ws-ssl-acceptor :port *ninx-https-port*
-							    :name 'decklm
+							    :name 'ninx
 							    :ssl-certificate-file *ninx-ssl-cert*
 							    :ssl-privatekey-file *ninx-ssl-key*
 							    :document-root (truename "~/common-lisp/ninx/priv/")
@@ -80,3 +80,39 @@
   (setf (slot-value http-taskmaster 'hunchentoot::max-accept-count) 15000)
   (setf (slot-value https-taskmaster 'hunchentoot::max-thread-count) 10000)
   (setf (slot-value https-taskmaster 'hunchentoot::max-accept-count) 15000))
+
+(defmacro match-path (request path-list host)
+  "match a given path-list and host to the requests."
+  `(and
+    (trivia:match (str:split (script-name* ,request))
+      (,path-list t))
+    (string= ,host (hunchentoot:header-in :host ,request))))
+
+
+(defmacro define-matching-functions (path-name host-name request-name)
+  "Defines two functions:
+   1. A request handler function that only takes the request object.
+   2. A helper function to check if the request's host and path-name match the given parameters.
+
+   Exports both functions and returns the handler function."
+  (let* ((check-fn-name (intern (format nil "CHECK-~A-~A" (string-upcase path-name) (string-upcase host-name))))
+         (handler-fn-name (intern (format nil "HANDLE-~A-~A" (string-upcase path-name) (string-upcase host-name)))))
+    `(progn
+       (defun ,check-fn-name (request)
+         "Checks if the host and path-name of the request match the given values."
+         (and (string= (hunchentoot:header-in :host request) ,host-name)
+              (string= (hunchentoot:script-name request) ,path-name)))
+
+       (defun ,handler-fn-name (,request-name)
+         "Handles the request by delegating to the checker function."
+	 (format *terminal-io* "~%host: ~a" (header-in :host ,request-name))
+	 (format *terminal-io* "~%sent-host: ~a~%~%" ,host-name)
+	 (format *terminal-io* "~%script: ~a" (script-name* request))
+	 (format *terminal-io* "~%sent-script: ~a~%~%" ,path-name)
+         (format *terminal-io* "~%response: ~a~%~%" (,check-fn-name ,request-name))
+	 (,check-fn-name ,request-name))
+
+       (export ',check-fn-name)
+       (export ',handler-fn-name)
+
+       ',handler-fn-name)))

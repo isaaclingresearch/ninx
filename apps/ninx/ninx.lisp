@@ -9,7 +9,9 @@
      (a :text-decoration none :color blue)
      ("a:visited" :text-decoration none :color blue))))
 
-(define-easy-handler (ninx-index :uri "/" :host *ninx-host*) ()
+(define-easy-handler (ninx-index :uri (define-matching-functions "/" *ninx-host* request)
+				 :host *ninx-host*
+				 :acceptor-names '(ninx::ninx)) ()
   (with-html-output-to-string (*standard-output*)
     "<!DOCTYPE html>"
     (:html :lang "en"

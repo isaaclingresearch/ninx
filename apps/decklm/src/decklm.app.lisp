@@ -35,7 +35,7 @@
 (flet ((test-path (request)
 	 (cl-ppcre:scan "^(/test/)" (script-name* request))))
 
-  (hunchentoot:define-easy-handler (test :uri #'test-path :acceptor-names '(decklm)) ()
+  (hunchentoot:define-easy-handler (test :uri #'test-path :acceptor-names '(ninx::ninx)) ()
     "testing12"))
 
 
@@ -44,33 +44,33 @@
   (let* ((message (jzon:parse message-json))
 	 (message-type (gethash "type" message nil)))
     (trivia:match message-type
-		  ("consent" (let* ((email (gethash "email" message))
-				    (choice (gethash "choice" message)))
-			       (save-consent email choice)
-			       (let* ((cookie (save-cookie email :persist choice)))
-				 (hunchensocket:send-text-message ws-user
-								  (jzon:stringify (hash-create `(("type" "consent")
-												 ("remember" ,choice)
-												 ("cookie" ,cookie))))))))
-		  ("email" (let* ((access-code (+ 999 (random 9000)))
-				  (email (gethash "email" message))
-				  (email-old-p (get-user-id email)))
-			     (save-new-email email)
-			     (save-access-code email access-code)
-			     (send-access-code email access-code)
-			     (hunchensocket:send-text-message ws-user
-							      (jzon:stringify (hash-create `(("type" "access-code-sent")
-											     ("new" ,(null email-old-p))))))))
-		  ("access-code" (let* ((access-code (gethash "code" message))
-					(email (gethash "email" message))
-					(consent (get-consent email))
-					(cookie (save-cookie email :persist consent)))
-				   (hunchensocket:send-text-message ws-user
-								    (jzon:stringify (hash-create (if (verify-access-code email (parse-integer access-code))
-												     `(("cookie" ,cookie)
-												       ("remember" ,consent)
-												       ("type" "correct-code"))
-												     `(("type" "incorrect-code")))))))))))
+      ("consent" (let* ((email (gethash "email" message))
+			(choice (gethash "choice" message)))
+		   (save-consent email choice)
+		   (let* ((cookie (save-cookie email :persist choice)))
+		     (hunchensocket:send-text-message ws-user
+						      (jzon:stringify (hash-create `(("type" "consent")
+										     ("remember" ,choice)
+										     ("cookie" ,cookie))))))))
+      ("email" (let* ((access-code (+ 999 (random 9000)))
+		      (email (gethash "email" message))
+		      (email-old-p (get-user-id email)))
+		 (save-new-email email)
+		 (save-access-code email access-code)
+		 (send-access-code email access-code)
+		 (hunchensocket:send-text-message ws-user
+						  (jzon:stringify (hash-create `(("type" "access-code-sent")
+										 ("new" ,(null email-old-p))))))))
+      ("access-code" (let* ((access-code (gethash "code" message))
+			    (email (gethash "email" message))
+			    (consent (get-consent email))
+			    (cookie (save-cookie email :persist consent)))
+		       (hunchensocket:send-text-message ws-user
+							(jzon:stringify (hash-create (if (verify-access-code email (parse-integer access-code))
+											 `(("cookie" ,cookie)
+											   ("remember" ,consent)
+											   ("type" "correct-code"))
+											 `(("type" "incorrect-code")))))))))))
 
 (defun send-access-code (email code)
   "send an email with access code to the given email"
@@ -89,25 +89,25 @@
     (with-html-output-to-string (*standard-output*)
       (htm (:body :style (cl-css:inline-css `(:background-color ,black :color ,green))
 		  (:table :cellpadding "0" :cellspacing "0"
-			  :style (cl-css:inline-css `(:width 100% :height 100%))
-			  (:tr 
-			   (:td :align "center"
-				(:table :width "600" :cellpadding "0" :cellspacing "0"
-					(:tr
-					 (:td :align "center" :style (cl-css:inline-css '(:padding 20px))
-					      (:h1 "DeckLM ")))
-					(:tr
-					 (:td :align "center"
-					      (:p "This code has sent been after you attempted to Signin/Signup with this email. Use it to access your account.")))
-					(:tr (:td :align "center" :style (cl-css:inline-css '(:padding 20px))
-						  (:a :href "#" :style (cl-css:inline-css `(:margin-top 10px :padding "10px 20px" :background-color ,blue
-											    :color ,black :text-decoration none :border-radius 4px)) 
-						      (str code))))
-					(:tr
-					 (:td :align "center" :style (cl-css:inline-css '(:padding 20px))
-					      (:p "Use this email when you have a question or complaint.")
-					      (:p "© 2024 Ninxtech Ltd.")
-					      )))))))))))
+		    :style (cl-css:inline-css `(:width 100% :height 100%))
+		    (:tr 
+		     (:td :align "center"
+			  (:table :width "600" :cellpadding "0" :cellspacing "0"
+			    (:tr
+			     (:td :align "center" :style (cl-css:inline-css '(:padding 20px))
+				  (:h1 "DeckLM ")))
+			    (:tr
+			     (:td :align "center"
+				  (:p "This code has sent been after you attempted to Signin/Signup with this email. Use it to access your account.")))
+			    (:tr (:td :align "center" :style (cl-css:inline-css '(:padding 20px))
+				      (:a :href "#" :style (cl-css:inline-css `(:margin-top 10px :padding "10px 20px" :background-color ,blue
+										:color ,black :text-decoration none :border-radius 4px)) 
+					  (str code))))
+			    (:tr
+			     (:td :align "center" :style (cl-css:inline-css '(:padding 20px))
+				  (:p "Use this email when you have a question or complaint.")
+				  (:p "© 2024 Ninxtech Ltd.")
+				  )))))))))))
 
 (defun get-current-year ()
   (multiple-value-bind (second minute hour date month year day-of-week dst-p tz)
@@ -118,383 +118,383 @@
 (defun beacon-js ()
   "this details a function a for a client to send back a beacon after 1 second of activity"
   (ps:ps
-   (defun-async send-beacon-after-delay ()
-     (await (new (-promise (=> resolve (set-timeout resolve 1000)))))
-     (ps:chain navigator (send-beacon "/register-active"
-				      (new (-u-r-l-search-params (create pathname (aref (ps:chain window location pathname (split "/")) 1)))))))
+    (defun-async send-beacon-after-delay ()
+      (await (new (-promise (=> resolve (set-timeout resolve 1000)))))
+      (ps:chain navigator (send-beacon "/register-active"
+				       (new (-u-r-l-search-params (create pathname (aref (ps:chain window location pathname (split "/")) 1)))))))
 
-   (send-beacon-after-delay)))
+    (send-beacon-after-delay)))
 
 
 (defun duration-js ()
   "this js will measure how long a user has lasted on a given page"
   (ps:ps
-   (let ((page-load-time (ps:chain performance (now))))
-     (defun send-time-spent ()
-       (let* ((time-spent (- (ps:chain performance (now)) page-load-time))
-	      (data (new (-u-r-l-search-params (create duration time-spent
-						       pathname (aref (ps:chain window location pathname (split "/")) 1))))))
-	 (ps:chain navigator (send-beacon "/register-duration" data))))
-     (ps:chain window (add-event-listener "beforeunload" send-time-spent)))))
+    (let ((page-load-time (ps:chain performance (now))))
+      (defun send-time-spent ()
+	(let* ((time-spent (- (ps:chain performance (now)) page-load-time))
+	       (data (new (-u-r-l-search-params (create duration time-spent
+							pathname (aref (ps:chain window location pathname (split "/")) 1))))))
+	  (ps:chain navigator (send-beacon "/register-duration" data))))
+      (ps:chain window (add-event-listener "beforeunload" send-time-spent)))))
 
 (defun ws-js-code ()
   "generate the code for websockets and handling of the back and forth between client and server"
   (parenscript:ps
-   (defun privacy-and-data ()
-     "this function: gives the user some details about the site. asks for consent to store a cookie.
+    (defun privacy-and-data ()
+      "this function: gives the user some details about the site. asks for consent to store a cookie.
 consent is stored server side, such that we track the user across all devices."
-     (let ((control (ps:chain document (get-element-by-id "control"))))
-       (ps:chain control (insert-adjacent-h-t-m-l
-			  "beforebegin"
-			  (who-ps-html
-			   (:p :class "message-p" "Code verified, account created successfully.")
-			   :br
-			   (:div :class "consent" :id "consent"
-				 (:b (:u "Privacy and Data Policy"))
-				 (:div :id "privacy-div" :class "privacy-div"
-				       (:p "We use one cookie to keep you logged in. We require consent to store this cookie and remember you on your device, otherwise, you will have to login every time.")
-				       (:p "Consent is asked for once and stored on our servers. You can later revoke this consent by clicking on 'Don't save cookie' on the home page. We also Google analytics to measure performance of our campaigns") 
-				       (:p "All images and documents submitted are only stored during making of the slide deck, after which they are deleted. The decks generated are stored on our servers for you to access later on.")
-				       (:p "Do you wish to be remembered when you login? Enter Yes or No below and press Enter to continue."))
-				 (:div "Yes/No: "
-				       (:input :type "text" :id "consent-input" :placeholder "Enter Yes/No here." :value "Yes")
-	               		       (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "consentVerification()"))))))
-       (scroll-to-bottom)
-       (bind-consent-input)))
-   
-   (defun set-js-cookie (name value exdays)
-     "set a cookie with name value and expiry days"
-     (let ((d (new (-date)))
-	   (exp (* exdays 24 60 60 1000)))
-       (ps:chain d (set-time (+ (ps:chain d (get-time)) exp)))
-       (let ((expires (+ "expires=" (ps:chain d (to-u-t-c-string)))))
-	 (setf (ps:chain document cookie) (+ name "=" value ";" expires  ";path=/")))))
-   
-   (setf *socket* (new (-web-socket "/ws/decklm")))
-   (setf (ps:chain *socket* onopen) (lambda () (ps:chain console (log "connected to server"))))
-   (setf (ps:chain *socket* onmessage)
-	 (lambda (event)
-	   (let* ((data (ps:chain -j-s-o-n (parse (ps:chain event data))))
-		  (type (ps:chain data type))
-		  (control (ps:chain document (get-element-by-id "control"))))
-	     (cond
-	       ((eql "consent" type)
-		(let ((cookie (ps:chain data cookie))
-		      (remember (ps:chain data remember)))
-		  (ps:chain console (log remember))
-		  (if remember
-		      (set-js-cookie "cookie" cookie 3650)
-		      (set-js-cookie "cookie" cookie 0))))
-	       
-	       ((eql "access-code-sent" type)
-		(setf *new-account-p* (ps:chain data new))
-		(setf (ps:chain document (get-element-by-id "email-loading-caret") disabled) t)
-		(ps:chain control (insert-adjacent-h-t-m-l
-				   "beforebegin"
-				   (who-ps-html
-				    :br
-				    (:p :class "access-code-message" :id "access-code-message")
-				    (:div
-				     "Enter access here: "
-				     (:input :type "number" :id "access-code" :class "access-code" :placeholder "Enter access code here")
-				     (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "accessCodeVerification()")))))
-		(type-writer "access-code-message" "An access code has been sent to your email. Enter it below to continue" 0)
-		;;	 (ps:chain document (get-element-by-id "access-code") (focus))
-		(scroll-to-bottom)
-		(bind-access-code-input))
-	       ((eql "correct-code" type)
-		;; when the code is correct, set the cookies depending on how the user wants to be remembered.
-		(setf (ps:chain document (get-element-by-id "code-loading-caret") disabled) t) ;; disable the caret
-		(let ((cookie (ps:chain data cookie))
-		      (remember (ps:chain data remember)))
-		  (if remember
-		      (set-js-cookie "cookie" cookie 3650)
-		      (set-js-cookie "cookie" cookie 0)))
-		(if *new-account-p*
-		    (privacy-and-data)
-		    (setf (ps:chain window location href) "/home")
-		    ))
-	       ((eql "incorrect-code" type)
-		(let ((error-paragraph (ps:chain document (get-element-by-id "code-error-paragraph")))
-		      (code-input (ps:chain document (get-element-by-id "access-code"))))
-		  (when error-paragraph
-		    (setf (ps:chain error-paragraph id) ""))
-		  (setf (ps:chain code-input id) "")
-		  (setf (ps:chain code-input class-name) "")
-		  (setf (ps:chain document (get-element-by-id "code-loading-caret") disabled) t)
-		  (ps:chain control (insert-adjacent-h-t-m-l
-				     "beforebegin"
-				     (who-ps-html
-				      :br
-				      (:p :class "error-paragraph" :id "code-error-paragraph"))))
-		  (type-writer "code-error-paragraph" "The code you entered is incorrect, try again with the correct code." 0)
-		  (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
-							     (who-ps-html
-							      (:p :class "access-code-message"
-								  :id "access-code-message"
-								  (:div "Enter access code: "
-									(:input :type "number"
-										:id "access-code"
-										:class "access-code"
-										:placeholder "Enter access code here")
-									(:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "accessCodeVerification()"))))))
-		  (ps:chain document (get-element-by-id "access-code") (focus))
-		  (bind-access-code-input)
-		  (scroll-to-bottom)))))))
-   (setf (ps:chain *socket* onclose) (lambda () ((ps:chain console log) "socket closed!")))
-   (setf (ps:chain *socket* onerror) (lambda (err) ((ps:chain console log) err)))))
+      (let ((control (ps:chain document (get-element-by-id "control"))))
+	(ps:chain control (insert-adjacent-h-t-m-l
+			   "beforebegin"
+			   (who-ps-html
+			    (:p :class "message-p" "Code verified, account created successfully.")
+			    :br
+			    (:div :class "consent" :id "consent"
+				  (:b (:u "Privacy and Data Policy"))
+				  (:div :id "privacy-div" :class "privacy-div"
+					(:p "We use one cookie to keep you logged in. We require consent to store this cookie and remember you on your device, otherwise, you will have to login every time.")
+					(:p "Consent is asked for once and stored on our servers. You can later revoke this consent by clicking on 'Don't save cookie' on the home page. We also Google analytics to measure performance of our campaigns") 
+					(:p "All images and documents submitted are only stored during making of the slide deck, after which they are deleted. The decks generated are stored on our servers for you to access later on.")
+					(:p "Do you wish to be remembered when you login? Enter Yes or No below and press Enter to continue."))
+				  (:div "Yes/No: "
+					(:input :type "text" :id "consent-input" :placeholder "Enter Yes/No here." :value "Yes")
+	               			(:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "consentVerification()"))))))
+	(scroll-to-bottom)
+	(bind-consent-input)))
+    
+    (defun set-js-cookie (name value exdays)
+      "set a cookie with name value and expiry days"
+      (let ((d (new (-date)))
+	    (exp (* exdays 24 60 60 1000)))
+	(ps:chain d (set-time (+ (ps:chain d (get-time)) exp)))
+	(let ((expires (+ "expires=" (ps:chain d (to-u-t-c-string)))))
+	  (setf (ps:chain document cookie) (+ name "=" value ";" expires  ";path=/")))))
+    
+    (setf *socket* (new (-web-socket "/ws/decklm")))
+    (setf (ps:chain *socket* onopen) (lambda () (ps:chain console (log "connected to server"))))
+    (setf (ps:chain *socket* onmessage)
+	  (lambda (event)
+	    (let* ((data (ps:chain -j-s-o-n (parse (ps:chain event data))))
+		   (type (ps:chain data type))
+		   (control (ps:chain document (get-element-by-id "control"))))
+	      (cond
+		((eql "consent" type)
+		 (let ((cookie (ps:chain data cookie))
+		       (remember (ps:chain data remember)))
+		   (ps:chain console (log remember))
+		   (if remember
+		       (set-js-cookie "cookie" cookie 3650)
+		       (set-js-cookie "cookie" cookie 0))))
+		
+		((eql "access-code-sent" type)
+		 (setf *new-account-p* (ps:chain data new))
+		 (setf (ps:chain document (get-element-by-id "email-loading-caret") disabled) t)
+		 (ps:chain control (insert-adjacent-h-t-m-l
+				    "beforebegin"
+				    (who-ps-html
+				     :br
+				     (:p :class "access-code-message" :id "access-code-message")
+				     (:div
+				      "Enter access here: "
+				      (:input :type "number" :id "access-code" :class "access-code" :placeholder "Enter access code here")
+				      (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "accessCodeVerification()")))))
+		 (type-writer "access-code-message" "An access code has been sent to your email. Enter it below to continue" 0)
+		 ;;	 (ps:chain document (get-element-by-id "access-code") (focus))
+		 (scroll-to-bottom)
+		 (bind-access-code-input))
+		((eql "correct-code" type)
+		 ;; when the code is correct, set the cookies depending on how the user wants to be remembered.
+		 (setf (ps:chain document (get-element-by-id "code-loading-caret") disabled) t) ;; disable the caret
+		 (let ((cookie (ps:chain data cookie))
+		       (remember (ps:chain data remember)))
+		   (if remember
+		       (set-js-cookie "cookie" cookie 3650)
+		       (set-js-cookie "cookie" cookie 0)))
+		 (if *new-account-p*
+		     (privacy-and-data)
+		     (setf (ps:chain window location href) "/home")
+		     ))
+		((eql "incorrect-code" type)
+		 (let ((error-paragraph (ps:chain document (get-element-by-id "code-error-paragraph")))
+		       (code-input (ps:chain document (get-element-by-id "access-code"))))
+		   (when error-paragraph
+		     (setf (ps:chain error-paragraph id) ""))
+		   (setf (ps:chain code-input id) "")
+		   (setf (ps:chain code-input class-name) "")
+		   (setf (ps:chain document (get-element-by-id "code-loading-caret") disabled) t)
+		   (ps:chain control (insert-adjacent-h-t-m-l
+				      "beforebegin"
+				      (who-ps-html
+				       :br
+				       (:p :class "error-paragraph" :id "code-error-paragraph"))))
+		   (type-writer "code-error-paragraph" "The code you entered is incorrect, try again with the correct code." 0)
+		   (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
+							      (who-ps-html
+							       (:p :class "access-code-message"
+								   :id "access-code-message"
+								   (:div "Enter access code: "
+									 (:input :type "number"
+										 :id "access-code"
+										 :class "access-code"
+										 :placeholder "Enter access code here")
+									 (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "accessCodeVerification()"))))))
+		   (ps:chain document (get-element-by-id "access-code") (focus))
+		   (bind-access-code-input)
+		   (scroll-to-bottom)))))))
+    (setf (ps:chain *socket* onclose) (lambda () ((ps:chain console log) "socket closed!")))
+    (setf (ps:chain *socket* onerror) (lambda (err) ((ps:chain console log) err)))))
 
 (defun pre-js ()
   "js code before the forms are loaded, anything that needs to run before the body goes here."
   (parenscript:ps
-   (defun scroll-to-bottom ()
-     (ps:chain window (scroll-to (create
-				  top (ps:chain document body scroll-height)
-				  behavior "smooth"))))
-   (defun check-cookie (name)
-     "check if cookie exists"
-     (let* ((cookies (ps:chain document cookie))
-	    (cookie-array (ps:chain cookies (split ";"))))
-       (loop for cookie across cookie-array do
-	 (let* ((kv (ps:chain cookie (split "=")))
-		(key (ps:chain (aref kv 0) (trim))))
-	   (if (eql name key)
-	       (return t))))
-       ))
-   ;; redirect the user if cookie is set
-   (if (check-cookie "cookie")
-       (setf (ps:chain window location href) "/home"))
-   ))
+    (defun scroll-to-bottom ()
+      (ps:chain window (scroll-to (create
+				   top (ps:chain document body scroll-height)
+				   behavior "smooth"))))
+    (defun check-cookie (name)
+      "check if cookie exists"
+      (let* ((cookies (ps:chain document cookie))
+	     (cookie-array (ps:chain cookies (split ";"))))
+	(loop for cookie across cookie-array do
+	  (let* ((kv (ps:chain cookie (split "=")))
+		 (key (ps:chain (aref kv 0) (trim))))
+	    (if (eql name key)
+		(return t))))
+	))
+    ;; redirect the user if cookie is set
+    (if (check-cookie "cookie")
+	(setf (ps:chain window location href) "/home"))
+    ))
 
 
 (defun typing-effect-js ()
   "Write the data to a page after the DOM has been fully loaded"
   (parenscript:ps
-   (setf speed 10)
-   (setf email-regex (regex "/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/"))
-   
-   (defun type-writer (elem str i)
-     (let ((element (ps:chain document (get-element-by-id elem))))
-       (if (< i (ps:chain str length))
-	   (progn
-	     (setf (ps:chain element inner-h-t-m-l)
-		   (+ (ps:chain element inner-h-t-m-l) (ps:chain str (char-at i))))
-	     (set-timeout (lambda () (type-writer elem str (1+ i))) speed))
-	   (progn
-	     (setf (ps:chain document (get-element-by-id "first-form") style display) "block")
-	     ;;  (ps:chain document (get-element-by-id "email") (focus))
-	     ))))
+    (setf speed 10)
+    (setf email-regex (regex "/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/"))
+    
+    (defun type-writer (elem str i)
+      (let ((element (ps:chain document (get-element-by-id elem))))
+	(if (< i (ps:chain str length))
+	    (progn
+	      (setf (ps:chain element inner-h-t-m-l)
+		    (+ (ps:chain element inner-h-t-m-l) (ps:chain str (char-at i))))
+	      (set-timeout (lambda () (type-writer elem str (1+ i))) speed))
+	    (progn
+	      (setf (ps:chain document (get-element-by-id "first-form") style display) "block")
+	      ;;  (ps:chain document (get-element-by-id "email") (focus))
+	      ))))
 
-   ;; TODO: FINAL VERIFICATION.
+    ;; TODO: FINAL VERIFICATION.
 
-   (defun final-verification ()
-     (disable-send-icon)
-     (let* ((final (ps:chain document (get-element-by-id "final-caret")))
-	    (choice (ps:chain final value (to-lower-case)))
-	    (control (ps:chain document (get-element-by-id "control"))))
-       (cond
-	 ((or (eql choice "no")) (setf (ps:chain window location href) "/home"))
-	 ((eql choice "yes") (setf (ps:chain window location href) "https://www.paypal.com/ncp/payment/H6QDGXUTHGCWJ"))
-	 (t ;; this means the user entered a wrong option, we must refresh the final-caret
-	  (setf (ps:chain final id) "")
-	  (ps:chain control
-		    (insert-adjacent-h-t-m-l
-		     "beforebegin"
-		     (who-ps-html
-		      (:p :class "error-paragraph" "Please answer Yes/No. ")
-		      (:div "Yes/No: "
-			    (:input :type "text" :id "final-caret" :placeholder "Enter Yes/No here." :value "Yes")
-	        	    (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "finalVerification()")))))
-	  (ps:chain document (get-element-by-id "final-caret") (focus))
+    (defun final-verification ()
+      (disable-send-icon)
+      (let* ((final (ps:chain document (get-element-by-id "final-caret")))
+	     (choice (ps:chain final value (to-lower-case)))
+	     (control (ps:chain document (get-element-by-id "control"))))
+	(cond
+	  ((or (eql choice "no")) (setf (ps:chain window location href) "/home"))
+	  ((eql choice "yes") (setf (ps:chain window location href) "https://www.paypal.com/ncp/payment/H6QDGXUTHGCWJ"))
+	  (t ;; this means the user entered a wrong option, we must refresh the final-caret
+	   (setf (ps:chain final id) "")
+	   (ps:chain control
+		     (insert-adjacent-h-t-m-l
+		      "beforebegin"
+		      (who-ps-html
+		       (:p :class "error-paragraph" "Please answer Yes/No. ")
+		       (:div "Yes/No: "
+			     (:input :type "text" :id "final-caret" :placeholder "Enter Yes/No here." :value "Yes")
+	        	     (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "finalVerification()")))))
+	   (ps:chain document (get-element-by-id "final-caret") (focus))
+	   (scroll-to-bottom)
+	   (bind-final-input)))))
+    
+    (defun bind-final-input ()
+      (ps:chain document (get-element-by-id "final-caret")
+		(add-event-listener
+		 "keyup"
+		 (lambda (event)
+		   (when (eql (ps:chain event key) "Enter")
+		     (final-verification))))))
+
+    (defun pricing-verification ()
+      (disable-send-icon)
+      (let ((control (ps:chain document (get-element-by-id "control"))))
+	(ps:chain document (get-element-by-id "pricing-caret") (blur))
+	(ps:chain control
+		  (insert-adjacent-h-t-m-l
+		   "beforebegin"
+		   (who-ps-html
+		    :br
+		    (:div
+		     (:b (:u "Tutorial"))
+		     (:p
+		      "You can generate slides from images or documents."
+		      " Supported documents are PDF, Word, and Excel documents"
+		      :br :br
+		      "You can optionally give a topic for which the slides will be made. If topic is not given, the slides will be about everything in the image(s) or document(s). " "Images are cheaper than documents."
+		      :br :br
+		      "To Buy tokens, enter Yes. To start your free trial, enter No.")
+		     (:div "Yes/No: "
+			   (:input :type "text" :id "final-caret" :placeholder "Yes/No." :value "Yes")
+			   (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "finalVerification()"))))))
+	(scroll-to-bottom)
+	(bind-final-input)))
+    
+    (defun bind-pricing-input ()
+      (ps:chain document (get-element-by-id "pricing-caret")
+		(add-event-listener
+		 "keyup"
+		 (lambda (event)
+		   (when (eql (ps:chain event key) "Enter")
+		     (pricing-verification))))))
+
+    (defun consent-verification ()
+      (disable-send-icon)
+      (let* ((consent (ps:chain document (get-element-by-id "consent-input")))
+	     (choice (ps:chain consent value (to-lower-case)))
+	     (email (ps:chain document (get-element-by-id "email") value))
+	     (control (ps:chain document (get-element-by-id "control"))))
+	(setf (ps:chain consent disabled) t)
+	(cond
+	  ((or (eql choice "yes") (eql choice "no"))
+	   (let ((choice-var (if (eql choice "yes") t nil)))
+	     (ps:chain *socket* (send (ps:chain -j-s-o-n (stringify (create type "consent"
+									    email email
+									    choice choice-var))))))
+	   (ps:chain control
+		     (insert-adjacent-h-t-m-l
+		      "beforebegin"
+		      (who-ps-html
+		       :br
+		       (:p :class "message-p" (if (eql choice "yes")
+						  "You will be remembered when you login."
+						  "You will be required to login after every session ends."))
+		       :br
+		       (:div :class "pricing"
+			     (:b (:u "Pricing and Payment"))
+			     (:p "Create your first slide deck for free!")
+			     (:p "Each token covers about 0.75 words. Tokens are used based on the number of words in your uploaded images/documents and in the slide deck generated. Tokens will be automatically deducted from your balance.")
+			     (:p "Get 1 million tokens (enough for approximately 750,000 words) for just $25. Token bundles are available in $5, $25, $100, and $1000 options.")
+			     (:p "We only accept payments via PayPal. Be sure to use the same email here as in your PayPal transaction.")
+			     )
+
+		       (:div "Enter Yes and press Enter to continue: "
+			     (:input :id "pricing-caret" :placeholder "Enter Yes here." :value "Yes")
+			     (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "pricingVerification()")))))
+	   (scroll-to-bottom)
+	   (bind-pricing-input) ;add an event listener to the pricing-caret
+	   )
+	  (t ;; this means the user entered a wrong option, we must refresh the consent-input
+	   (setf (ps:chain consent id) "")
+	   (ps:chain control
+		     (insert-adjacent-h-t-m-l
+		      "beforebegin"
+		      (who-ps-html
+		       (:p :class "error-paragraph" "Please answer Yes/No. ")
+		       (:div "Yes/No: "
+			     (:input :type "text" :id "consent-input" :placeholder "Enter Yes/No here and press Enter")
+			     (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "consentVerification()")))))
+	   (ps:chain document (get-element-by-id "consent-input") (focus))
+	   (scroll-to-bottom)
+	   (bind-consent-input)))))
+
+    (defun bind-consent-input ()
+      (ps:chain document (get-element-by-id "consent-input")
+		(add-event-listener
+		 "keyup"
+		 (lambda (event)
+		   (when (eql (ps:chain event key) "Enter")
+		     (consent-verification))))))
+
+    (defun access-code-verification ()
+      "send access code for verification"
+      (let* ((email (ps:chain document (get-element-by-id "email") value))
+	     (code-input (ps:chain document (get-element-by-id "access-code")))
+	     (code (ps:chain code-input value))
+	     (code-loading-div (ps:chain document (get-element-by-id "code-loading-div")))
+	     (code-loading-caret (ps:chain document (get-element-by-id "code-loading-caret")))
+	     (control (ps:chain document (get-element-by-id "control"))))
+	(setf (ps:chain code-input disabled) t)
+	(disable-send-icon)
+	(when (not (eql "" code))
+	  (when (and code-loading-div code-loading-caret)
+	    (setf (ps:chain code-loading-div id) "")
+	    (setf (ps:chain code-loading-caret id) ""))
+	  (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
+						     (who-ps-html
+						      :br
+						      (:div
+						       (:i :class "code-loading-div" :id "code-loading-div")
+						       (:input :class "code-loading-caret" :id "code-loading-caret")))))
+	  (type-writer "code-loading-div" "Verifying code, please wait..." 0)
 	  (scroll-to-bottom)
-	  (bind-final-input)))))
-   
-   (defun bind-final-input ()
-     (ps:chain document (get-element-by-id "final-caret")
-	       (add-event-listener
-		"keyup"
-		(lambda (event)
-		  (when (eql (ps:chain event key) "Enter")
-		    (final-verification))))))
+	  (ps:chain document (get-element-by-id "code-loading-caret") (focus))
+	  (ps:chain *socket* (send (ps:chain -j-s-o-n (stringify (create type "access-code"
+									 email email
+									 code code))))))))
+    (defun bind-access-code-input ()
+      (ps:chain document (get-element-by-id "access-code")
+		(add-event-listener
+		 "keyup"
+		 (lambda (event)
+		   (when (eql (ps:chain event key) "Enter")
+		     (access-code-verification))))))
+    
+    (defun disable-send-icon ()
+      "this function will remove the onclick properties of send icon to allow it to be reusable"
+      (let* ((send-icon (ps:chain document (get-element-by-id "send-icon"))))
+	(setf (ps:chain send-icon onclick) null)
+	(setf (ps:chain send-icon id) null)))
+    
+    (defun email-verification ()
+      "verify that email is an email"
+      (let* ((email-input (ps:chain document (get-element-by-id "email")))
+	     (email (ps:chain email-input value))
+	     (parent (ps:chain document (get-element-by-id "parent")))
+	     (error-paragraph (ps:chain document (get-element-by-id "error-paragraph")))
+	     (control (ps:chain document (get-element-by-id "control"))))
+	(setf (ps:chain email-input disabled) t)
+	(disable-send-icon)
+	(if (ps:chain email-regex (test email))
+	    (progn
+	      (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
+							 (who-ps-html
+							  (:div
+							   (:i :class "email-loading-div" :id "email-loading-div")
+							   (:input :id "email-loading-caret" :class "email-loading-caret")))))
+	      (type-writer "email-loading-div" "Loading, please wait..." 0)
+	      (ps:chain document (get-element-by-id "email-loading-caret") (focus))
+	      (scroll-to-bottom)
+	      (ps:chain *socket* (send (ps:chain -j-s-o-n (stringify (create email email
+									     type "email"))))))
+	    (progn
+	      (when error-paragraph
+		(setf (ps:chain error-paragraph id) ""))
+	      (setf (ps:chain email-input id) "")
+	      (setf (ps:chain email-input class-name) "")
+	      (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
+							 (who-ps-html
+							  (:p :class "error-paragraph"  :id "error-paragraph"))))
+	      (type-writer "error-paragraph" "You have entered an incorrect email. Enter a correct email and try again." 0)
+	      (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
+							 (who-ps-html
+							  (:div :class "email-input"
+								"Enter correct email here: "
+								(:input :type "email" :id "email" :class "email-input" :autocomplete "off" :placeholder "Email goes here.")
+								(:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "emailVerification()")))))
+	      (scroll-to-bottom)
+	      (bind-email-input)))))
 
-   (defun pricing-verification ()
-     (disable-send-icon)
-     (let ((control (ps:chain document (get-element-by-id "control"))))
-       (ps:chain document (get-element-by-id "pricing-caret") (blur))
-       (ps:chain control
-		 (insert-adjacent-h-t-m-l
-		  "beforebegin"
-		  (who-ps-html
-		   :br
-		   (:div
-		    (:b (:u "Tutorial"))
-		    (:p
-		     "You can generate slides from images or documents."
-		     " Supported documents are PDF, Word, and Excel documents"
-		     :br :br
-		     "You can optionally give a topic for which the slides will be made. If topic is not given, the slides will be about everything in the image(s) or document(s). " "Images are cheaper than documents."
-		     :br :br
-		     "To Buy tokens, enter Yes. To start your free trial, enter No.")
-		    (:div "Yes/No: "
-			  (:input :type "text" :id "final-caret" :placeholder "Yes/No." :value "Yes")
-			  (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "finalVerification()"))))))
-       (scroll-to-bottom)
-       (bind-final-input)))
-   
-   (defun bind-pricing-input ()
-     (ps:chain document (get-element-by-id "pricing-caret")
-	       (add-event-listener
-		"keyup"
-		(lambda (event)
-		  (when (eql (ps:chain event key) "Enter")
-		    (pricing-verification))))))
-
-   (defun consent-verification ()
-     (disable-send-icon)
-     (let* ((consent (ps:chain document (get-element-by-id "consent-input")))
-	    (choice (ps:chain consent value (to-lower-case)))
-	    (email (ps:chain document (get-element-by-id "email") value))
-	    (control (ps:chain document (get-element-by-id "control"))))
-       (setf (ps:chain consent disabled) t)
-       (cond
-	 ((or (eql choice "yes") (eql choice "no"))
-	  (let ((choice-var (if (eql choice "yes") t nil)))
-	    (ps:chain *socket* (send (ps:chain -j-s-o-n (stringify (create type "consent"
-									   email email
-									   choice choice-var))))))
-	  (ps:chain control
-		    (insert-adjacent-h-t-m-l
-		     "beforebegin"
-		     (who-ps-html
-		      :br
-		      (:p :class "message-p" (if (eql choice "yes")
-						 "You will be remembered when you login."
-						 "You will be required to login after every session ends."))
-		      :br
-		      (:div :class "pricing"
-			    (:b (:u "Pricing and Payment"))
-			    (:p "Create your first slide deck for free!")
-			    (:p "Each token covers about 0.75 words. Tokens are used based on the number of words in your uploaded images/documents and in the slide deck generated. Tokens will be automatically deducted from your balance.")
-			    (:p "Get 1 million tokens (enough for approximately 750,000 words) for just $25. Token bundles are available in $5, $25, $100, and $1000 options.")
-			    (:p "We only accept payments via PayPal. Be sure to use the same email here as in your PayPal transaction.")
-			    )
-
-		      (:div "Enter Yes and press Enter to continue: "
-			    (:input :id "pricing-caret" :placeholder "Enter Yes here." :value "Yes")
-			    (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "pricingVerification()")))))
-	  (scroll-to-bottom)
-	  (bind-pricing-input) ;add an event listener to the pricing-caret
-	  )
-	 (t ;; this means the user entered a wrong option, we must refresh the consent-input
-	  (setf (ps:chain consent id) "")
-	  (ps:chain control
-		    (insert-adjacent-h-t-m-l
-		     "beforebegin"
-		     (who-ps-html
-		      (:p :class "error-paragraph" "Please answer Yes/No. ")
-		      (:div "Yes/No: "
-			    (:input :type "text" :id "consent-input" :placeholder "Enter Yes/No here and press Enter")
-			    (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "consentVerification()")))))
-	  (ps:chain document (get-element-by-id "consent-input") (focus))
-	  (scroll-to-bottom)
-	  (bind-consent-input)))))
-
-   (defun bind-consent-input ()
-     (ps:chain document (get-element-by-id "consent-input")
-	       (add-event-listener
-		"keyup"
-		(lambda (event)
-		  (when (eql (ps:chain event key) "Enter")
-		    (consent-verification))))))
-
-   (defun access-code-verification ()
-     "send access code for verification"
-     (let* ((email (ps:chain document (get-element-by-id "email") value))
-	    (code-input (ps:chain document (get-element-by-id "access-code")))
-	    (code (ps:chain code-input value))
-	    (code-loading-div (ps:chain document (get-element-by-id "code-loading-div")))
-	    (code-loading-caret (ps:chain document (get-element-by-id "code-loading-caret")))
-	    (control (ps:chain document (get-element-by-id "control"))))
-       (setf (ps:chain code-input disabled) t)
-       (disable-send-icon)
-       (when (not (eql "" code))
-	 (when (and code-loading-div code-loading-caret)
-	   (setf (ps:chain code-loading-div id) "")
-	   (setf (ps:chain code-loading-caret id) ""))
-	 (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
-						    (who-ps-html
-						     :br
-						     (:div
-						      (:i :class "code-loading-div" :id "code-loading-div")
-						      (:input :class "code-loading-caret" :id "code-loading-caret")))))
-	 (type-writer "code-loading-div" "Verifying code, please wait..." 0)
-	 (scroll-to-bottom)
-	 (ps:chain document (get-element-by-id "code-loading-caret") (focus))
-	 (ps:chain *socket* (send (ps:chain -j-s-o-n (stringify (create type "access-code"
-									email email
-									code code))))))))
-   (defun bind-access-code-input ()
-     (ps:chain document (get-element-by-id "access-code")
-	       (add-event-listener
-		"keyup"
-		(lambda (event)
-		  (when (eql (ps:chain event key) "Enter")
-		    (access-code-verification))))))
-   
-   (defun disable-send-icon ()
-     "this function will remove the onclick properties of send icon to allow it to be reusable"
-     (let* ((send-icon (ps:chain document (get-element-by-id "send-icon"))))
-       (setf (ps:chain send-icon onclick) null)
-       (setf (ps:chain send-icon id) null)))
-   
-   (defun email-verification ()
-     "verify that email is an email"
-     (let* ((email-input (ps:chain document (get-element-by-id "email")))
-	    (email (ps:chain email-input value))
-	    (parent (ps:chain document (get-element-by-id "parent")))
-	    (error-paragraph (ps:chain document (get-element-by-id "error-paragraph")))
-	    (control (ps:chain document (get-element-by-id "control"))))
-       (setf (ps:chain email-input disabled) t)
-       (disable-send-icon)
-       (if (ps:chain email-regex (test email))
-	   (progn
-	     (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
-							(who-ps-html
-							 (:div
-							  (:i :class "email-loading-div" :id "email-loading-div")
-							  (:input :id "email-loading-caret" :class "email-loading-caret")))))
-	     (type-writer "email-loading-div" "Loading, please wait..." 0)
-	     (ps:chain document (get-element-by-id "email-loading-caret") (focus))
-	     (scroll-to-bottom)
-	     (ps:chain *socket* (send (ps:chain -j-s-o-n (stringify (create email email
-									    type "email"))))))
-	   (progn
-	     (when error-paragraph
-	       (setf (ps:chain error-paragraph id) ""))
-	     (setf (ps:chain email-input id) "")
-	     (setf (ps:chain email-input class-name) "")
-	     (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
-							(who-ps-html
-							 (:p :class "error-paragraph"  :id "error-paragraph"))))
-	     (type-writer "error-paragraph" "You have entered an incorrect email. Enter a correct email and try again." 0)
-	     (ps:chain control (insert-adjacent-h-t-m-l "beforebegin"
-							(who-ps-html
-							 (:div :class "email-input"
-							       "Enter correct email here: "
-							       (:input :type "email" :id "email" :class "email-input" :autocomplete "off" :placeholder "Email goes here.")
-							       (:img :class "send-icon" :id "send-icon" :src "/decklm/icons/send.png" :alt "Send" :onclick "emailVerification()")))))
-	     (scroll-to-bottom)
-	     (bind-email-input)))))
-
-   (defun bind-email-input ()
-     "this function resets email verification onto the new email input after an error"
-     (ps:chain document (get-element-by-id "email")
-	       (add-event-listener
-		"keyup"
-		(lambda (event)
-		  (when (eql (ps:chain event key) "Enter")
-		    (email-verification))))))
-   (bind-email-input)))
+    (defun bind-email-input ()
+      "this function resets email verification onto the new email input after an error"
+      (ps:chain document (get-element-by-id "email")
+		(add-event-listener
+		 "keyup"
+		 (lambda (event)
+		   (when (eql (ps:chain event key) "Enter")
+		     (email-verification))))))
+    (bind-email-input)))
 
 
 (defun accounts-css ()
@@ -535,7 +535,9 @@ consent is stored server side, such that we track the user across all devices."
 	("input:focus" :width 90%)
 	("input:disabled" :width 90%))))))
 
-(define-easy-handler (accounts :uri "/accounts" :host *decklm-host*) ()
+(define-easy-handler (accounts :uri "/accounts"
+			       :acceptor-names '(ninx::ninx)
+			       :host *decklm-host*) ()
   (incr-events "accounts")
   (save-ip-visit (remote-addr* *request*))
   (save-country-visit (remote-addr*))
@@ -582,11 +584,11 @@ consent is stored server side, such that we track the user across all devices."
 		  (:script
 		   (str
 		    (ps:ps
-		     (ps:chain document (add-event-listener "DOMContentLoaded"
-							    (lambda ()
-							      ;; Call type-writer function after DOM is loaded
-							      (type-writer "first-paragraph" "Make a slide deck from your image and PDF references in a minute. Enter your email below to start." 0))))
-		     )))))))
+		      (ps:chain document (add-event-listener "DOMContentLoaded"
+							     (lambda ()
+							       ;; Call type-writer function after DOM is loaded
+							       (type-writer "first-paragraph" "Make a slide deck from your image and PDF references in a minute. Enter your email below to start." 0))))
+		      )))))))
 
 (defun is-mobile-browser (request &optional agent)
   "check if a given agent is a mobile browser"
@@ -737,7 +739,9 @@ consent is stored server side, such that we track the user across all devices."
 	(.pricing :width 95% :margin 0)
 	(".copyright" :color ,fg-color :text-align left))))))
 
-(define-easy-handler (pricing :uri "/pricing" :host *decklm-host*) ()
+(define-easy-handler (pricing :uri "/pricing"
+			      :acceptor-names '(ninx::ninx)
+			      :host *decklm-host*) ()
   (incr-events "pricing")
   (save-ip-visit (remote-addr* *request*))
   (save-country-visit (remote-addr*))
@@ -768,14 +772,14 @@ consent is stored server side, such that we track the user across all devices."
 			  (:p "We only accept payments via PayPal. Be sure to use the same email here as in your PayPal transaction.")
 			  )
 		    (:table
-		     (:thead
-		      (:tr
-		       (:th "Tier") (:th "Price") (:th "Tokens") (:th "Number of words")))
-		     (:tbody
-		      (:tr (:td "1") (:td "$5") (:td "250,000") (:td "~187,500"))
-		      (:tr (:td "2") (:td "$25") (:td "1,000,000") (:td "~750,000"))
-		      (:tr (:td "3") (:td "$100") (:td "4,000,000") (:td "~3,000,000"))
-		      (:tr (:td "4") (:td "$1,000") (:td "40,000,000") (:td "~30,000,000"))))
+			(:thead
+			 (:tr
+			  (:th "Tier") (:th "Price") (:th "Tokens") (:th "Number of words")))
+		      (:tbody
+		       (:tr (:td "1") (:td "$5") (:td "250,000") (:td "~187,500"))
+		       (:tr (:td "2") (:td "$25") (:td "1,000,000") (:td "~750,000"))
+		       (:tr (:td "3") (:td "$100") (:td "4,000,000") (:td "~3,000,000"))
+		       (:tr (:td "4") (:td "$1,000") (:td "40,000,000") (:td "~30,000,000"))))
 		    (footer *request* cookie))))))
 
 (defun tacs-css ()
@@ -811,7 +815,9 @@ consent is stored server side, such that we track the user across all devices."
 	(a :margin-left 2px :margin-right 2px)
 	(".copyright" :color ,fg-color :text-align left))))))
 
-(define-easy-handler (terms-and-privacy :uri "/terms-and-privacy" :host *decklm-host*) ()
+(define-easy-handler (terms-and-privacy :uri "/terms-and-privacy"
+					:acceptor-names '(ninx::ninx)
+					:host *decklm-host*) ()
   (incr-events "terms-and-privacy")
   (save-ip-visit (remote-addr* *request*))
   (save-country-visit (remote-addr*))
@@ -849,315 +855,315 @@ consent is stored server side, such that we track the user across all devices."
 (defun home-js ()
   "the js for the home page"
   (ps:ps
-   (defun is-mobile-browser ()
-     "check if the browser is mobile"
-     (let ((user-agent (or (ps:chain navigator user-agent) (ps:chain navigator vendor) (ps:chain window opera))))
-       (cond
-	 ((ps:chain (regex "/android/i") (test user-agent)) t)
-	 ((ps:chain (regex "/iPad|iPhone|iPod/") (test user-agent)) t)
-	 ((ps:chain (regex "/windows phone/i") (test user-agent)) t)
-	 ((ps:chain (regex "/blackberry|bb10|playbook/i") (test user-agent)) t)
-	 (t false))))
+    (defun is-mobile-browser ()
+      "check if the browser is mobile"
+      (let ((user-agent (or (ps:chain navigator user-agent) (ps:chain navigator vendor) (ps:chain window opera))))
+	(cond
+	  ((ps:chain (regex "/android/i") (test user-agent)) t)
+	  ((ps:chain (regex "/iPad|iPhone|iPod/") (test user-agent)) t)
+	  ((ps:chain (regex "/windows phone/i") (test user-agent)) t)
+	  ((ps:chain (regex "/blackberry|bb10|playbook/i") (test user-agent)) t)
+	  (t false))))
 
-   (defun incr-user-doc-count ()
-     (let* ((user-doc-count (ps:chain document (get-element-by-id "user-doc-count")))
-	    (count (parse-int (ps:chain user-doc-count inner-h-t-m-l))))
-       (setf (ps:chain user-doc-count inner-h-t-m-l) (+ 1 count))))
+    (defun incr-user-doc-count ()
+      (let* ((user-doc-count (ps:chain document (get-element-by-id "user-doc-count")))
+	     (count (parse-int (ps:chain user-doc-count inner-h-t-m-l))))
+	(setf (ps:chain user-doc-count inner-h-t-m-l) (+ 1 count))))
 
-   (defun change-user-balance (tokens)
-     ;; if the user balance is 0 or less, disable the forms.
-     (ps:chain console (log tokens))
-     (let ((balance-span (ps:chain document (get-element-by-id "balance-span"))))
-       (setf (ps:chain balance-span inner-h-t-m-l) (+ tokens " tokens"))
-       (unless (> (parse-int tokens) 0)
-	 (setf (ps:chain document (get-element-by-id "file-input") disabled) t)
-	 (ps:chain document (get-element-by-id "balance-holder") class-list (replace "balance" "error-p"))
-	 (setf (ps:chain document (get-element-by-id "no-balance-p") style display) "block")
-	 (setf (ps:chain document (get-element-by-id "description") disabled) t))))
-   
-   ;; Only show the drop zone if it's not a mobile browser.
-   (ps:chain document (add-event-listener "DOMContentLoaded" (lambda ()
-							       (let ((drop-zone (ps:chain document (get-element-by-id "drop-zone")))
-								     (style (if (is-mobile-browser) "none" "block")))
-								 (setf (ps:chain drop-zone style display) style)))))
+    (defun change-user-balance (tokens)
+      ;; if the user balance is 0 or less, disable the forms.
+      (ps:chain console (log tokens))
+      (let ((balance-span (ps:chain document (get-element-by-id "balance-span"))))
+	(setf (ps:chain balance-span inner-h-t-m-l) (+ tokens " tokens"))
+	(unless (> (parse-int tokens) 0)
+	  (setf (ps:chain document (get-element-by-id "file-input") disabled) t)
+	  (ps:chain document (get-element-by-id "balance-holder") class-list (replace "balance" "error-p"))
+	  (setf (ps:chain document (get-element-by-id "no-balance-p") style display) "block")
+	  (setf (ps:chain document (get-element-by-id "description") disabled) t))))
+    
+    ;; Only show the drop zone if it's not a mobile browser.
+    (ps:chain document (add-event-listener "DOMContentLoaded" (lambda ()
+								(let ((drop-zone (ps:chain document (get-element-by-id "drop-zone")))
+								      (style (if (is-mobile-browser) "none" "block")))
+								  (setf (ps:chain drop-zone style display) style)))))
 
-   (defun generate-random-id ()
-     "generate a random id from date"
-     (+ "id" (ps:chain -date (now)) "-" (ps:chain -math (random) (to-string 36) (substr 2 9))))
+    (defun generate-random-id ()
+      "generate a random id from date"
+      (+ "id" (ps:chain -date (now)) "-" (ps:chain -math (random) (to-string 36) (substr 2 9))))
 
-   (setf files-array (array)) ;; this will hold the files
-   
-   (defun handle-files (files)
-     "this function will handle addition of files when a user submits or drops them"
-     (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
-       (ps:chain -array (from files)
-		 (for-each
-		  (lambda (file)
-		    ;; first add the file to form-data created above
-		    (ps:chain files-array (push file))
-		    (let ((file-frame (ps:chain document (create-element "div")))
-			  (close-button (ps:chain document (create-element "button")))
-			  (frame-id (generate-random-id))
-			  (btn-id (generate-random-id)))
-		      ;; handle frame
-		      (ps:chain file-frame class-list (add "file-frame"))
-		      (ps:chain file-frame (set-attribute "id" frame-id))
-		      (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
+    (setf files-array (array)) ;; this will hold the files
+    
+    (defun handle-files (files)
+      "this function will handle addition of files when a user submits or drops them"
+      (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
+	(ps:chain -array (from files)
+		  (for-each
+		   (lambda (file)
+		     ;; first add the file to form-data created above
+		     (ps:chain files-array (push file))
+		     (let ((file-frame (ps:chain document (create-element "div")))
+			   (close-button (ps:chain document (create-element "button")))
+			   (frame-id (generate-random-id))
+			   (btn-id (generate-random-id)))
+		       ;; handle frame
+		       (ps:chain file-frame class-list (add "file-frame"))
+		       (ps:chain file-frame (set-attribute "id" frame-id))
+		       (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
 
-		      ;; handle close button
-		      (ps:chain close-button class-list (add "close-btn"))
-		      (ps:chain close-button (set-attribute "id" btn-id))
-		      (setf (ps:chain close-button inner-h-t-m-l) "&times;")
-		      (ps:chain close-button (add-event-listener "click"
-								 (lambda ()
-								   ;; remove the file from files-array
-								   (let ((index (ps:chain files-array (index-of file))))
-								     (if (> index -1)
-									 (ps:chain files-array (splice index 1))))
-								   (ps:chain file-frame (remove))))))
- 		    (cond
-		      ((ps:chain file type (starts-with "image/"))
-		       (let ((img (ps:chain document (create-element "img")))
-			     (reader (new -file-reader)))
-			 (setf (ps:chain reader onload) (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
-			 (ps:chain reader (read-as-data-u-r-l file))
-			 (ps:chain file-frame (append-child img))))
-		      ((eql (ps:chain file type) "application/pdf")
-		       (let ((iframe (ps:chain document (create-element "iframe")))
-			     (file-name (ps:chain document (create-element "span"))))
-			 (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
-			 (ps:chain file-frame (append-child iframe))
-			 ;; file name
-			 (ps:chain file-name class-list (add "file-name"))
-			 (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
-			 (ps:chain file-frame (append-child file-name)))))
-		    (ps:chain file-frame (append-child close-button))
-		    (ps:chain files-container (append-child file-frame)))))))
+		       ;; handle close button
+		       (ps:chain close-button class-list (add "close-btn"))
+		       (ps:chain close-button (set-attribute "id" btn-id))
+		       (setf (ps:chain close-button inner-h-t-m-l) "&times;")
+		       (ps:chain close-button (add-event-listener "click"
+								  (lambda ()
+								    ;; remove the file from files-array
+								    (let ((index (ps:chain files-array (index-of file))))
+								      (if (> index -1)
+									  (ps:chain files-array (splice index 1))))
+								    (ps:chain file-frame (remove))))))
+ 		     (cond
+		       ((ps:chain file type (starts-with "image/"))
+			(let ((img (ps:chain document (create-element "img")))
+			      (reader (new -file-reader)))
+			  (setf (ps:chain reader onload) (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
+			  (ps:chain reader (read-as-data-u-r-l file))
+			  (ps:chain file-frame (append-child img))))
+		       ((eql (ps:chain file type) "application/pdf")
+			(let ((iframe (ps:chain document (create-element "iframe")))
+			      (file-name (ps:chain document (create-element "span"))))
+			  (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
+			  (ps:chain file-frame (append-child iframe))
+			  ;; file name
+			  (ps:chain file-name class-list (add "file-name"))
+			  (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+			  (ps:chain file-frame (append-child file-name)))))
+		     (ps:chain file-frame (append-child close-button))
+		     (ps:chain files-container (append-child file-frame)))))))
 
-   ;; Enable drag-and-drop file rearranging within files-container
-   (setf files-container (ps:chain document (get-element-by-id "files-container")))
-   (setf dragged-item nil)
+    ;; Enable drag-and-drop file rearranging within files-container
+    (setf files-container (ps:chain document (get-element-by-id "files-container")))
+    (setf dragged-item nil)
 
-   (ps:chain files-container (add-event-listener "dragstart"
-						 (lambda (event)
-						   (setf dragged-item (ps:chain event target))
-						   ;; Add visual feedback when dragging starts
-						   (set-timeout (lambda () (setf (ps:chain dragged-item style opacity) "0.5")) 0))))
+    (ps:chain files-container (add-event-listener "dragstart"
+						  (lambda (event)
+						    (setf dragged-item (ps:chain event target))
+						    ;; Add visual feedback when dragging starts
+						    (set-timeout (lambda () (setf (ps:chain dragged-item style opacity) "0.5")) 0))))
 
-   (ps:chain files-container (add-event-listener "dragend"
-						 (lambda ()
-						   ;; Reset opacity and clear dragged item after dropping
-						   (set-timeout (lambda ()
-								  (setf (ps:chain dragged-item style opacity) "1")
-								  (setf dragged-item nil)) 0))))
+    (ps:chain files-container (add-event-listener "dragend"
+						  (lambda ()
+						    ;; Reset opacity and clear dragged item after dropping
+						    (set-timeout (lambda ()
+								   (setf (ps:chain dragged-item style opacity) "1")
+								   (setf dragged-item nil)) 0))))
 
-   (ps:chain files-container (add-event-listener "dragover"
-						 (lambda (event)
-						   ;; Allow dropping by preventing the default behavior
-						   (ps:chain event (prevent-default)))))
+    (ps:chain files-container (add-event-listener "dragover"
+						  (lambda (event)
+						    ;; Allow dropping by preventing the default behavior
+						    (ps:chain event (prevent-default)))))
 
-   (ps:chain files-container (add-event-listener "drop"
-						 (lambda (event)
-						   (ps:chain event (prevent-default)) ;; Prevent default drop behavior
-						   (let ((target (ps:chain event target)))
-						     (when (and dragged-item (ps:chain target class-list (contains "file-frame")))
-						       (let ((rect (ps:chain target get-bounding-client-rect))
-							     (offset (ps:chain event client-y)))
-							 ;; Determine whether to insert before or after the target based on the Y position
-							 (if (< offset (+ (ps:chain rect top) (/ (ps:chain rect height) 2)))
-							     (ps:chain files-container (insert-before dragged-item target))
-							     (let ((next-sibling (ps:chain target next-sibling)))
-							       (if next-sibling
-								   (ps:chain files-container (insert-before dragged-item next-sibling))
-								   (ps:chain files-container (append-child dragged-item)))))))))))
+    (ps:chain files-container (add-event-listener "drop"
+						  (lambda (event)
+						    (ps:chain event (prevent-default)) ;; Prevent default drop behavior
+						    (let ((target (ps:chain event target)))
+						      (when (and dragged-item (ps:chain target class-list (contains "file-frame")))
+							(let ((rect (ps:chain target get-bounding-client-rect))
+							      (offset (ps:chain event client-y)))
+							  ;; Determine whether to insert before or after the target based on the Y position
+							  (if (< offset (+ (ps:chain rect top) (/ (ps:chain rect height) 2)))
+							      (ps:chain files-container (insert-before dragged-item target))
+							      (let ((next-sibling (ps:chain target next-sibling)))
+								(if next-sibling
+								    (ps:chain files-container (insert-before dragged-item next-sibling))
+								    (ps:chain files-container (append-child dragged-item)))))))))))
 
-   ;; Add files via "Add a file" button click
-   (ps:chain document (get-element-by-id "upload-btn")
-	     (add-event-listener "click"
-				 (lambda ()
-				   (setf (ps:chain document (get-element-by-id "success-indicator") style display) "none")
-				   (let ((file-input (ps:chain document (get-element-by-id "file-input"))))
-				     (ps:chain file-input (click))
-				     (setf (ps:chain file-input onchange)
-					   (lambda ()
-					     (handle-files (ps:chain file-input files))
-					     (setf (ps:chain file-input value) "")))))))
+    ;; Add files via "Add a file" button click
+    (ps:chain document (get-element-by-id "upload-btn")
+	      (add-event-listener "click"
+				  (lambda ()
+				    (setf (ps:chain document (get-element-by-id "success-indicator") style display) "none")
+				    (let ((file-input (ps:chain document (get-element-by-id "file-input"))))
+				      (ps:chain file-input (click))
+				      (setf (ps:chain file-input onchange)
+					    (lambda ()
+					      (handle-files (ps:chain file-input files))
+					      (setf (ps:chain file-input value) "")))))))
 
-   ;; Enable file drag-and-drop in the drop zone
-   (setf drop-zone (ps:chain document (get-element-by-id "drop-zone")))
+    ;; Enable file drag-and-drop in the drop zone
+    (setf drop-zone (ps:chain document (get-element-by-id "drop-zone")))
 
-   (ps:chain drop-zone (add-event-listener "dragenter" (lambda (event)
-							 (ps:chain event (prevent-default))
-							 (ps:chain drop-zone class-list (add "dragging")))))
+    (ps:chain drop-zone (add-event-listener "dragenter" (lambda (event)
+							  (ps:chain event (prevent-default))
+							  (ps:chain drop-zone class-list (add "dragging")))))
 
-   (ps:chain drop-zone (add-event-listener "dragover" (lambda (event)
-							(ps:chain event (prevent-default)))))
+    (ps:chain drop-zone (add-event-listener "dragover" (lambda (event)
+							 (ps:chain event (prevent-default)))))
 
-   (ps:chain drop-zone (add-event-listener "dragleave" (lambda (event)
-							 (ps:chain event (prevent-default))
-							 (ps:chain drop-zone class-list (remove "dragging")))))
+    (ps:chain drop-zone (add-event-listener "dragleave" (lambda (event)
+							  (ps:chain event (prevent-default))
+							  (ps:chain drop-zone class-list (remove "dragging")))))
 
-   (ps:chain drop-zone (add-event-listener "drop"
-					   (lambda (event)
-					     (ps:chain event (prevent-default))
-					     (ps:chain drop-zone class-list (remove "dragging"))
-		 			     (handle-files (ps:chain event data-transfer files)))))
+    (ps:chain drop-zone (add-event-listener "drop"
+					    (lambda (event)
+					      (ps:chain event (prevent-default))
+					      (ps:chain drop-zone class-list (remove "dragging"))
+		 			      (handle-files (ps:chain event data-transfer files)))))
 
-   (defun show-toast (message duration)
-     "show a toast to the user"
-     (let ((toast-container (ps:chain document (get-element-by-id "toast-container")))
-	   (toast (ps:chain document (create-element "div"))))
-       (ps:chain toast class-list (add "toast"))
-       (setf (ps:chain toast text-content) message)
-       (ps:chain toast-container (append-child toast))
-       (set-timeout (lambda () "remove the toast"
-		      (ps:chain toast class-list (add "fade-out"))
-		      (set-timeout (lambda () "wait fo the fade-out to complete"
-				     (ps:chain toast (remove))) 500))
-		    duration)))
+    (defun show-toast (message duration)
+      "show a toast to the user"
+      (let ((toast-container (ps:chain document (get-element-by-id "toast-container")))
+	    (toast (ps:chain document (create-element "div"))))
+	(ps:chain toast class-list (add "toast"))
+	(setf (ps:chain toast text-content) message)
+	(ps:chain toast-container (append-child toast))
+	(set-timeout (lambda () "remove the toast"
+		       (ps:chain toast class-list (add "fade-out"))
+		       (set-timeout (lambda () "wait fo the fade-out to complete"
+				      (ps:chain toast (remove))) 500))
+		     duration)))
 
-   
-   ;; Upload files to the "/files" endpoint using plain JS
-   (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn")))
-	 (progress-container (ps:chain document (get-element-by-id "progress-container")))
-	 (progress-bar (ps:chain document (get-element-by-id "upload-progress")))
-	 (loading-indicator (ps:chain document (get-element-by-id "loading-indicator")))
-	 (error-container (ps:chain document (get-element-by-id "error-container")))
-	 (error-indicator (ps:chain document (get-element-by-id "error-indicator")))
-	 (success-indicator (ps:chain document (get-element-by-id "success-indicator")))
-	 (loading-container (ps:chain document (get-element-by-id "loading-container")))
-	 )
-     (defun base64-to-array (base64data)
-       "This function processes base64data returned from the server and converts it into a Uint8Array."
-       (let* ((binary-string (ps:chain window (atob base64data)))
-              (len (ps:chain binary-string length))
-              (bytes (new (-uint8-array len)))
-              (i 0))
-	 (loop for i from 0 to len do
-	   (setf (aref bytes i) (ps:chain binary-string (char-code-at i))))
-	 bytes))
+    
+    ;; Upload files to the "/files" endpoint using plain JS
+    (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn")))
+	  (progress-container (ps:chain document (get-element-by-id "progress-container")))
+	  (progress-bar (ps:chain document (get-element-by-id "upload-progress")))
+	  (loading-indicator (ps:chain document (get-element-by-id "loading-indicator")))
+	  (error-container (ps:chain document (get-element-by-id "error-container")))
+	  (error-indicator (ps:chain document (get-element-by-id "error-indicator")))
+	  (success-indicator (ps:chain document (get-element-by-id "success-indicator")))
+	  (loading-container (ps:chain document (get-element-by-id "loading-container")))
+	  )
+      (defun base64-to-array (base64data)
+	"This function processes base64data returned from the server and converts it into a Uint8Array."
+	(let* ((binary-string (ps:chain window (atob base64data)))
+               (len (ps:chain binary-string length))
+               (bytes (new (-uint8-array len)))
+               (i 0))
+	  (loop for i from 0 to len do
+	    (setf (aref bytes i) (ps:chain binary-string (char-code-at i))))
+	  bytes))
 
-     (defun download-file (blob name)
-       "This function triggers the download of the file returned by the server. Shows a toast with the filename,
+      (defun download-file (blob name)
+	"This function triggers the download of the file returned by the server. Shows a toast with the filename,
    hides the progress indicator, and resets forms and file array."
-       (let ((blob-data (new (-blob (array (base64-to-array blob)) 
-				    (create :type "application/vnd.openxmlformats-officedocument.presentationml.presentation"))))
-             (link (ps:chain document (create-element "a")))
-             (filename (+ name ".pptx")))
-	 
-	 (setf (ps:chain link href) (ps:chain window -u-r-l (create-object-u-r-l blob-data)))
-	 (setf (ps:chain link download) filename)
-	 (ps:chain document body (append-child link))
-	 (ps:chain link (click))
-	 (ps:chain document body (remove-child link))
-	 (setf (ps:chain progress-container style display) "none")
-	 (setf (ps:chain loading-indicator style display) "none")
-	 (setf (ps:chain loading-container style display) "none")
-	 (let ((txt (+ "Your deck is saved as " filename " in your downloads folder as " name ".")))
-	   (show-toast txt 500)
-	   (setf (ps:chain success-indicator inner-h-t-m-l) txt))
-	 
-	 (setf (ps:chain success-indicator style display) "block")
-	 (setf files-array (array))
-	 (setf (ps:chain document (get-element-by-id "description") value) "")
-	 (setf (ps:chain document (get-element-by-id "files-container") inner-h-t-m-l) ""))
-       )
+	(let ((blob-data (new (-blob (array (base64-to-array blob)) 
+				     (create :type "application/vnd.openxmlformats-officedocument.presentationml.presentation"))))
+              (link (ps:chain document (create-element "a")))
+              (filename (+ name ".pptx")))
+	  
+	  (setf (ps:chain link href) (ps:chain window -u-r-l (create-object-u-r-l blob-data)))
+	  (setf (ps:chain link download) filename)
+	  (ps:chain document body (append-child link))
+	  (ps:chain link (click))
+	  (ps:chain document body (remove-child link))
+	  (setf (ps:chain progress-container style display) "none")
+	  (setf (ps:chain loading-indicator style display) "none")
+	  (setf (ps:chain loading-container style display) "none")
+	  (let ((txt (+ "Your deck is saved as " filename " in your downloads folder as " name ".")))
+	    (show-toast txt 500)
+	    (setf (ps:chain success-indicator inner-h-t-m-l) txt))
+	  
+	  (setf (ps:chain success-indicator style display) "block")
+	  (setf files-array (array))
+	  (setf (ps:chain document (get-element-by-id "description") value) "")
+	  (setf (ps:chain document (get-element-by-id "files-container") inner-h-t-m-l) ""))
+	)
 
 
-     (defun upload-files ()
-       "upload the files and track progress of the upload"
-       (ps:chain console (log files-array))
-       (let ((form-data (new -form-data))
-	     (xhr (new -x-m-l-http-request))
-	     (description-value (ps:chain document (get-element-by-id "description") value)) ;; get the description value to be sent to the server
-	     )
-	 ;; Add files to FormData
-	 (when (> (ps:chain files-array length) 0)
-	   (ps:chain form-data (set "number-of-files" (ps:chain files-array length)))
-	   (loop for i from 0 below (ps:chain files-array length) do
-	     (ps:chain form-data (append (+ "file_" i) (aref files-array i)))))
-	 
-	 (when description-value
-	   (ps:chain form-data (append "description" description-value)))
-	 ;; Open the request
-	 (ps:chain xhr (open "POST" "/files" t))
-	 ;; Track progress
-	 (setf (ps:chain xhr upload onprogress)
-	       (lambda (event)
-		 (when (ps:chain event length-computable)
-		   (setf (ps:chain progress-bar value)
-			 (/ (* 100 (ps:chain event loaded)) (ps:chain event total)))
-		   (when (eql (ps:chain event loaded) (ps:chain event total))
-		     (setf (ps:chain progress-container style display) "none")
-		     (setf (ps:chain loading-indicator style display) "block")
-		     (setf (ps:chain loading-container style display) "block")
-		     (setf (ps:chain loading-indicator inner-h-t-m-l) "Generating deck, sit back and wait...")))))
+      (defun upload-files ()
+	"upload the files and track progress of the upload"
+	(ps:chain console (log files-array))
+	(let ((form-data (new -form-data))
+	      (xhr (new -x-m-l-http-request))
+	      (description-value (ps:chain document (get-element-by-id "description") value)) ;; get the description value to be sent to the server
+	      )
+	  ;; Add files to FormData
+	  (when (> (ps:chain files-array length) 0)
+	    (ps:chain form-data (set "number-of-files" (ps:chain files-array length)))
+	    (loop for i from 0 below (ps:chain files-array length) do
+	      (ps:chain form-data (append (+ "file_" i) (aref files-array i)))))
+	  
+	  (when description-value
+	    (ps:chain form-data (append "description" description-value)))
+	  ;; Open the request
+	  (ps:chain xhr (open "POST" "/files" t))
+	  ;; Track progress
+	  (setf (ps:chain xhr upload onprogress)
+		(lambda (event)
+		  (when (ps:chain event length-computable)
+		    (setf (ps:chain progress-bar value)
+			  (/ (* 100 (ps:chain event loaded)) (ps:chain event total)))
+		    (when (eql (ps:chain event loaded) (ps:chain event total))
+		      (setf (ps:chain progress-container style display) "none")
+		      (setf (ps:chain loading-indicator style display) "block")
+		      (setf (ps:chain loading-container style display) "block")
+		      (setf (ps:chain loading-indicator inner-h-t-m-l) "Generating deck, sit back and wait...")))))
 
-	 (setf (ps:chain xhr onloadstart) (lambda ()
-					    "Show loading indicator when uploading starts"
-					    (setf (ps:chain loading-container style display) "none")
-					    (setf (ps:chain success-indicator style display) "none")
-					    (setf (ps:chain progress-container style display) "block")
-					    (setf (ps:chain loading-indicator style display) "block")
-					    (setf (ps:chain error-container style display) "none")
-					    (setf (ps:chain error-indicator style display) "none")
-					    ))
+	  (setf (ps:chain xhr onloadstart) (lambda ()
+					     "Show loading indicator when uploading starts"
+					     (setf (ps:chain loading-container style display) "none")
+					     (setf (ps:chain success-indicator style display) "none")
+					     (setf (ps:chain progress-container style display) "block")
+					     (setf (ps:chain loading-indicator style display) "block")
+					     (setf (ps:chain error-container style display) "none")
+					     (setf (ps:chain error-indicator style display) "none")
+					     ))
 
-	 (setf (ps:chain xhr onload)
-	       (lambda ()
-		 "handle upload completion and process response"
-		 (if (and (eql (ps:chain xhr ready-state) 4) (eql (ps:chain xhr status) 200))
-		     (let* ((response-json (ps:chain xhr response-text))
-			    (response (ps:chain -j-s-o-n (parse response-json))))
-		       (ps:chain console (log response))
-		       (setf (ps:chain progress-container style display) "none")
-		       (setf (ps:chain loading-indicator style display) "none")
-		       (if (eql (ps:chain response success) t)
-			   (setf (ps:chain window location href) (+ "/deck/" (ps:chain response docid) "/" (ps:chain response title)))
-			   ;; (progn (download-file (ps:chain response data) (ps:chain response title))
-			   ;; 	   (incr-user-doc-count)
-			   ;; 	   (change-user-balance (ps:chain response balance)))
-			   (progn
-			     (ps:chain console (log response))
-			     (show-toast "An error occured during making the deck, please try again" 3000)
-			     (let* ((error-code (ps:chain response error-code))
-				    (error-text (cond
-						  ((eql error-code 429) "Server currently busy, please try again later.")
-						  ((eql error-code 500) "Your documents are too long, they will take forever to process. Decrease the number and/or size of the documents and try again.")
-						  ((eql error-code 503) "Server currently experiencing some technical problems. Try again later.")
-						  ((eql error-code 504) "The documents are taking very long to process, won't finish in time. Decrease number and/or size of the documents and try again.")
-						  (t "An error occurred while processing the request. Please try again.")))))
+	  (setf (ps:chain xhr onload)
+		(lambda ()
+		  "handle upload completion and process response"
+		  (if (and (eql (ps:chain xhr ready-state) 4) (eql (ps:chain xhr status) 200))
+		      (let* ((response-json (ps:chain xhr response-text))
+			     (response (ps:chain -j-s-o-n (parse response-json))))
+			(ps:chain console (log response))
+			(setf (ps:chain progress-container style display) "none")
+			(setf (ps:chain loading-indicator style display) "none")
+			(if (eql (ps:chain response success) t)
+			    (setf (ps:chain window location href) (+ "/deck/" (ps:chain response docid) "/" (ps:chain response title)))
+			    ;; (progn (download-file (ps:chain response data) (ps:chain response title))
+			    ;; 	   (incr-user-doc-count)
+			    ;; 	   (change-user-balance (ps:chain response balance)))
+			    (progn
+			      (ps:chain console (log response))
+			      (show-toast "An error occured during making the deck, please try again" 3000)
+			      (let* ((error-code (ps:chain response error-code))
+				     (error-text (cond
+						   ((eql error-code 429) "Server currently busy, please try again later.")
+						   ((eql error-code 500) "Your documents are too long, they will take forever to process. Decrease the number and/or size of the documents and try again.")
+						   ((eql error-code 503) "Server currently experiencing some technical problems. Try again later.")
+						   ((eql error-code 504) "The documents are taking very long to process, won't finish in time. Decrease number and/or size of the documents and try again.")
+						   (t "An error occurred while processing the request. Please try again.")))))
+			      (setf (ps:chain progress-container style display) "none")
+			      (setf (ps:chain loading-indicator style display) "none")
+			      (setf (ps:chain loading-container style display) "none")
+			      (setf (ps:chain error-indicator inner-h-t-m-l) error-text)
+			      (setf (ps:chain error-container style display) "block")
+			      (setf (ps:chain error-indicator style display) "block")
+			      )))
+		      (progn (show-toast "An error occured during making the deck, please try again" 3000)
+			     (setf (ps:chain loading-container style display) "none")
 			     (setf (ps:chain progress-container style display) "none")
 			     (setf (ps:chain loading-indicator style display) "none")
-			     (setf (ps:chain loading-container style display) "none")
-			     (setf (ps:chain error-indicator inner-h-t-m-l) error-text)
 			     (setf (ps:chain error-container style display) "block")
 			     (setf (ps:chain error-indicator style display) "block")
-			     )))
-		     (progn (show-toast "An error occured during making the deck, please try again" 3000)
-			    (setf (ps:chain loading-container style display) "none")
-			    (setf (ps:chain progress-container style display) "none")
-			    (setf (ps:chain loading-indicator style display) "none")
-			    (setf (ps:chain error-container style display) "block")
-			    (setf (ps:chain error-indicator style display) "block")
-			    ))))
+			     ))))
 
-	 ;; Send the request only if there's a description or files to send
-	 (when (or (> (length files-array) 0)
-		   description-value)
-	   (ps:chain xhr (send form-data))
-	   (show-toast "Data is being submitted" 1500))))
+	  ;; Send the request only if there's a description or files to send
+	  (when (or (> (length files-array) 0)
+		    description-value)
+	    (ps:chain xhr (send form-data))
+	    (show-toast "Data is being submitted" 1500))))
 
-     (ps:chain submit-btn (add-event-listener "click" (lambda ()
-							"submit button click listener"
-							(upload-files))))
+      (ps:chain submit-btn (add-event-listener "click" (lambda ()
+							 "submit button click listener"
+							 (upload-files))))
 
-     (let ((textarea (ps:chain document (get-element-by-id "description"))))
-       (ps:chain textarea (add-event-listener "input" (lambda ()
-							"auto resize the textarea vertically as the user types in"
-							(setf (ps:chain this style height) "auto")
-							(setf (ps:chain this style height) (+ (ps:chain this scroll-height) "px"))))))
-     )))
+      (let ((textarea (ps:chain document (get-element-by-id "description"))))
+	(ps:chain textarea (add-event-listener "input" (lambda ()
+							 "auto resize the textarea vertically as the user types in"
+							 (setf (ps:chain this style height) "auto")
+							 (setf (ps:chain this style height) (+ (ps:chain this scroll-height) "px"))))))
+      )))
 
 
 (defun home-css ()
@@ -1223,7 +1229,9 @@ consent is stored server side, such that we track the user across all devices."
 	(a :margin-left 2px :margin-right 2px)
 	(".copyright" :color ,fg-color :text-align left))))))
 
-(define-easy-handler (home :uri "/home" :host *decklm-host*) ()
+(define-easy-handler (home :uri "/home"
+			   :acceptor-names '(ninx::ninx)
+			   :host *decklm-host*) ()
   ;; you first check the cookiw against those stored in the database.
   ;; if you match it, then load the page, else delete the cookie.
   (incr-events "home")
@@ -1303,7 +1311,9 @@ consent is stored server side, such that we track the user across all devices."
 	(hunchentoot:redirect "/"))))
 
 
-(define-easy-handler (files :uri "/files" :host *decklm-host* :default-request-type :post) ()
+(define-easy-handler (files :uri "/files" :host *decklm-host*
+			    :acceptor-names '(ninx::ninx)
+			    :default-request-type :post) ()
   ;; when we are done, we send the user the file for download and then redirect the user back to the home page.
   ;; if the user has a free trial and the generation is successful, consume it.
   (incr-events "files")
@@ -1329,7 +1339,9 @@ consent is stored server side, such that we track the user across all devices."
 	       (hash-create '(("error" "no tokens"))))))
 	(hunchentoot:redirect "/"))))
 
-(define-easy-handler (logout :uri "/logout" :host *decklm-host*) ()
+(define-easy-handler (logout :uri "/logout"
+			     :acceptor-names '(ninx::ninx)
+			     :host *decklm-host*) ()
   (incr-events "logout")
   (save-ip-visit (remote-addr* *request*))
   (save-country-visit (remote-addr*))
@@ -1339,7 +1351,8 @@ consent is stored server side, such that we track the user across all devices."
     (set-cookie "cookie" :expires (- (get-universal-time) 10000))
     (hunchentoot:redirect "/")))
 
-(define-easy-handler (consent :uri "/consent" :host *decklm-host*) ()
+(define-easy-handler (consent :uri "/consent"		      :acceptor-names '(ninx::ninx)
+			      :host *decklm-host*) ()
   (incr-events "consent")
   (save-ip-visit (remote-addr* *request*))
   (save-country-visit (remote-addr*))
@@ -1349,7 +1362,9 @@ consent is stored server side, such that we track the user across all devices."
 	       (hunchentoot:redirect "/home"))
 	(hunchentoot:redirect "/"))))
 
-(define-easy-handler (manage-cookie-consent :uri "/revoke-consent" :host *decklm-host*) ()
+(define-easy-handler (manage-cookie-consent :uri "/revoke-consent"
+					    :acceptor-names '(ninx::ninx)
+					    :host *decklm-host*) ()
   (incr-events "revoke-consent")
   (save-ip-visit (remote-addr* *request*))
   (save-country-visit (remote-addr*))
@@ -1405,11 +1420,13 @@ consent is stored server side, such that we track the user across all devices."
 (defun copy-to-clipboard ()
   "this function will copy to clip board"
   (ps:ps
-   (defun copy-to-clipboard (text)
-     (ps:chain navigator clipboard (write-text text))
-     (show-toast "Link copied to clipboard." 1500))))
+    (defun copy-to-clipboard (text)
+      (ps:chain navigator clipboard (write-text text))
+      (show-toast "Link copied to clipboard." 1500))))
 
-(define-easy-handler (user-decks :uri "/user-decks" :host *decklm-host*) ()
+(define-easy-handler (user-decks :uri "/user-decks"
+				 :acceptor-names '(ninx::ninx)
+				 :host *decklm-host*) ()
   ;; this route lists the user's generated decks
   (incr-events "user-decks")
   (save-ip-visit (remote-addr* *request*))
@@ -1474,85 +1491,85 @@ consent is stored server side, such that we track the user across all devices."
 (defun feedback-js ()
   "the js for the home page"
   (ps:ps
-   (defun is-mobile-browser ()
-     "check if the browser is mobile"
-     (let ((user-agent (or (ps:chain navigator user-agent) (ps:chain navigator vendor) (ps:chain window opera))))
-       (cond
-	 ((ps:chain (regex "/android/i") (test user-agent)) t)
-	 ((ps:chain (regex "/iPad|iPhone|iPod/") (test user-agent)) t)
-	 ((ps:chain (regex "/windows phone/i") (test user-agent)) t)
-	 ((ps:chain (regex "/blackberry|bb10|playbook/i") (test user-agent)) t)
-	 (t false))))
-   (defun show-toast (message duration)
-     "show a toast to the user"
-     (let ((toast-container (ps:chain document (get-element-by-id "toast-container")))
-	   (toast (ps:chain document (create-element "div"))))
-       (ps:chain toast class-list (add "toast"))
-       (setf (ps:chain toast text-content) message)
-       (ps:chain toast-container (append-child toast))
-       (set-timeout (lambda () "remove the toast"
-		      (ps:chain toast class-list (add "fade-out"))
-		      (set-timeout (lambda () "wait fo the fade-out to complete"
-				     (ps:chain toast (remove))) 500))
-		    duration)))
-   ;; Upload files to the "/files" endpoint using plain JS
-   (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn")))
-	 (progress-container (ps:chain document (get-element-by-id "progress-container")))
-	 (progress-bar (ps:chain document (get-element-by-id "upload-progress")))
-	 (loading-indicator (ps:chain document (get-element-by-id "loading-indicator")))
-	 )
+    (defun is-mobile-browser ()
+      "check if the browser is mobile"
+      (let ((user-agent (or (ps:chain navigator user-agent) (ps:chain navigator vendor) (ps:chain window opera))))
+	(cond
+	  ((ps:chain (regex "/android/i") (test user-agent)) t)
+	  ((ps:chain (regex "/iPad|iPhone|iPod/") (test user-agent)) t)
+	  ((ps:chain (regex "/windows phone/i") (test user-agent)) t)
+	  ((ps:chain (regex "/blackberry|bb10|playbook/i") (test user-agent)) t)
+	  (t false))))
+    (defun show-toast (message duration)
+      "show a toast to the user"
+      (let ((toast-container (ps:chain document (get-element-by-id "toast-container")))
+	    (toast (ps:chain document (create-element "div"))))
+	(ps:chain toast class-list (add "toast"))
+	(setf (ps:chain toast text-content) message)
+	(ps:chain toast-container (append-child toast))
+	(set-timeout (lambda () "remove the toast"
+		       (ps:chain toast class-list (add "fade-out"))
+		       (set-timeout (lambda () "wait fo the fade-out to complete"
+				      (ps:chain toast (remove))) 500))
+		     duration)))
+    ;; Upload files to the "/files" endpoint using plain JS
+    (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn")))
+	  (progress-container (ps:chain document (get-element-by-id "progress-container")))
+	  (progress-bar (ps:chain document (get-element-by-id "upload-progress")))
+	  (loading-indicator (ps:chain document (get-element-by-id "loading-indicator")))
+	  )
 
-     (defun upload-feedback ()
-       "upload the files and track progress of the upload"
-       (let ((form-data (new -form-data))
-	     (xhr (new -x-m-l-http-request))
-	     (feedback-value (ps:chain document (get-element-by-id "feedback") value)) ;; get the feedback
-	     )
-	 ;; Add feedback to form-data
-	 (when feedback-value
-	   (ps:chain form-data (append "feedback" feedback-value)))
-	 
-	 ;; Open the request
-	 (ps:chain xhr (open "POST" "/process-feedback" t))
-	 
-	 ;; Track progress
-	 (setf (ps:chain xhr upload onprogress) (lambda (event)
-						  (when (ps:chain event length-computable)
-						    (setf (ps:chain progress-bar value)
-							  (/ (* 100 (ps:chain event loaded)) (ps:chain event total))))))
+      (defun upload-feedback ()
+	"upload the files and track progress of the upload"
+	(let ((form-data (new -form-data))
+	      (xhr (new -x-m-l-http-request))
+	      (feedback-value (ps:chain document (get-element-by-id "feedback") value)) ;; get the feedback
+	      )
+	  ;; Add feedback to form-data
+	  (when feedback-value
+	    (ps:chain form-data (append "feedback" feedback-value)))
+	  
+	  ;; Open the request
+	  (ps:chain xhr (open "POST" "/process-feedback" t))
+	  
+	  ;; Track progress
+	  (setf (ps:chain xhr upload onprogress) (lambda (event)
+						   (when (ps:chain event length-computable)
+						     (setf (ps:chain progress-bar value)
+							   (/ (* 100 (ps:chain event loaded)) (ps:chain event total))))))
 
-	 (setf (ps:chain xhr onloadstart) (lambda ()
-					    "Show loading indicator when uploading starts"
-					    (setf (ps:chain progress-container style display) "block")
-					    (setf (ps:chain loading-indicator style display) "block")
-					    ))
+	  (setf (ps:chain xhr onloadstart) (lambda ()
+					     "Show loading indicator when uploading starts"
+					     (setf (ps:chain progress-container style display) "block")
+					     (setf (ps:chain loading-indicator style display) "block")
+					     ))
 
-	 (setf (ps:chain xhr onload) (lambda ()
-				       "handle upload completion and process response"
-				       (if (and (eql (ps:chain xhr ready-state) 4) (eql (ps:chain xhr status) 200))
-					   (progn
-					     (show-toast "Feedback has been sent successfully." 3000)
-					     (setf (ps:chain progress-container style display) "none")
-					     (setf (ps:chain loading-indicator style display) "none")
-					     (setf (ps:chain document (get-element-by-id "feedback") value) ""))
-					   (show-toast "An error has occurred while sending feeback, please try again." 3000))))
+	  (setf (ps:chain xhr onload) (lambda ()
+					"handle upload completion and process response"
+					(if (and (eql (ps:chain xhr ready-state) 4) (eql (ps:chain xhr status) 200))
+					    (progn
+					      (show-toast "Feedback has been sent successfully." 3000)
+					      (setf (ps:chain progress-container style display) "none")
+					      (setf (ps:chain loading-indicator style display) "none")
+					      (setf (ps:chain document (get-element-by-id "feedback") value) ""))
+					    (show-toast "An error has occurred while sending feeback, please try again." 3000))))
 
-	 ;; Send the request only if there's a description or files to send
-	 (if feedback-value
-	     (progn (ps:chain xhr (send form-data))
-		    (show-toast "Feedback is being sent to server" 1500))
-	     (show-toast "A feedback value is required" 1500))))
+	  ;; Send the request only if there's a description or files to send
+	  (if feedback-value
+	      (progn (ps:chain xhr (send form-data))
+		     (show-toast "Feedback is being sent to server" 1500))
+	      (show-toast "A feedback value is required" 1500))))
 
-     (ps:chain submit-btn (add-event-listener "click" (lambda ()
-							"submit button click listener"
-							(upload-feedback))))
+      (ps:chain submit-btn (add-event-listener "click" (lambda ()
+							 "submit button click listener"
+							 (upload-feedback))))
 
-     (let ((textarea (ps:chain document (get-element-by-id "feedback"))))
-       (ps:chain textarea (add-event-listener "input" (lambda ()
-							"auto resize the textarea vertically as the user types in"
-							(setf (ps:chain this style height) "auto")
-							(setf (ps:chain this style height) (+ (ps:chain this scroll-height) "px"))))))
-     )))
+      (let ((textarea (ps:chain document (get-element-by-id "feedback"))))
+	(ps:chain textarea (add-event-listener "input" (lambda ()
+							 "auto resize the textarea vertically as the user types in"
+							 (setf (ps:chain this style height) "auto")
+							 (setf (ps:chain this style height) (+ (ps:chain this scroll-height) "px"))))))
+      )))
 
 (defun feedback-css ()
   "the css for the /home endpoint"
@@ -1600,7 +1617,9 @@ consent is stored server side, such that we track the user across all devices."
 	(a :margin-left 2px :margin-right 2px)
 	(".copyright" :color ,fg-color :text-align left)) ))))
 
-(define-easy-handler (feedback :uri "/feedback" :uri *decklm-host*) ()
+(define-easy-handler (feedback :uri "/feedback"
+			       :acceptor-names '(ninx::ninx)
+			       :host *decklm-host*) ()
   ;; feedback doesn't require an account
   (incr-events "feedback")
   (save-ip-visit (remote-addr* *request*))
@@ -1640,7 +1659,9 @@ consent is stored server side, such that we track the user across all devices."
 	     (:script (str (feedback-js)))
 	     ))))
 
-(define-easy-handler (process-feedback :uri "/process-feedback" :host *decklm-host*) ()
+(define-easy-handler (process-feedback :uri "/process-feedback"
+				       :acceptor-names '(ninx::ninx)
+				       :host *decklm-host*) ()
   ;; save the feedback to the database, optionally with the person who sent it, if logged in
   (incr-events "process-feedback")
   (save-ip-visit (remote-addr* *request*))
@@ -1686,136 +1707,146 @@ consent is stored server side, such that we track the user across all devices."
 
 (flet ((match-path (request)
 	 (cl-ppcre:scan "^(/download-deck/)" (script-name* request))))
-  (define-easy-handler (download-file :uri #'match-path :host *decklm-host*) (type)
+  (define-easy-handler (download-file :uri #'match-path
+				      :acceptor-names '(ninx::ninx)
+				      :host *decklm-host*) (type)
     (trivia:match (str:split "/" (script-name*))
-		  ((list "" "download-deck" doc-id doc-name)
-		   ;; this will get data from the db and send back binary data to the user.
-		   ;; should we restrict downloads to users who have account's with us? i don't know, for now we won't
-		   ;; bytes returned are pptx bytes
-		   (incr-events "download-deck")
-		   (save-ip-visit (remote-addr* *request*))
-		   (save-country-visit (remote-addr*))
-		   (let* ((json-data (get-document-data doc-id))
-			  (name (format nil "~a.~a" doc-name type))
-			  (bytes (if (equal type "pptx") (make-pptx-bytes json-data) (make-pdf-bytes json-data))))
-		     (if (equal type "pptx")
-			 (progn
-			   (setf (content-type*) "application/vnd.openxmlformats-officedocument.presentationml.presentation")
-			   (setf (content-length*) (length bytes))
-			   (setf (header-out "Content-disposition")
-				 (format nil "attachment; filename=\"~a\"; filename*=\"~a\"" name name))
-			   bytes)
-			 (progn
-			   (setf (content-type*) "application/pdf")
-			   (setf (content-length*) (length bytes))
-			   (setf (header-out "Content-disposition")
-				 (format nil "attachment; filename=\"~a\"; filename*=\"~a\"" name name))
-			   bytes)))
-		   ))))
+      ((list "" "download-deck" doc-id doc-name)
+       ;; this will get data from the db and send back binary data to the user.
+       ;; should we restrict downloads to users who have account's with us? i don't know, for now we won't
+       ;; bytes returned are pptx bytes
+       (incr-events "download-deck")
+       (save-ip-visit (remote-addr* *request*))
+       (save-country-visit (remote-addr*))
+       (let* ((json-data (get-document-data doc-id))
+	      (name (format nil "~a.~a" doc-name type))
+	      (bytes (if (equal type "pptx") (make-pptx-bytes json-data) (make-pdf-bytes json-data))))
+	 (if (equal type "pptx")
+	     (progn
+	       (setf (content-type*) "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+	       (setf (content-length*) (length bytes))
+	       (setf (header-out "Content-disposition")
+		     (format nil "attachment; filename=\"~a\"; filename*=\"~a\"" name name))
+	       bytes)
+	     (progn
+	       (setf (content-type*) "application/pdf")
+	       (setf (content-length*) (length bytes))
+	       (setf (header-out "Content-disposition")
+		     (format nil "attachment; filename=\"~a\"; filename*=\"~a\"" name name))
+	       bytes)))
+       ))))
 
-(define-easy-handler (register-active :uri "/register-active" :host *decklm-host* :default-request-type :post) (pathname) 
+(define-easy-handler (register-active :uri "/register-active"
+				      :acceptor-names '(ninx::ninx)
+				      :host *decklm-host* :default-request-type :post) (pathname) 
   ;; this will register all active users
   (incr-active pathname)
   "")
 
-(define-easy-handler (register-duration :uri "/register-duration" :host *decklm-host* :default-request-type :post) (pathname duration)
+(define-easy-handler (register-duration :uri "/register-duration"
+					:acceptor-names '(ninx::ninx)
+					:host *decklm-host* :default-request-type :post) (pathname duration)
   (save-duration (if (equal pathname "") "index" pathname) (read-from-string duration))
   "")
 
-(define-easy-handler (share-email :uri "/share-email" :host *decklm-host*) ()
+(define-easy-handler (share-email :uri "/share-email"
+				  :acceptor-names '(ninx::ninx)
+				  :host *decklm-host*) ()
   ;; we will design the sharing via email template here.
   (access-code-html 1234))
 
 
 (flet ((match-path (request)
 	 (cl-ppcre:scan "^(/deck/)" (script-name* request))))
-  (define-easy-handler (deck-page :uri #'match-path :host *decklm-host*) ()
+  (define-easy-handler (deck-page :uri #'match-path
+				  :acceptor-names '(ninx::ninx)
+				  :host *decklm-host*) ()
     (trivia:match (str:split "/" (script-name*))
-		  ((list "" "deck" doc-id doc-name)
-		   ;; this route lists the user's generated decks
-		   (incr-events "deck")
-		   (save-ip-visit (remote-addr* *request*))
-		   (save-country-visit (remote-addr*))
-		   (let ((cookie (cookie-in "cookie")))
-		     (let* ((doc (get-document-details doc-id))
-			    (title (cadr doc))
-			    (name (format nil "~a.pdf" (str:downcase title)))
-			    (share-link (format nil "/deck/~a/~a"
-						(car doc)
-						(str:replace-all " " "-" name)))
-			    (whatsapp-link (format nil "whatsapp://send?text=~a%0A%0A~a"
-						   (url-encode (format nil "Download the slide deck of \"~a\" at: " title))
-						   share-link))
-			    (email-link (format nil "mailto:?subject=~a slide deck.&body=~a"
-						title
-						(format nil "Download the PDF slide deck of \"~a\" at ~a" title share-link)))
-			    (telegram-link (format nil "https://t.me/share/url?url=~a&text=%0A%0A~a" share-link
-						   (url-encode (format nil "Download the slide deck of ~a from the above link." title)))))
-		       (with-html-output-to-string (*standard-output*)
-			 "<!DOCTYPE html>"
-			 (:html :lang "en"
-				(:head
-				 (:title "Download Deck | DeckLM")
-				 (:meta :charset "UTF-8")
-				 (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-				 (:meta :name "description" :content "The home page for DeckLM")
-				 (:link :rel "manifest" :href "/decklm/manifest.json")
-				 (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-				 (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-				 (:style (str (user-decks-css))))
-				(:body :id "parent"
-				       (:a :href "/home" :class "logo-link"
-					   (:div :class "logo"
-						 (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
-						 "DeckLM"))
-				       (:div :id "container"
-					     (:h4 (str (format nil "File: ~a" title)))
-					     (str (format nil " Added on ~a" (extract-timestamp
-									      (format nil "~a" (universal-to-timestamp
-												(caddr doc))))))
-					     :br :br
-					     "PDF is designed for better for reading"
-					     :br :br
-					     "Slides are designed for better for editing."
-					     :br :br
-					     (:div :id :buttons
-						   (let* ((link (format nil "/download-deck/~a/~a"
-									(car doc)
-									(str:replace-all " " "-" doc-name))))
-						     (htm
-						      (:a :href (format nil "~a.pdf?type=pdf" link) (:button :id "pdf-button" "Download PDF"))
-						      (:a :href (format nil "~a.pptx?type=pptx" link) (:button :id "ppt-button" "Download Slides")))))
-					     )
-				       
-				       (when (is-mobile-browser *request*) ;; add a whatsapp share button on mobile
-					 (htm (:a :class "share-link" :title "Share to WhatsApp"
-						  :href whatsapp-link
-						  (:img :src "/decklm/icons/whatsapp.png" :alt "" :class "wp"))))
-				       (:a :class "share-link" :title "Share by Email"
-					   :href email-link
-					   (:img :src "/decklm/icons/mail.png" :class "wp" :alt ""))
-				       (:a :class "share-link" :title "Share via Telegram"
-					   :href telegram-link
-					   (:img :src "/decklm/icons/telegram.png" :class "wp" :alt ""))
-				       (:a :href "https://twitter.com/share?ref_src=twsrc%5Etfw"
-					   :class "share-link twitter-share-button"
-					   :data-text (format nil "Download the slide deck of ~a from this url: " title)
-					   :data-url share-link
-					   :data-show-count "false"
-					   (:img :src "/decklm/icons/x.png" :alt "" :class "wp"))
-				       (:a :href "#" :id "copy-link" :class "share-link"
-					   :onclick (format nil "copyToClipboard(~s)" share-link)
-					   "Copy 🔗")
-				       (:hr)
-				       (:div :id "toast-container" :class "toast-container")
-				       (footer *request* cookie))
-				(:script (str (home-js)))
-				(:script
-				 :async t
-				 :src "https://platform.twitter.com/widgets.js"
-				 :charset "utf-8")
-				(:script (str (copy-to-clipboard)))
-				))))))))
+      ((list "" "deck" doc-id doc-name)
+       ;; this route lists the user's generated decks
+       (incr-events "deck")
+       (save-ip-visit (remote-addr* *request*))
+       (save-country-visit (remote-addr*))
+       (let ((cookie (cookie-in "cookie")))
+	 (let* ((doc (get-document-details doc-id))
+		(title (cadr doc))
+		(name (format nil "~a.pdf" (str:downcase title)))
+		(share-link (format nil "/deck/~a/~a"
+				    (car doc)
+				    (str:replace-all " " "-" name)))
+		(whatsapp-link (format nil "whatsapp://send?text=~a%0A%0A~a"
+				       (url-encode (format nil "Download the slide deck of \"~a\" at: " title))
+				       share-link))
+		(email-link (format nil "mailto:?subject=~a slide deck.&body=~a"
+				    title
+				    (format nil "Download the PDF slide deck of \"~a\" at ~a" title share-link)))
+		(telegram-link (format nil "https://t.me/share/url?url=~a&text=%0A%0A~a" share-link
+				       (url-encode (format nil "Download the slide deck of ~a from the above link." title)))))
+	   (with-html-output-to-string (*standard-output*)
+	     "<!DOCTYPE html>"
+	     (:html :lang "en"
+		    (:head
+		     (:title "Download Deck | DeckLM")
+		     (:meta :charset "UTF-8")
+		     (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+		     (:meta :name "description" :content "The home page for DeckLM")
+		     (:link :rel "manifest" :href "/decklm/manifest.json")
+		     (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+		     (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+		     (:style (str (user-decks-css))))
+		    (:body :id "parent"
+			   (:a :href "/home" :class "logo-link"
+			       (:div :class "logo"
+				     (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
+				     "DeckLM"))
+			   (:div :id "container"
+				 (:h4 (str (format nil "File: ~a" title)))
+				 (str (format nil " Added on ~a" (extract-timestamp
+								  (format nil "~a" (universal-to-timestamp
+										    (caddr doc))))))
+				 :br :br
+				 "PDF is designed for better for reading"
+				 :br :br
+				 "Slides are designed for better for editing."
+				 :br :br
+				 (:div :id :buttons
+				       (let* ((link (format nil "/download-deck/~a/~a"
+							    (car doc)
+							    (str:replace-all " " "-" doc-name))))
+					 (htm
+					  (:a :href (format nil "~a.pdf?type=pdf" link) (:button :id "pdf-button" "Download PDF"))
+					  (:a :href (format nil "~a.pptx?type=pptx" link) (:button :id "ppt-button" "Download Slides")))))
+				 )
+			   
+			   (when (is-mobile-browser *request*) ;; add a whatsapp share button on mobile
+			     (htm (:a :class "share-link" :title "Share to WhatsApp"
+				      :href whatsapp-link
+				      (:img :src "/decklm/icons/whatsapp.png" :alt "" :class "wp"))))
+			   (:a :class "share-link" :title "Share by Email"
+			       :href email-link
+			       (:img :src "/decklm/icons/mail.png" :class "wp" :alt ""))
+			   (:a :class "share-link" :title "Share via Telegram"
+			       :href telegram-link
+			       (:img :src "/decklm/icons/telegram.png" :class "wp" :alt ""))
+			   (:a :href "https://twitter.com/share?ref_src=twsrc%5Etfw"
+			       :class "share-link twitter-share-button"
+			       :data-text (format nil "Download the slide deck of ~a from this url: " title)
+			       :data-url share-link
+			       :data-show-count "false"
+			       (:img :src "/decklm/icons/x.png" :alt "" :class "wp"))
+			   (:a :href "#" :id "copy-link" :class "share-link"
+			       :onclick (format nil "copyToClipboard(~s)" share-link)
+			       "Copy 🔗")
+			   (:hr)
+			   (:div :id "toast-container" :class "toast-container")
+			   (footer *request* cookie))
+		    (:script (str (home-js)))
+		    (:script
+		     :async t
+		     :src "https://platform.twitter.com/widgets.js"
+		     :charset "utf-8")
+		    (:script (str (copy-to-clipboard)))
+		    ))))))))
 
 ;;; payments
 ;;; when we get this, we first verify the transaction on the server, because you know, fraud, and then we redirect the user to home
@@ -1833,12 +1864,16 @@ consent is stored server side, such that we track the user across all devices."
 	(when (get-user-id email)
 	  (incr-user-tokens (get-user-id email) (* *tokens-per-dollar* (read-from-string amount))))))))
 
-(define-easy-handler (verify-payment :uri "/verify-payment" :host *decklm-host*) (cc amt tx st)
+(define-easy-handler (verify-payment :uri "/verify-payment"
+				     :acceptor-names '(ninx::ninx)
+				     :host *decklm-host*) (cc amt tx st)
   (verify-payment-fun tx)
   (redirect "/"))
 
 ;; this defines the success-webhook that will listen for notifications from paypal.
-(define-easy-handler (success-webhook :uri "/success-webhook" :host *decklm-host*) ()
+(define-easy-handler (success-webhook :uri "/success-webhook"
+				      :acceptor-names '(ninx::ninx)
+				      :host *decklm-host*) ()
   (let* ((body-string (flexi-streams:octets-to-string (raw-post-data) :external-format :utf8))
 	 (body-hash (jzon:parse body-string))
 	 (id (gethash "id" body-hash))
@@ -2025,7 +2060,9 @@ store the user-id as null and await a claim or process the claim manually."
 	    (push (list key v1) acc))))
     `(,@acc ,@list2)))
 
-(define-easy-handler (realtime-analytics :uri "/realtime-analytics" :host *decklm-host*) ()
+(define-easy-handler (realtime-analytics :uri "/realtime-analytics"
+					 :acceptor-names '(ninx::ninx)
+					 :host *decklm-host*) ()
   (let* ((daily-cost (compute-costs 1))
 	 (daily-sales (compute-sales 1))
 	 (daily-profit (compute-profit 1))
@@ -2050,165 +2087,165 @@ store the user-id as null and await a claim or process the claim manually."
 	 (:div :class "ana-div left-div"
 	       (:h4 "Tokenomics Daily")
 	       (:table
-		(:tr (:th "type")
-		     (:th "Amount"))
-		(:tr (:td "Cost") (:td (str (format nil "~,7f" daily-cost))))
-		(:tr (:td "Sales") (:td (str (format nil "~,7f" daily-sales))))
-		(:tr (:td "Profit") (:td (str (format nil "~,7f" daily-profit))))
-		(:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 2 1))))))
+		   (:tr (:th "type")
+		    (:th "Amount"))
+		 (:tr (:td "Cost") (:td (str (format nil "~,7f" daily-cost))))
+		 (:tr (:td "Sales") (:td (str (format nil "~,7f" daily-sales))))
+		 (:tr (:td "Profit") (:td (str (format nil "~,7f" daily-profit))))
+		 (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 2 1))))))
 
 	       (:h4 "Tokenomics Weekly")
 	       (:table
-		(:tr (:th "type")
-		     (:th "Amount"))
-		(:tr (:td "Cost") (:td (str (format nil "~,7f" weekly-cost))))
-		(:tr (:td "Sales") (:td (str (format nil "~,7f" weekly-sales))))
-		(:tr (:td "Profit") (:td (str (format nil "~,7f" weekly-profit))))
- 		(:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 14 7))))))
+		   (:tr (:th "type")
+		    (:th "Amount"))
+		 (:tr (:td "Cost") (:td (str (format nil "~,7f" weekly-cost))))
+		 (:tr (:td "Sales") (:td (str (format nil "~,7f" weekly-sales))))
+		 (:tr (:td "Profit") (:td (str (format nil "~,7f" weekly-profit))))
+ 		 (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 14 7))))))
 
 	       (:h4 "Tokenomics Monthly")
 	       (:table
-		(:tr (:th "type")
-		     (:th "Amount"))
-		(:tr (:td "Cost") (:td (str (format nil "~,7f" monthly-cost))))
-		(:tr (:td "Sales") (:td (str (format nil "~,7f" monthly-sales))))
-		(:tr (:td "Profit") (:td (str (format nil "~,7f" monthly-profit))))
- 		(:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 56 28))))))
+		   (:tr (:th "type")
+		    (:th "Amount"))
+		 (:tr (:td "Cost") (:td (str (format nil "~,7f" monthly-cost))))
+		 (:tr (:td "Sales") (:td (str (format nil "~,7f" monthly-sales))))
+		 (:tr (:td "Profit") (:td (str (format nil "~,7f" monthly-profit))))
+ 		 (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 56 28))))))
 
 	       (:h4 "Daily Active")
 	       (:table
-		(:tr (:th "Page") (:th "Number") (:th "Growth"))
-		(:tr (:td "Index") (:td (str (get-active "index"))) (:td (str (format nil "~,7f"
-										      (compute-growth
-										       (get-active "index" :duration 2)
-										       (get-active "index" :duration 1))))))
-		(:tr (:td "Accounts") (:td (str (get-active "accounts"))) (:td (str (format nil "~,7f"
-											    (compute-growth
-											     (get-active "accounts" :duration 2)
-											     (get-active "accounts" :duration 1))))))
-		(:tr (:td "Deck") (:td (str (get-active "deck"))) (:td (str (format nil "~,7f"
-										    (compute-growth
-										     (get-active "deck" :duration 2)
-										     (get-active "deck" :duration 1))))))
-		(:tr (:td "Home") (:td (str (get-active "home"))) (:td (str (format nil "~,7f"
-										    (compute-growth
-										     (get-active "home" :duration 2)
-										     (get-active "home" :duration 1)))))))
+		   (:tr (:th "Page") (:th "Number") (:th "Growth"))
+		 (:tr (:td "Index") (:td (str (get-active "index"))) (:td (str (format nil "~,7f"
+										       (compute-growth
+											(get-active "index" :duration 2)
+											(get-active "index" :duration 1))))))
+		 (:tr (:td "Accounts") (:td (str (get-active "accounts"))) (:td (str (format nil "~,7f"
+											     (compute-growth
+											      (get-active "accounts" :duration 2)
+											      (get-active "accounts" :duration 1))))))
+		 (:tr (:td "Deck") (:td (str (get-active "deck"))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-active "deck" :duration 2)
+										      (get-active "deck" :duration 1))))))
+		 (:tr (:td "Home") (:td (str (get-active "home"))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-active "home" :duration 2)
+										      (get-active "home" :duration 1)))))))
 
 	       (:h4 "Daily Events")
 	       (:table
-		(:tr (:th "Page") (:th "Number") (:th "Growth"))
-		(:tr (:td "Index") (:td (str (get-events "index")))(:td (str (format nil "~,7f"
+		   (:tr (:th "Page") (:th "Number") (:th "Growth"))
+		 (:tr (:td "Index") (:td (str (get-events "index")))(:td (str (format nil "~,7f"
+										      (compute-growth
+										       (get-events "index" :duration 2)
+										       (get-events "index" :duration 1))))))
+		 (:tr (:td "Accounts") (:td (str (get-events "accounts")))(:td (str (format nil "~,7f"
+											    (compute-growth
+											     (get-events "accounts" :duration 2)
+											     (get-events "accounts" :duration 1))))))
+		 (:tr (:td "Deck") (:td (str (get-events "deck"))) (:td (str (format nil "~,7f"
 										     (compute-growth
-										      (get-events "index" :duration 2)
-										      (get-events "index" :duration 1))))))
-		(:tr (:td "Accounts") (:td (str (get-events "accounts")))(:td (str (format nil "~,7f"
-											   (compute-growth
-											    (get-events "accounts" :duration 2)
-											    (get-events "accounts" :duration 1))))))
-		(:tr (:td "Deck") (:td (str (get-events "deck"))) (:td (str (format nil "~,7f"
-										    (compute-growth
-										     (get-events "deck" :duration 2)
-										     (get-events "deck" :duration 1))))))
-		(:tr (:td "Home") (:td (str (get-events "home"))) (:td (str (format nil "~,7f"
-										    (compute-growth
-										     (get-events "home" :duration 2)
-										     (get-events "home" :duration 1))))))))))
+										      (get-events "deck" :duration 2)
+										      (get-events "deck" :duration 1))))))
+		 (:tr (:td "Home") (:td (str (get-events "home"))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-events "home" :duration 2)
+										      (get-events "home" :duration 1))))))))))
        (:div :class "ana-div right-div"
 	     (:h4 "Parsing Error - Daily")
 	     (:table
-	      (:tr (:th "Model") (:th "Number") (:th "% change"))
-	      (let* ((model-data-1 (get-all-parsing-errors :duration 2))
-		     (model-data-2 (get-all-parsing-errors :duration 1))
-		     (merged-data (merge-lists model-data-2 model-data-1)))
-		(dolist (data merged-data)
-		  (htm
-		   (:tr (:td (str (car data)))
-			(:td (str (cadr data)))
-			(:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
-								       (if old old 0))
-								     (cadr data))))))))))
+		 (:tr (:th "Model") (:th "Number") (:th "% change"))
+	       (let* ((model-data-1 (get-all-parsing-errors :duration 2))
+		      (model-data-2 (get-all-parsing-errors :duration 1))
+		      (merged-data (merge-lists model-data-2 model-data-1)))
+		 (dolist (data merged-data)
+		   (htm
+		    (:tr (:td (str (car data)))
+			 (:td (str (cadr data)))
+			 (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
+									(if old old 0))
+								      (cadr data))))))))))
 
 	     (:h4 "Parsing Error - Weekly")
 	     (:table
-	      (:tr (:th "Model") (:th "Number") (:th "% change"))
-	      (let* ((model-data-1 (get-all-parsing-errors :duration 14))
-		     (model-data-2 (get-all-parsing-errors :duration 7))
-		     (merged-data (merge-lists model-data-2 model-data-1)))
-		(dolist (data merged-data)
-		  (htm
-		   (:tr (:td (str (car data)))
-			(:td (str (cadr data)))
-			(:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
-								       (if old old 0))
-								     (cadr data))))))))))
+		 (:tr (:th "Model") (:th "Number") (:th "% change"))
+	       (let* ((model-data-1 (get-all-parsing-errors :duration 14))
+		      (model-data-2 (get-all-parsing-errors :duration 7))
+		      (merged-data (merge-lists model-data-2 model-data-1)))
+		 (dolist (data merged-data)
+		   (htm
+		    (:tr (:td (str (car data)))
+			 (:td (str (cadr data)))
+			 (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
+									(if old old 0))
+								      (cadr data))))))))))
 
 	     (:h4 "Parsing Error - Monthly")
 	     (:table
-	      (:tr (:th "Model") (:th "Number") (:th "% change"))
-	      (let* ((model-data-1 (get-all-parsing-errors :duration 56))
-		     (model-data-2 (get-all-parsing-errors :duration 28))
-		     (merged-data (merge-lists model-data-2 model-data-1)))
-		(dolist (data merged-data)
-		  (htm
-		   (:tr (:td (str (car data)))
-			(:td (str (cadr data)))
-			(:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
-								       (if old old 0))
-								     (cadr data))))))))))
+		 (:tr (:th "Model") (:th "Number") (:th "% change"))
+	       (let* ((model-data-1 (get-all-parsing-errors :duration 56))
+		      (model-data-2 (get-all-parsing-errors :duration 28))
+		      (merged-data (merge-lists model-data-2 model-data-1)))
+		 (dolist (data merged-data)
+		   (htm
+		    (:tr (:td (str (car data)))
+			 (:td (str (cadr data)))
+			 (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
+									(if old old 0))
+								      (cadr data))))))))))
 
 	     
 	     (:h4 "Unique visitors")
 	     (:table
-	      (:tr (:th "Type")  (:th "Number") (:th "% change"))
-	      (:tr (:td "Daily") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
-											     (compute-growth
-											      (get-unique-visitors-by-ip 2)
-											      (get-unique-visitors-by-ip 1))))))
-	      (:tr (:td "Weekly") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
+		 (:tr (:th "Type")  (:th "Number") (:th "% change"))
+	       (:tr (:td "Daily") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
 											      (compute-growth
-											       (get-unique-visitors-by-ip 14)
-											       (get-unique-visitors-by-ip 7))))))
-	      (:tr (:td "Monthly") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
+											       (get-unique-visitors-by-ip 2)
+											       (get-unique-visitors-by-ip 1))))))
+	       (:tr (:td "Weekly") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
 											       (compute-growth
-												(get-unique-visitors-by-ip 28)
-												(get-unique-visitors-by-ip 56)))))))
+												(get-unique-visitors-by-ip 14)
+												(get-unique-visitors-by-ip 7))))))
+	       (:tr (:td "Monthly") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
+												(compute-growth
+												 (get-unique-visitors-by-ip 28)
+												 (get-unique-visitors-by-ip 56)))))))
 
 	     (:h4 "Top Countries - Daily Visits")
 	     (:table
-	      (:tr (:th "Country") (:th "Count"))
-	      (dolist (data (get-top-country-visitors))
-		(htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-top-country-visitors))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
 	     (:h4 "Top Countries - Weekly Visits")
 	     (:table
-	      (:tr (:th "Country") (:th "Count"))
-	      (dolist (data (get-top-country-visitors :duration 7))
-		(htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-top-country-visitors :duration 7))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
 	     (:h4 "Top Countries - Monthly Visits")
 	     (:table
-	      (:tr (:th "Country") (:th "Count"))
-	      (dolist (data (get-top-country-visitors :duration 28))
-		(htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-top-country-visitors :duration 28))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
 	     (:h4 "Top Countries - Daily Decks")
 	     (:table
-	      (:tr (:th "Country") (:th "Count"))
-	      (dolist (data (get-country-deck-creations))
-		(htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-country-deck-creations))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
 	     (:h4 "Top Countries - Weekly Decks")
 	     (:table
-	      (:tr (:th "Country") (:th "Count"))
-	      (dolist (data (get-country-deck-creations :duration 7))
-		(htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-country-deck-creations :duration 7))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
 	     (:h4 "Top Countries - Monthly Decks")
 	     (:table
-	      (:tr (:th "Country") (:th "Count"))
-	      (dolist (data (get-country-deck-creations :duration 28))
-		(htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-country-deck-creations :duration 28))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 	     
 	     )))))
 
@@ -2312,7 +2349,9 @@ store the user-id as null and await a claim or process the claim manually."
        :font-size "0.9em" :padding "8px 16px" :bottom "15px" :right "15px")
       ))))
 
-(define-easy-handler (index :uri "/" :host *decklm-host*) ()
+(define-easy-handler (index :uri "/"
+			    :acceptor-names '(ninx::ninx)
+			    :host *decklm-host*) ()
   (format *terminal-io* "~%~a~%" *request*)
   (incr-events "index")
   (save-ip-visit (remote-addr* *request*))
