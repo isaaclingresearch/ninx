@@ -5,7 +5,12 @@
   (:export :start-server :restart-server :create-tables))
 
 (in-package :ninx-blog)
-(defvar *ninx-blog-host* (format nil "~a:~a" (uiop:getenv "NINX_BLOG_HOST") (uiop:getenv "NINX_HTTPS_PORT")))
+
+(defvar *ninx-blog-host* (let ((port (uiop:getenv "NINX_HTTPS_PORT"))
+			       (host (uiop:getenv "NINX_BLOG_HOST")))
+			   (if (equal "443" port)
+			       host
+			       (format nil "~a:~a" host port))))
 
 (defun get-current-year ()
   (multiple-value-bind (second minute hour date month year day-of-week dst-p tz)

@@ -103,7 +103,6 @@ then send the file id back to the user for redirection to the download page."
 					      				  :error))))
 						 :parsing-error
 						 (jzon:parse clean-data))))
-				 (print data)
 				 (trivia:match data
 				   (:parsing-error
 				    (incr-parsing-errors :model *current-gpt-model*)

@@ -25,8 +25,8 @@
 			     (:file "decklm")
 			     ))
 	       (:module "apps/blog"
-			:components ((:file "ninx")
-				     (:file "blog")))
+		:components ((:file "ninx")
+			     (:file "blog")))
 	       (:file "server"))
   :build-operation "program-op" ;; leave as is
   :build-pathname "ninx"
