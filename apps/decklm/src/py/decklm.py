@@ -200,21 +200,23 @@ def make_pptx(file_path, json_data):
 
 def get_absolute_path(relative_path):
     """
-    Converts a relative file path to an absolute file path.
+    Converts a relative or tilde-prefixed file path to an absolute file path.
 
     Parameters:
-        relative_path (str): The relative path to be converted.
+        relative_path (str): The relative path or tilde-prefixed path to be converted.
 
     Returns:
         str: The absolute path.
     """
     try:
-        absolute_path = os.path.abspath(relative_path)
+        # Expand ~ to the user's home directory
+        expanded_path = os.path.expanduser(relative_path)
+        # Convert to an absolute path
+        absolute_path = os.path.abspath(expanded_path)
         return absolute_path
     except Exception as e:
         print(f"Error converting path: {e}")
         return None
 
-
 def test_make_pptx():
-    make_pptx(get_absolute_path( "./common-lisp/ninx/apps/decklm/p.pptx"), "{ \"outline\": [\"a\", \"b\", \"c\"], \"references\": [\"a\", \"b\", \"c\"], \"overall-title\":\"Testinglkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\", \"content\":[{\"title\": \"Testing slide\",\"content\": [{\"type\": \"paragraph\", \"content\": {\"point\": \"test point\", \"explanation\": \"Test explanation\"}}, {\"type\": \"list\", \"content\": [\"b\", \"c\", \"d\"]}]}], \"definitions\": [{\"term\": \"test\", \"definition\": \"definition\"}]}")
+    make_pptx(get_absolute_path( "~/common-lisp/ninx/apps/decklm/p.pptx"), "{ \"outline\": [\"a\", \"b\", \"c\"], \"references\": [\"a\", \"b\", \"c\"], \"overall-title\":\"Testinglkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\", \"content\":[{\"title\": \"Testing slide\",\"content\": [{\"type\": \"paragraph\", \"content\": {\"point\": \"test point\", \"explanation\": \"Test explanation\"}}, {\"type\": \"list\", \"content\": [\"b\", \"c\", \"d\"]}]}], \"definitions\": [{\"term\": \"test\", \"definition\": \"definition\"}]}")
