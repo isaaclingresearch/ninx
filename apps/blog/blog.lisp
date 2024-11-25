@@ -50,53 +50,6 @@
 (defun get-admin-full-name (username)
   (execute-single *db* "select full_name from admin where username = ?" username))
 
-(define-easy-handler (blog-index-page
-		      :uri (lambda (request) (cl-ppcre:scan "^(/blog/)" (script-name* request)))
-		      :host *ninx-blog-host*) ()
-  (trivia:match
-      (str:split "/" (script-name*))
-    ((list "" "blog" user)
-     (with-html-output-to-string (*standard-output*)
-       (htm (:html :lang "en"
-		   (:head (:meta :charset "utf-8")
-			  (:meta :http-equiv "x-ua-compatible" :content "ie=edge")
-			  (:meta :name "viewport" :content "width=device-width, initial-scale=1")
-			  (:title "Ninx | Essays")
-			  (:style "body {line-height: 1.4; font-size: 16px; padding: 0 10px; margin: 50px auto; max-width: 650px; text-align: left; text-wrap: pretty;}")
-			  (:link :rel "icon" :href "/blog-priv/favicons/favicon.ico" :sizes "any")
-			  (:link :rel "apple-touch-icon" :href "/blog-priv/favicons/apple-touch-icon.png")
-			  (:link :rel "manifest" :href "/blog-priv/favicons/manifest.json")
-			  )
-		   (let ((posts (get-all-blog-posts-by-author (get-admin-full-name user))))
-		     (if posts
-			 (htm (:div
-			       (loop for post in (reverse posts) ;; reverse to start with the newest essay
-				     collect
-				     (htm
-				      (:article
-				       :class "" :style "margin-bottom: 4rem; white-space: pre-wrap;"
-				       (:h2 :class "" (str (car post)))
-				       (:p :style "margin-bottom: 1.25rem; color: #727272;"
-					   "Added on " (str (nth 5 post))
-					   " Written by "
-					   (:a :style (inline-css '(:color blue)) :href "#" (str (cadddr post))))
-				       (if (> 500 (length (nth 4 post)))
-					   (htm  (:p :class "blog-post" (str (nth 4 post))))
-					   (htm  (:p :class "blog-post"
-						     (str (subseq (nth 4 post) 0 500))
-						     "... "
-						     (:a :style (inline-css '(:color blue)) :href (str (format nil "/blog/~a/~a" user (cadr post))) "Continue"))))
-				       (if (and (not (null (cookie-in "na-cookie"))) (equal user (base64-string-to-string (cookie-in "na-cookie"))))
-					   (htm (:div :class ""
-						      (:div :class ""
-							    (:a :style (inline-css '(:color blue)) :href (str (format nil "/blog/~a/update-blog-post/~a" user (cadr post))) "Edit Post"))
-						      (:div :class ""
-							    (:a :style (inline-css '(:color blue)) :href (str (format nil "/blog/~a/save-blog-as-draft/~a" user (cadr post))) "Save as Draft"))
-						      
-						      )))
-				       )))))
-			 (htm (:p "There are no blog posts"))))))))))
-
 (defun make-description-meta (blog-url)
   "create a snippet of the actual page to be displayed as a meta description"
   (let ((post-list (get-blog-post blog-url)))
@@ -106,39 +59,11 @@
 	      (cadddr post)
 	      (concatenate 'string (subseq (cadddr post) 0 157) "..."))))))
 
-(define-easy-handler (blog-page :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/([^/]+)" (script-name* request)))
-				:host *ninx-blog-host*) ()
-  (trivia:match
-      (str:split "/" (script-name*))
-    ((list "" "blog" user blog-url) 
-     ;; displays the actual blog essay for reading in full format.
-     (with-html-output-to-string (*standard-output*)
-       (htm (:html :lang "en"
-		   (:head (:meta :charset "utf-8")
-			  (:meta :http-equiv "x-ua-compatible" :content "ie=edge")
-			  (:meta :name "viewport" :content "width=device-width, initial-scale=1")
-			  (:title "Ninx | Essays")
-			  (:style "body {line-height: 1.4; font-size: 16px; padding: 0 10px; margin: 50px auto; max-width: 650px; text-align: left; text-wrap: pretty;}")
-			  (:link :rel "icon" :href "/blog-priv/favicons/favicon.ico" :sizes "any")
-			  (:link :rel "apple-touch-icon" :href "/blog-priv/favicons/apple-touch-icon.png")
-			  (:link :rel "manifest" :href "/blog-priv/favicons/manifest.json"))
-		   
-		   (let ((post-list (get-blog-post blog-url)))
-		     (if post-list
-			 (let ((post (car post-list)))
-			   (htm (:article :class "blog-post-div"
-					  (:h2 :class "" (str (car post)))
-					  (:p :style "margin-bottom: 1.25rem; color: #727272;"
-					      "Added on " (str (nth 4 post))
-					      " Written by "
-					      (:a :href "#" (str (caddr post)))
-					      (:br)
-					      )
-					  (htm  (:p :style (inline-css '(:white-space pre-wrap :text-align justify)) (str (cadddr post))))			 
-					  )))
-			 (htm (:p "There are no blog posts"))))))))))
-
-(define-easy-handler (drafts-page :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/drafts" (script-name* request)))
+(define-easy-handler (drafts-page :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ "drafts") t)
+					   (_ nil)))
 				  :host *ninx-blog-host*) ()
   (if (null (cookie-in "na-cookie"))
       (redirect "/admin/login"))
@@ -183,7 +108,11 @@
 			 (htm (:p "There are no draft blog posts"))))))))))
 
 (define-easy-handler (view-draft
-		      :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/view-draft/([^/]+)" (script-name* request)))
+		      :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ "view-draft" _) t)
+					   (_ nil)))
 		      :host *ninx-blog-host*) ()
   (trivia:match
       (str:split "/" (script-name*))
@@ -212,7 +141,11 @@
 
 (define-easy-handler (create-blog-post
 		      :host *ninx-blog-host*
-		      :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/create-blog-post" (script-name* request)))) ()
+		      :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ "create-blog-post") t)
+					   (_ nil)))) ()
   (if (null (cookie-in "na-cookie"))
       (redirect "/admin/login")
       (trivia:match
@@ -236,7 +169,11 @@
 
 (define-easy-handler (update-blog-post
 		      :host *ninx-blog-host*
-		      :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/update-blog-post/([^/]+)" (script-name* request)))) ()
+		      :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ "update-blog-post" _) t)
+					   (_ nil)))) ()
   (if (null (cookie-in "na-cookie"))
       (redirect "/admin/login")
       (trivia:match
@@ -285,7 +222,11 @@
 (define-easy-handler (save-blog-post
 		      :default-request-type :post
 		      :host *ninx-blog-host*
-		      :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/save-blog-post" (script-name* request))))
+		      :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ "save-blog-post") t)
+					   (_ nil))))
     (draft title url author essay)
   (if (null (cookie-in "na-cookie"))
       (redirect "/admin/login")
@@ -301,7 +242,11 @@
 (define-easy-handler (edit-blog-post
 		      :default-request-type :post
 		      :host *ninx-blog-host*
-		      :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/edit-blog-post/([^/]+)" (script-name* request))))
+		      :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ "edit-blog-post" _) t)
+					   (_ nil))))
     (draft title url author essay)
   (if (null (cookie-in "na-cookie"))
       (redirect "/admin/login")
@@ -316,7 +261,11 @@
 
 (define-easy-handler (save-blog-as-draft
 		      :host *ninx-blog-host*
-		      :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/save-blog-as-draft/([^/]+)" (script-name* request)))) ()
+		      :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ "save-blog-post-as-draft" _) t)
+					   (_ nil)))) ()
   (if (null (cookie-in "na-cookie"))
       (redirect "/admin/login")
       (trivia:match
@@ -330,7 +279,11 @@
 
 (define-easy-handler (delete-blog-post
 		      :host *ninx-blog-host*
-		      :uri (lambda (request) (cl-ppcre:scan "/blog/([^/]+)/delete-blog-post/([^/]+)" (script-name* request)))) ()
+		      :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ "delete-blog-post" _) t)
+					   (_ nil)))) ()
   (if (null (cookie-in "na-cookie"))
       (redirect "/admin/login")
       (trivia:match
@@ -341,3 +294,90 @@
 	 (site-template "Ninx | Blog"
 			:body (with-html-output (*standard-output*)
 				(htm (:p "The blog has been deleted from database."))))))))
+
+(define-easy-handler (blog-index-page
+		      :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _) t)
+					   (_ nil)))
+		      :host *ninx-blog-host*) ()
+  (trivia:match
+      (str:split "/" (script-name*))
+    ((list "" "blog" user)
+     (with-html-output-to-string (*standard-output*)
+       (htm (:html :lang "en"
+		   (:head (:meta :charset "utf-8")
+			  (:meta :http-equiv "x-ua-compatible" :content "ie=edge")
+			  (:meta :name "viewport" :content "width=device-width, initial-scale=1")
+			  (:title "Ninx | Essays")
+			  (:style "body {line-height: 1.4; font-size: 16px; padding: 0 10px; margin: 50px auto; max-width: 650px; text-align: left; text-wrap: pretty;}")
+			  (:link :rel "icon" :href "/blog-priv/favicons/favicon.ico" :sizes "any")
+			  (:link :rel "apple-touch-icon" :href "/blog-priv/favicons/apple-touch-icon.png")
+			  (:link :rel "manifest" :href "/blog-priv/favicons/manifest.json")
+			  )
+		   (let ((posts (get-all-blog-posts-by-author (get-admin-full-name user))))
+		     (if posts
+			 (htm (:div
+			       (loop for post in (reverse posts) ;; reverse to start with the newest essay
+				     collect
+				     (htm
+				      (:article
+				       :class "" :style "margin-bottom: 4rem; white-space: pre-wrap;"
+				       (:h2 :class "" (str (car post)))
+				       (:p :style "margin-bottom: 1.25rem; color: #727272;"
+					   "Added on " (str (nth 5 post))
+					   " Written by "
+					   (:a :style (inline-css '(:color blue)) :href "#" (str (cadddr post))))
+				       (if (> 500 (length (nth 4 post)))
+					   (htm  (:p :class "blog-post" (str (nth 4 post))))
+					   (htm  (:p :class "blog-post"
+						     (str (subseq (nth 4 post) 0 500))
+						     "... "
+						     (:a :style (inline-css '(:color blue)) :href (str (format nil "/blog/~a/~a" user (cadr post))) "Continue"))))
+				       (if (and (not (null (cookie-in "na-cookie"))) (equal user (base64-string-to-string (cookie-in "na-cookie"))))
+					   (htm (:div :class ""
+						      (:div :class ""
+							    (:a :style (inline-css '(:color blue)) :href (str (format nil "/blog/~a/update-blog-post/~a" user (cadr post))) "Edit Post"))
+						      (:div :class ""
+							    (:a :style (inline-css '(:color blue)) :href (str (format nil "/blog/~a/save-blog-as-draft/~a" user (cadr post))) "Save as Draft"))
+						      
+						      )))
+				       )))))
+			 (htm (:p "There are no blog posts"))))))))))
+
+(define-easy-handler (blog-page :uri (lambda (request)
+					 (trivia:match
+					     (str:split "/" (script-name* request))
+					   ((list "" "blog" _ _) t)
+					   (_ nil)))
+				:host *ninx-blog-host*) ()
+  (trivia:match
+      (str:split "/" (script-name*))
+    ((list "" "blog" user blog-url) 
+     ;; displays the actual blog essay for reading in full format.
+     (with-html-output-to-string (*standard-output*)
+       (htm (:html :lang "en"
+		   (:head (:meta :charset "utf-8")
+			  (:meta :http-equiv "x-ua-compatible" :content "ie=edge")
+			  (:meta :name "viewport" :content "width=device-width, initial-scale=1")
+			  (:title "Ninx | Essays")
+			  (:style "body {line-height: 1.4; font-size: 16px; padding: 0 10px; margin: 50px auto; max-width: 650px; text-align: left; text-wrap: pretty;}")
+			  (:link :rel "icon" :href "/blog-priv/favicons/favicon.ico" :sizes "any")
+			  (:link :rel "apple-touch-icon" :href "/blog-priv/favicons/apple-touch-icon.png")
+			  (:link :rel "manifest" :href "/blog-priv/favicons/manifest.json"))
+		   
+		   (let ((post-list (get-blog-post blog-url)))
+		     (if post-list
+			 (let ((post (car post-list)))
+			   (htm (:article :class "blog-post-div"
+					  (:h2 :class "" (str (car post)))
+					  (:p :style "margin-bottom: 1.25rem; color: #727272;"
+					      "Added on " (str (nth 4 post))
+					      " Written by "
+					      (:a :href "#" (str (caddr post)))
+					      (:br)
+					      )
+					  (htm  (:p :style (inline-css '(:white-space pre-wrap :text-align justify)) (str (cadddr post))))			 
+					  )))
+			 (htm (:p "There are no blog posts"))))))))))
