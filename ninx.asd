@@ -9,9 +9,6 @@
   :depends-on (:cl-pdf :cl-pdf-parser :postmodern :str :com.inuoe.jzon :hunchentoot :hunchensocket :drakma :cl-who :cl-css :cl-base64 :frugal-uuid :trivia :flexi-streams :parenscript :paren-async :paren6 :local-time :cl-hash-util :trivial-mimes :cl-typesetting :zstd :cl-ppcre :cl-smtp :sb-rt :py4cl2 :cl-maxminddb :sqlite :cl-html-parse :cl-pass)
   :components ((:file "package")
 	       (:file "config")
-	       (:module "apps/ninx"
-		:components ((:file "package")
-			     (:file "ninx")))
 	       (:module "apps/decklm/src"
 		:components ((:file "package")
 			     (:file "decklm.pdf")
@@ -27,6 +24,9 @@
 	       (:module "apps/blog"
 		:components ((:file "ninx")
 			     (:file "blog")))
+	       (:module "apps/ninx"
+		:components ((:file "package")
+			     (:file "ninx")))
 	       (:file "server"))
   :build-operation "program-op" ;; leave as is
   :build-pathname "ninx"
