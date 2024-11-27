@@ -38,7 +38,7 @@
 
 	    (:b (:p "Mail us at " (:a :href "mailto:info@ninx.xyz" "info@ninx.xyz")))
 	    (:h2 "Products")
-	    (:p (:a :target "_blank" :href (format nil "https://~a" decklm::*declm-host*) "DeckLM") " - Generate slides from your learning resources in minutes.")
+	    (:p (:a :target "_blank" :href (format nil "https://~a" decklm::*decklm-host*) "DeckLM") " - Generate slides from your learning resources in minutes.")
 	    :hr
 	    (:b "Ninx Technology Limited,")
 	    :br
