@@ -105,6 +105,196 @@
 				  (:p "© 2024 Ninxtech Ltd.")
 				  )))))))))))
 
+
+(defun index-css ()
+  (cl-css:css
+   `((body :margin 0 :padding 0 :background-color "white" 
+           :font-family "Arial, sans-serif" :line-height 1.5)
+     (.main :margin "20px auto" :background-color "#e8e8e8" 
+            :padding "20px" :border-radius "15px" 
+            :box-shadow "0 4px 8px rgba(0, 0, 0, 0.2)"
+            :max-width "1200px")
+     (.header :display :flex :justify-content :space-between 
+              :align-items :center :margin-bottom "20px")
+     (.outer-logo :display :flex :flex-direction :column 
+                  :align-items :flex-start :gap "10px")
+     (.logo :display :flex :flex-direction :row :align-items :center :gap "10px")
+     (a :font-weight bold)
+     ("a:visited" :color blue)
+     (.logo-image :width "50px" :border-radius "5px")
+     (.logo-link :font-size "2em" :font-weight :bold :text-decoration :none 
+                 :color "#1e90ff")
+     ("a.logo-link:visited" :color "#1e90ff")
+     (.logo-description :font-style :italic :font-size "0.9em" 
+                        :background-color "yellow" :padding "10px" 
+                        :border-radius "5px" :transform "rotate(-5deg)" 
+                        :transform-origin "top left")
+     (.nav-links :display :flex :gap "15px" :align-items :center)
+     (".nav-links a" :text-decoration :none :font-weight :bold)
+     (.home :display :inline-block :padding "10px 20px" 
+            :background-color "#28a745" :color "white" 
+            :text-decoration :none :font-weight :bold 
+            :border-radius "20px" :text-align :center :border "none")
+     ("a.home" :color "#e8e8e8")
+     (".home:hover" :background-color "#1e7e34")
+     (.try-div :display :flex :justify-content :center :align-items :center 
+               :padding "10px 20px" :background-color "#28a745" 
+               :color "white" :text-decoration :none 
+               :font-weight :bold :border-radius "20px" 
+               :margin "10px auto" :border "none" :width "150px")
+     (".try-div a" :text-decoration none :color "#e8e8e8")
+     (".try-div:hover" :background-color "#1e7e34")
+
+     (.video-container :position :relative :display :flex 
+                       :justify-content :center :align-items :center 
+                       :margin "20px auto" :width "100%" 
+                       :max-width "1000px")
+     (.video-demo :width "100%" :height "auto" :border-radius "10px")
+     (.video-overlay :position :absolute :top 0 :left 0 
+                     :width "100%" :height "100%" 
+                     :background-color "rgba(255, 255, 255, 0.7)" 
+                     :display :flex :justify-content :center 
+                     :align-items :center :border-radius "10px" 
+                     :pointer-events :none)
+     (.overlay-button :padding "15px 30px" :font-size "1.2em" 
+                      :background-color "#28a745" :color "#e8e8e8" 
+                      :border "none" :border-radius "25px" 
+                      :text-align :center :text-decoration :none 
+                      :font-weight :bold :cursor :pointer 
+                      :pointer-events :all :transition "background-color 0.3s")
+     (".overlay-button:hover" :background-color "#1e7e34")
+
+     (.big-text :font-size "2em" :margin-bottom "20px")
+     (.center-item :text-align center)
+     (.no-margin :margin 0 :font-weight bold)
+     (.sample-pages :display :flex :gap "10px" :justify-content :center 
+                    :margin-top "20px")
+     (.pdf-sample :position :relative :width "calc(50% - 10px)" 
+                  :max-width "calc(50% - 10px)" :flex-basis "calc(50% - 10px)")
+     (".pdf-sample-text" :position :absolute :top "5px" :left "5px" 
+                         :color "#e8e8e8" :font-weight :bold 
+                         :background-color "rgba(0, 0, 0, 0.7)" 
+                         :padding "5px" :border-radius "3px")
+     (".sample-pages img" :width "100%" :height "auto" :display :block 
+                          :border-radius "5px")
+     (.footer :margin-top "20px" :font-size "0.9em")
+     (.rest :font-size "20px")
+     (.small-div :width 60% :margin-left 20%)
+     (.fab
+      :position :fixed :bottom "20px" :right "20px" :z-index 1000
+      :background-color "#1e90ff" :color "#e8e8e8" :border "none"
+      :border-radius "30px" :padding "10px 20px" :font-size "1em"
+      :box-shadow "0px 4px 6px rgba(0, 0, 0, 0.1)"
+      :cursor :pointer :transition "background-color 0.3s, transform 0.2s"
+      :display :inline-block :text-align :center :font-weight :bold)
+     (".fab:hover"
+      :background-color "#1e7e34"
+      :transform "scale(1.05)")
+     (".fab a:visited" :color "#e8e8e8")
+     ("@media (max-width: 768px)"
+      (.main :margin "0px auto" :max-width 100%)
+      (.small-div :width 95% :margin-left 0)
+      (.big-text :font-size 1.5em)
+      (.header :flex-direction column)
+      (.logo-description :font-size 0.8em )
+      (.sample-pages :flex-direction column :gap "15px" :align-items center)
+      (.pdf-sample :width "100%" :max-width "100%" :margin "0 auto")
+      (.pdf-sample-text :font-size 0.6em)
+      (.overlay-button :font-size 0.9em)
+      (.fab
+       :font-size "0.9em" :padding "8px 16px" :bottom "15px" :right "15px")
+      ))))
+
+(define-easy-handler (index :uri (define-matching-functions "^/$" *decklm-host*)
+			    :acceptor-names '(ninx::ninx)
+			    :host *decklm-host*) ()
+  (incr-events "index")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let* ((cookie (cookie-in "cookie"))
+	 (email (when cookie (get-email-from-cookie cookie))))
+    (if (and email cookie)
+	(hunchentoot:redirect "/home")
+	(with-html-output-to-string (*standard-output*)
+	  "<!DOCTYPE html>"
+	  (htm (:html :lang "en"
+		      (:head
+		       (:title "DeckLM — Online slide deck creator")
+		       (:meta :charset "UTF-8")
+		       (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+		       (:link :rel "manifest" :href "/decklm/manifest.json")
+		       (:meta :name "description" :content "Landing page for DeckLM, the online slide deck creator")
+		       (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+		       (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+		       (:style (str (index-css)))
+		       (:script "<!-- Google tag (gtag.js) -->
+<script async src=\"https://www.googletagmanager.com/gtag/js?id=AW-16666958238\">
+</script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'AW-16666958238');
+</script>")
+		       )
+		      (:body
+		       (:div :class "main"
+			     (:div :class "header"
+				   (:div :class "outer-logo"
+					 (:a :href "/home" :class "logo-link"
+					     (:div :class "logo" (:img :src "/decklm/icon-512.png" :class "logo-image")
+						   "DeckLM"))
+					 (:div :class "logo-description" "Simple and easy to use"))
+				   (:div :class "nav-links"
+					 (:a :href "/pricing" "Pricing")
+					 (:a :class "home" :href "/accounts" "Signup or Signin")))
+			     (:div :class "rest"
+				   (:h1 :class "big-text center-item" "Insanely simple slide deck generation!")
+				   (:p :class "center-item" "DeckLM uses your resources—images, PDFs, plain text, and CSV files—to create a slide deck with detailed, relevant information that you can customize, download the finished deck as a PDF or PowerPoint presentation—all in under 5 minutes.")
+				   (:div :class "try-div center-item" (:a :href "/accounts" "Try it for free."))
+				   (:div :class "video-container"
+					 (:video :class "video-demo" :id "demo-video" :controls t
+						 :src (if (is-mobile-browser *request*) "/decklm/demo-mobile.mp4" "/decklm/demo.mp4")
+						 :alt "Demonstration video for the DeckLM.")
+					 (:div :class "video-overlay"
+					       (:a :class "overlay-button" :href "javascript:void(0);" 
+						   :data-target "#demo-video" "▶ See how DeckLM works")))
+
+				   (:script "
+document.addEventListener('DOMContentLoaded', function () {
+  const overlayButton = document.querySelector('.overlay-button');
+  overlayButton.addEventListener('click', function () {
+    const video = document.querySelector(overlayButton.getAttribute('data-target'));
+    if (video) {
+      video.play();
+      overlayButton.parentElement.style.display = 'none';
+    }
+  });
+});
+")
+				   
+				   
+				   (:div :class "sample-pages"
+					 (:div :class "pdf-sample" (:span :class "pdf-sample-text" "PDF sample page")
+					       (:img :src "/decklm/static/images/sample-pdf.png" :alt "Sample PDF page generated."))
+					 (:div :class "pdf-sample" (:span :class "pdf-sample-text" "PowerPoint sample page")
+					       (:img :src "/decklm/static/images/sample-pptx.png" :alt "Sample PPTX page generated.")))
+				   (:div :class "small-div center-item"
+					 (:h3 :class "big-text no-margin center-item" "With clear billing: only pay for what you use.")
+					 (:p :class "center-item" "You are only charged when you generate a slide deck and are charged per word in your resources and the deck created. No hidden charges. See " (:a :href "/pricing" "Pricing."))
+					 (:h3 :class "big-text no-margin center-item" "We want to hear from you.")
+					 (:p :class "center-item" "We take all questions about pricing, how to use and all other inquiries. "
+					     (:a :href "mailto:lam@ninx.xyz" "Email our founder")
+					     ", he wants to hear from you.")))
+			     (:button :class "fab" (:a :href "/accounts" "Try it now"))
+			     (:div :class "footer center-item"
+				   "DeckLM is built and backed by " (:a :href "https://ninx.xyz/about" "Ninx Technology Limited.")
+				   " Enjoy the rest of your day!")))
+		      (:script (str (beacon-js)))
+		      (:script (str (duration-js)))
+		      ))))))
+
 (defun get-current-year ()
   (multiple-value-bind (second minute hour date month year day-of-week dst-p tz)
       (decode-universal-time (get-universal-time))
@@ -531,65 +721,137 @@ consent is stored server side, such that we track the user across all devices."
 	("input:focus" :width 90%)
 	("input:disabled" :width 90%))))))
 
-(let ((match-fn (define-matching-functions "^(/accounts)$" *decklm-host* request)))
-  (define-easy-handler (accounts :uri match-fn
-				 :acceptor-names '(ninx::ninx)
-				 :host *decklm-host*) ()
-    (incr-events "accounts")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
+(define-easy-handler (accounts :uri (define-matching-functions "^/accounts$" *decklm-host*)
+			       :acceptor-names '(ninx::ninx)
+			       :host *decklm-host*) ()
+  (incr-events "accounts")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (with-html-output-to-string (*standard-output*)
+    "<!DOCTYPE html>"
+    (:html :lang "en"
+           (:head
+            (:title "DeckLM")
+            (:meta :charset "UTF-8")
+            (:link :rel "manifest" :href "/decklm/manifest.json")
+	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+            (:meta :name "description" :content "The accounts page for DeckLM")
+            (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+            (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+            (:style (str (accounts-css)))
+	    (:script (str (pre-js)))
+	    (:script (str (duration-js))))
+           (:body :id "parent"
+		  (:a :href "/" :class "logo-link"
+		      (:div :class "logo" (:img :src "/decklm/icon-512.png" :class "logo-image")
+			    "DeckLM"))
+		  (if (is-mobile-browser *request*)
+		      (htm (:div :class "home-links"
+				 (:a :href "https://www.paypal.com/ncp/payment/H6QDGXUTHGCWJ" "Buy tokens")
+			    :br
+			    (:a :href "/pricing" "Pricing")
+			    :br
+			    (:a :href "/terms-and-privacy" "Terms and Privacy")))
+		      (htm (:div :class "home-links"
+				 (:a :href "https://www.paypal.com/ncp/payment/H6QDGXUTHGCWJ" "Buy tokens")
+				 (:span :class "separator" " |")
+				 (:a :href "/pricing" "Pricing")
+				 (:span :class "separator" " |")
+				 (:a :href "/terms-and-privacy" "Terms and Privacy"))))
+		  (:p :id "first-paragraph" :class "first-paragraph")
+		  (:div :id "first-form" :class "first-form"
+			"Enter email here: "
+			(:input :type "email" :id "email" :class "email-input" :autocomplete "off" :placeholder "Email goes here.")
+			(:img :class "send-icon" :src "/decklm/icons/send.png" :alt "Send" :id "send-icon" :onclick "emailVerification()"))
+		  (:div :id "control")
+		  (:script (str (ws-js-code)))
+		  (:script (str (beacon-js)))
+		  (:script (str (typing-effect-js)))
+		  (:script
+		   (str
+		    (ps:ps
+		      (ps:chain document (add-event-listener "DOMContentLoaded"
+							     (lambda ()
+							       ;; Call type-writer function after DOM is loaded
+							       (type-writer "first-paragraph" "Make a slide deck from your image and PDF references in a minute. Enter your email below to start." 0))))
+		      )))))))
+
+(define-easy-handler (terms-and-privacy :uri (define-matching-functions "^/terms-and-privacy$" *decklm-host*)
+					:acceptor-names '(ninx::ninx)
+					:host *decklm-host*) ()
+  (incr-events "terms-and-privacy")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
     (with-html-output-to-string (*standard-output*)
       "<!DOCTYPE html>"
       (:html :lang "en"
-             (:head
-              (:title "DeckLM")
-              (:meta :charset "UTF-8")
-              (:link :rel "manifest" :href "/decklm/manifest.json")
+	     (:head
+	      (:title "TACS | DeckLM")
+	      (:meta :charset "UTF-8")
 	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-              (:meta :name "description" :content "The accounts page for DeckLM")
-              (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-              (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-              (:style (str (accounts-css)))
-	      (:script (str (pre-js)))
-	      (:script (str (duration-js))))
-             (:body :id "parent"
-		    (:a :href "/" :class "logo-link"
-			(:div :class "logo" (:img :src "/decklm/icon-512.png" :class "logo-image")
+	      (:meta :name "description" :content "The terms and conditions page for DeckLM")
+	      (:link :rel "manifest" :href "/decklm/manifest.json")
+	      (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+	      (:style (str (tacs-css))))
+	     (:body :id "parent"
+		    (:a :href "/home" :class "logo-link"
+			(:div :class "logo"
+			      (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
 			      "DeckLM"))
-		    (if (is-mobile-browser *request*)
-			(htm (:div :class "home-links"
-				   (:a :href "https://www.paypal.com/ncp/payment/H6QDGXUTHGCWJ" "Buy tokens")
-			      :br
-			      (:a :href "/pricing" "Pricing")
-			      :br
-			      (:a :href "/terms-and-privacy" "Terms and Privacy")))
-			(htm (:div :class "home-links"
-				   (:a :href "https://www.paypal.com/ncp/payment/H6QDGXUTHGCWJ" "Buy tokens")
-				   (:span :class "separator" " |")
-				   (:a :href "/pricing" "Pricing")
-				   (:span :class "separator" " |")
-				   (:a :href "/terms-and-privacy" "Terms and Privacy"))))
-		    (:p :id "first-paragraph" :class "first-paragraph")
-		    (:div :id "first-form" :class "first-form"
-			  "Enter email here: "
-			  (:input :type "email" :id "email" :class "email-input" :autocomplete "off" :placeholder "Email goes here.")
-			  (:img :class "send-icon" :src "/decklm/icons/send.png" :alt "Send" :id "send-icon" :onclick "emailVerification()"))
-		    (:div :id "control")
-		    (:script (str (ws-js-code)))
-		    (:script (str (beacon-js)))
-		    (:script (str (typing-effect-js)))
-		    (:script
-		     (str
-		      (ps:ps
-			(ps:chain document (add-event-listener "DOMContentLoaded"
-							       (lambda ()
-								 ;; Call type-writer function after DOM is loaded
-								 (type-writer "first-paragraph" "Make a slide deck from your image and PDF references in a minute. Enter your email below to start." 0))))
-			))))))))
+		    (:h2 "Terms, Conditons and Privacy")
+		    (:p :id "privacy-div" :class "privacy-div"
+			"We use one cookie to keep you logged in. We require consent to store this cookie and remember you on your device, otherwise, you will have to login every time."
+			:br :br
+			"Consent is asked for once and stored on our servers. You can later revoke this consent by clicking on 'Don't save cookie' on the home page. We don't use third party cookies." 
+			:br :br
+			"All images and documents submitted are only stored during making of the slide deck, after which they are deleted. The decks generated are stored on our servers for you to access later on."
+			:br :br
+			"We only accept payment via Paypal and do not store any credit card details on our servers. Use the same email you used here when paying."
+			:br :br)
+		    (footer *request* cookie)
+		    )))))
+
+(define-easy-handler (logout :uri (define-matching-functions "^/logout$" *decklm-host*)
+			     :acceptor-names '(ninx::ninx)
+			     :host *decklm-host*) ()
+  (incr-events "logout")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
+    (when cookie
+      (delete-cookie cookie))
+    (set-cookie "cookie" :expires (- (get-universal-time) 10000))
+    (hunchentoot:redirect "/")))
+
+(define-easy-handler (consent :uri (define-matching-functions "^/consent$" *decklm-host*)
+			      :acceptor-names '(ninx::ninx)
+			      :host *decklm-host*) ()
+  (incr-events "consent")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
+    (if cookie
+	(progn (save-consent (get-email-from-cookie cookie) t)
+	       (hunchentoot:redirect "/home"))
+	(hunchentoot:redirect "/"))))
+
+(define-easy-handler (manage-cookie-consent :uri (define-matching-functions "^/revoke-consent$" *decklm-host*)
+					    :acceptor-names '(ninx::ninx)
+					    :host *decklm-host*) ()
+  (incr-events "revoke-consent")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
+    (if cookie
+	(progn (revoke-consent (get-email-from-cookie cookie))
+	       (hunchentoot:redirect "/home"))
+	(hunchentoot:redirect "/"))))
 
 (defun is-mobile-browser (request &optional agent)
   "check if a given agent is a mobile browser"
-  (let ((user-agent (if agent agent (cdr (find :user-agent (headers-in* request) :key #'car)))))
+  (let ((user-agent (if agent agent (cdr (find :user-agent (headers-in*) :key #'car)))))
     (cond
       ((ppcre:scan "(?i)android" user-agent) t)
       ((ppcre:scan "(?i)iPad|iPhone|iPod" user-agent) t)
@@ -736,49 +998,48 @@ consent is stored server side, such that we track the user across all devices."
 	(.pricing :width 95% :margin 0)
 	(".copyright" :color ,fg-color :text-align left))))))
 
-(let ((match-fn (define-matching-functions "^(/pricing)$" *decklm-host* request)))
-  (define-easy-handler (pricing :uri match-fn
-				:acceptor-names '(ninx::ninx)
-				:host *decklm-host*) ()
-    (incr-events "pricing")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (with-html-output-to-string (*standard-output*)
-	"<!DOCTYPE html>"
-	(:html :lang "en"
-	       (:head
-		(:title "Pricing | DeckLM")
-		(:meta :charset "UTF-8")
-		(:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-		(:link :rel "manifest" :href "/decklm/manifest.json")
-		(:meta :name "description" :content "The pricing page for DeckLM")
-		(:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-		(:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-		(:style (str (pricing-css))))
-	       (:body :id "parent"
-		      (:a :href "/home" :class "logo-link"
-			  (:div :class "logo"
-				(:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
-				"DeckLM"))
-		      (:h2 "Pricing")
-		      (:div :class "pricing"
-			    (:b (:u "Pricing and Payment"))
-			    (:p "Create your first slide deck for free!")
-			    (:p "Each token covers about 0.75 words. Tokens are used based on the number of words in your uploaded images/documents and in the slide deck generated. Tokens will be automatically deducted from your balance.")
-			    (:p "Get 1 million tokens (enough for approximately 750,000 words) for just $25. Token bundles are available in $5, $25, $100, and $1000 options. Tokens do not expire, but get used up.")
-			    (:p "We only accept payments via PayPal. Be sure to use the same email here as in your PayPal transaction.")
-			    )
-		      (:table
-			  (:thead
-			   (:tr
-			    (:th "Tier") (:th "Price") (:th "Tokens") (:th "Number of words")))
-			(:tbody
-			 (:tr (:td "1") (:td "$5") (:td "250,000") (:td "~187,500"))
-			 (:tr (:td "2") (:td "$25") (:td "1,000,000") (:td "~750,000"))
-			 (:tr (:td "3") (:td "$100") (:td "4,000,000") (:td "~3,000,000"))
-			 (:tr (:td "4") (:td "$1,000") (:td "40,000,000") (:td "~30,000,000"))))
-		      (footer *request* cookie)))))))
+(define-easy-handler (pricing :uri (define-matching-functions "^/pricing$" *decklm-host*)
+			      :acceptor-names '(ninx::ninx)
+			      :host *decklm-host*) ()
+  (incr-events "pricing")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
+    (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
+      (:html :lang "en"
+	     (:head
+	      (:title "Pricing | DeckLM")
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/decklm/manifest.json")
+	      (:meta :name "description" :content "The pricing page for DeckLM")
+	      (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+	      (:style (str (pricing-css))))
+	     (:body :id "parent"
+		    (:a :href "/home" :class "logo-link"
+			(:div :class "logo"
+			      (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
+			      "DeckLM"))
+		    (:h2 "Pricing")
+		    (:div :class "pricing"
+			  (:b (:u "Pricing and Payment"))
+			  (:p "Create your first slide deck for free!")
+			  (:p "Each token covers about 0.75 words. Tokens are used based on the number of words in your uploaded images/documents and in the slide deck generated. Tokens will be automatically deducted from your balance.")
+			  (:p "Get 1 million tokens (enough for approximately 750,000 words) for just $25. Token bundles are available in $5, $25, $100, and $1000 options. Tokens do not expire, but get used up.")
+			  (:p "We only accept payments via PayPal. Be sure to use the same email here as in your PayPal transaction.")
+			  )
+		    (:table
+			(:thead
+			 (:tr
+			  (:th "Tier") (:th "Price") (:th "Tokens") (:th "Number of words")))
+		      (:tbody
+		       (:tr (:td "1") (:td "$5") (:td "250,000") (:td "~187,500"))
+		       (:tr (:td "2") (:td "$25") (:td "1,000,000") (:td "~750,000"))
+		       (:tr (:td "3") (:td "$100") (:td "4,000,000") (:td "~3,000,000"))
+		       (:tr (:td "4") (:td "$1,000") (:td "40,000,000") (:td "~30,000,000"))))
+		    (footer *request* cookie))))))
 
 (defun tacs-css ()
   (let ((fg-color "#1a1a1a")
@@ -1190,156 +1451,115 @@ consent is stored server side, such that we track the user across all devices."
 	(a :margin-left 2px :margin-right 2px)
 	(".copyright" :color ,fg-color :text-align left))))))
 
-(let ((match-fn (define-matching-functions "^(/home)$" *decklm-host* request)))
-  (define-easy-handler (home :uri match-fn
-			     :acceptor-names '(ninx::ninx)
-			     :host *decklm-host*) ()
-    ;; you first check the cookiw against those stored in the database.
-    ;; if you match it, then load the page, else delete the cookie.
-    (incr-events "home")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (if cookie
-	  (if (get-email-from-cookie cookie)
-	      (let* ((saved-tokens (get-user-tokens nil cookie))
-		     (tokens (if saved-tokens saved-tokens 0))
-		     (has-access (or (> tokens 0) (has-free-trial-p cookie))) ;;checks if a user has free trial or has tokens
-		     (has-free-trial (when cookie (has-free-trial-p cookie)))
-		     (has-free-trial-or-tokens (or has-free-trial (> tokens 0)))
-		     )
-		
-		(with-html-output-to-string (*standard-output*)
-		  "<!DOCTYPE html>"
-		  (:html :lang "en"
-			 (:head
-			  (:title "Create deck | DeckLM")
-			  (:meta :charset "UTF-8")
-			  (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-			  (:meta :name "description" :content "The home page for DeckLM")
-			  (:link :rel "manifest" :href "/decklm/manifest.json")
-			  (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-			  (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-			  (:style (str (home-css))))
-			 (:body :id "parent"
-				(:a :href "/home" :class "logo-link"
-				    (:div :class "logo"
-					  (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
-					  "DeckLM"))
-				(when cookie
-				  (htm (:span :id "balance-holder" :class (cond
-									    (has-free-trial-or-tokens "balance top")
-									    ((null has-free-trial-or-tokens) "error-p top")
-									    (t  "balance top"))
-					      "Your balance: " (:span :id "balance-span" (str (if has-free-trial
-												  "1 free trial"
-												  (format nil "~a tokens" tokens))))) :br))
-				(:p :id "no-balance-p" :style (if has-access "display:none" "display:block") :class "error-p"
-				    "You don't have any tokens, please buy tokens and try again."
-				    (:a :href "https://www.paypal.com/ncp/payment/H6QDGXUTHGCWJ" " Buy tokens"))
-				(:p "To start, select images and/or PDFs from which to make the deck. You can add more files with the '+ Add' button.")
-				(:p :class "description-title" "Optional: Provide a description of what you want in the slide deck.")
-				(:textarea :class "description" :placeholder "Description goes here: include areas you want emphasized and if possible, an outline of things you want included." :id "description"
-					   :disabled (if has-access nil t))
-				(:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add button")
-				(:input :type "file" :id "file-input" :style "display: none;" :multiple t :allow "application/pdf, application/x-javascript, text/javascript, application/x-python, text/x-python, text/plain, text/html, text/css, text/md, text/csv, text/xml, text/rtf" 
-					:disabled (if has-access nil t))
-				(:div :id "files-container")
-				(:div :class "btns"
-				      (:button :class "upload-btn" :id "upload-btn"
-					       (:span :class "add-symbol" "+")
-					       "Add image/PDF")
-				      (:button :class "submit-btn" :id "submit-btn" "Create Deck"))
-				(:div :id "loading-container" :class "loading-container" :style "display: none;"
-				      (:div :class "bar")
-				      (:div :class "bar")
-				      (:div :class "bar"))
-				(:div :id "progress-container" :style "display: none;"
-				      (:progress :id "upload-progress" :value "0" :max "100"))
-				(:div :id "loading-indicator" :style "display: none;"
-				      "Submitting... Please wait.")
-				(:div :id "error-container" :style "display: none;"
-				      (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
-				(:div :id "error-indicator" :style "display: none; color: #FF6060"
-				      "An error occurred, please try again.")
-				(:div :id "success-indicator" :style "display: none; color: #1e90ff"
-				      "The deck has been created, downloaded and saved in downloads.")
-				(:div :id "toast-container" :class "toast-container")
-				(footer *request* cookie))
-			 (:script (str (home-js))))))
-	      (progn
-		(set-cookie "cookie" :expires (- (get-universal-time) 10000))
-		(hunchentoot:redirect "/")))
-	  (hunchentoot:redirect "/")))))
+(define-easy-handler (home :uri (define-matching-functions "^/home$" *decklm-host*)
+			   :acceptor-names '(ninx::ninx)
+			   :host *decklm-host*) ()
+  ;; you first check the cookiw against those stored in the database.
+  ;; if you match it, then load the page, else delete the cookie.
+  (incr-events "home")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
+    (if cookie
+	(if (get-email-from-cookie cookie)
+	    (let* ((saved-tokens (get-user-tokens nil cookie))
+		   (tokens (if saved-tokens saved-tokens 0))
+		   (has-access (or (> tokens 0) (has-free-trial-p cookie))) ;;checks if a user has free trial or has tokens
+		   (has-free-trial (when cookie (has-free-trial-p cookie)))
+		   (has-free-trial-or-tokens (or has-free-trial (> tokens 0)))
+		   )
+	      
+	      (with-html-output-to-string (*standard-output*)
+		"<!DOCTYPE html>"
+		(:html :lang "en"
+		       (:head
+			(:title "Create deck | DeckLM")
+			(:meta :charset "UTF-8")
+			(:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+			(:meta :name "description" :content "The home page for DeckLM")
+			(:link :rel "manifest" :href "/decklm/manifest.json")
+			(:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+			(:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+			(:style (str (home-css))))
+		       (:body :id "parent"
+			      (:a :href "/home" :class "logo-link"
+				  (:div :class "logo"
+					(:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
+					"DeckLM"))
+			      (when cookie
+				(htm (:span :id "balance-holder" :class (cond
+									  (has-free-trial-or-tokens "balance top")
+									  ((null has-free-trial-or-tokens) "error-p top")
+									  (t  "balance top"))
+					    "Your balance: " (:span :id "balance-span" (str (if has-free-trial
+												"1 free trial"
+												(format nil "~a tokens" tokens))))) :br))
+			      (:p :id "no-balance-p" :style (if has-access "display:none" "display:block") :class "error-p"
+				  "You don't have any tokens, please buy tokens and try again."
+				  (:a :href "https://www.paypal.com/ncp/payment/H6QDGXUTHGCWJ" " Buy tokens"))
+			      (:p "To start, select images and/or PDFs from which to make the deck. You can add more files with the '+ Add' button.")
+			      (:p :class "description-title" "Optional: Provide a description of what you want in the slide deck.")
+			      (:textarea :class "description" :placeholder "Description goes here: include areas you want emphasized and if possible, an outline of things you want included." :id "description"
+					 :disabled (if has-access nil t))
+			      (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add button")
+			      (:input :type "file" :id "file-input" :style "display: none;" :multiple t :allow "application/pdf, application/x-javascript, text/javascript, application/x-python, text/x-python, text/plain, text/html, text/css, text/md, text/csv, text/xml, text/rtf" 
+				      :disabled (if has-access nil t))
+			      (:div :id "files-container")
+			      (:div :class "btns"
+				    (:button :class "upload-btn" :id "upload-btn"
+					     (:span :class "add-symbol" "+")
+					     "Add image/PDF")
+				    (:button :class "submit-btn" :id "submit-btn" "Create Deck"))
+			      (:div :id "loading-container" :class "loading-container" :style "display: none;"
+				    (:div :class "bar")
+				    (:div :class "bar")
+				    (:div :class "bar"))
+			      (:div :id "progress-container" :style "display: none;"
+				    (:progress :id "upload-progress" :value "0" :max "100"))
+			      (:div :id "loading-indicator" :style "display: none;"
+				    "Submitting... Please wait.")
+			      (:div :id "error-container" :style "display: none;"
+				    (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+			      (:div :id "error-indicator" :style "display: none; color: #FF6060"
+				    "An error occurred, please try again.")
+			      (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+				    "The deck has been created, downloaded and saved in downloads.")
+			      (:div :id "toast-container" :class "toast-container")
+			      (footer *request* cookie))
+		       (:script (str (home-js))))))
+	    (progn
+	      (set-cookie "cookie" :expires (- (get-universal-time) 10000))
+	      (hunchentoot:redirect "/")))
+	(hunchentoot:redirect "/"))))
 
-(let ((match-fn (define-matching-functions "^(/files)$" *decklm-host* request)))
-  (define-easy-handler (files :uri match-fn
-			       :host *decklm-host*
-			      :acceptor-names '(ninx::ninx)
-			      :default-request-type :post) ()
-    ;; when we are done, we send the user the file for download and then redirect the user back to the home page.
-    ;; if the user has a free trial and the generation is successful, consume it.
-    (incr-events "files")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (if cookie
-	  (let* ((has-free-trial (has-free-trial-p cookie))
-		 )
-	    (jzon:stringify
-	     (if (or (has-tokens-p nil cookie) has-free-trial)
-		 (progn
-		   (let* ((number-of-files-str (post-parameter "number-of-files"))
-			  (number-of-files (if number-of-files-str (parse-integer number-of-files-str) 0))
-			  (files (if (> number-of-files 0)
-				     (loop for i from 0 below number-of-files
-					   collect (post-parameter (format nil "file_~a" i)))))
-	      		  (description (post-parameter "description"))
-			  (slide-data (make-slides cookie description files)))
-		     (when has-free-trial (save-to-free-trial cookie))
-		     (save-country-deck-creations (remote-addr* *request*))
-		     slide-data))
-		 (hash-create '(("error" "no tokens"))))))
-	  (hunchentoot:redirect "/")))))
-
-(let ((match-fn (define-matching-functions "^(/logout)$" *decklm-host* request)))
-  (define-easy-handler (logout :uri match-fn
-			       :acceptor-names '(ninx::ninx)
-			       :host *decklm-host*) ()
-    (incr-events "logout")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (when cookie
-	(delete-cookie cookie))
-      (set-cookie "cookie" :expires (- (get-universal-time) 10000))
-      (hunchentoot:redirect "/"))))
-
-(let ((match-fn (define-matching-functions "^(/consent)$" *decklm-host* request)))
-  (define-easy-handler (consent :uri match-fn
-				:acceptor-names '(ninx::ninx)
-				:host *decklm-host*) ()
-    (incr-events "consent")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (if cookie
-	  (progn (save-consent (get-email-from-cookie cookie) t)
-		 (hunchentoot:redirect "/home"))
-	  (hunchentoot:redirect "/")))))
-
-(let ((match-fn (define-matching-functions "^(/revoke-consent)$" *decklm-host* request)))
-  (define-easy-handler (manage-cookie-consent :uri match-fn
-					      :acceptor-names '(ninx::ninx)
-					      :host *decklm-host*) ()
-    (incr-events "revoke-consent")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (if cookie
-	  (progn (revoke-consent (get-email-from-cookie cookie))
-		 (hunchentoot:redirect "/home"))
-	  (hunchentoot:redirect "/")))))
+(define-easy-handler (files :uri (define-matching-functions "^/files$" *decklm-host*)
+			    :host *decklm-host*
+			    :acceptor-names '(ninx::ninx)
+			    :default-request-type :post) ()
+  ;; when we are done, we send the user the file for download and then redirect the user back to the home page.
+  ;; if the user has a free trial and the generation is successful, consume it.
+  (incr-events "files")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
+    (if cookie
+	(let* ((has-free-trial (has-free-trial-p cookie))
+	       )
+	  (jzon:stringify
+	   (if (or (has-tokens-p nil cookie) has-free-trial)
+	       (progn
+		 (let* ((number-of-files-str (post-parameter "number-of-files"))
+			(number-of-files (if number-of-files-str (parse-integer number-of-files-str) 0))
+			(files (if (> number-of-files 0)
+				   (loop for i from 0 below number-of-files
+					 collect (post-parameter (format nil "file_~a" i)))))
+	      		(description (post-parameter "description"))
+			(slide-data (make-slides cookie description files)))
+		   (when has-free-trial (save-to-free-trial cookie))
+		   (save-country-deck-creations (remote-addr* *request*))
+		   slide-data))
+	       (hash-create '(("error" "no tokens"))))))
+	(hunchentoot:redirect "/"))))
 
 (defun user-decks-css ()
   "the css for the /home endpoint"
@@ -1391,64 +1611,63 @@ consent is stored server side, such that we track the user across all devices."
       (ps:chain navigator clipboard (write-text text))
       (show-toast "Link copied to clipboard." 1500))))
 
-(let ((match-fn (define-matching-functions "^(/user-decks)$" *decklm-host* request)))
-  (define-easy-handler (user-decks :uri match-fn
-				   :acceptor-names '(ninx::ninx)
-				   :host *decklm-host*) ()
-    ;; this route lists the user's generated decks
-    (incr-events "user-decks")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (if cookie
-	  (if (get-email-from-cookie cookie)
-	      (with-html-output-to-string (*standard-output*)
-		"<!DOCTYPE html>"
-		(:html :lang "en"
-		       (:head
-			(:title "Your Decks | DeckLM")
-			(:meta :charset "UTF-8")
-			(:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-			(:link :rel "manifest" :href "/decklm/manifest.json")
-			(:meta :name "description" :content "The home page for DeckLM")
-			(:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-			(:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-			(:style (str (user-decks-css))))
-		       (:body :id "parent"
-			      (:a :href "/home" :class "logo-link"
-				  (:div :class "logo"
-					(:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
-					"DeckLM"))
-			      (:h4 "Your decks: Click on one to proceed.")
-			      (mapcar (lambda (doc)
-					(let* ((title (cadr doc))
-					       (name (str:downcase title))
-					       
-					       )
-					  (htm (:p :class "doc-div" (:a 
-								     :href (format nil "/deck/~a/~a"
-										   (car doc)
-										   name)
-								     (str title))
-						   (str (format nil " - added on ~a" (extract-timestamp
-										      (format nil "~a" (universal-to-timestamp
-													(caddr doc)))))))
-					       
-					       
-					       )))
-				      (reverse (get-user-documents cookie)))
-			      (:div :id "toast-container" :class "toast-container")
-			      (footer *request* cookie))
-		       (:script (str (home-js)))
-		       (:script
-			:async t
-			:src "https://platform.twitter.com/widgets.js"
-			:charset "utf-8")
-		       (:script (str (copy-to-clipboard)))
-		       ))
-	      (progn  (set-cookie "cookie" :expires (- (get-universal-time) 10000))
-		      (hunchentoot:redirect "/")))
-	  (hunchentoot:redirect "/")))))
+(define-easy-handler (user-decks :uri (define-matching-functions "^/user-decks$" *decklm-host*)
+				 :acceptor-names '(ninx::ninx)
+				 :host *decklm-host*) ()
+  ;; this route lists the user's generated decks
+  (incr-events "user-decks")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
+    (if cookie
+	(if (get-email-from-cookie cookie)
+	    (with-html-output-to-string (*standard-output*)
+	      "<!DOCTYPE html>"
+	      (:html :lang "en"
+		     (:head
+		      (:title "Your Decks | DeckLM")
+		      (:meta :charset "UTF-8")
+		      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+		      (:link :rel "manifest" :href "/decklm/manifest.json")
+		      (:meta :name "description" :content "The home page for DeckLM")
+		      (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+		      (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+		      (:style (str (user-decks-css))))
+		     (:body :id "parent"
+			    (:a :href "/home" :class "logo-link"
+				(:div :class "logo"
+				      (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
+				      "DeckLM"))
+			    (:h4 "Your decks: Click on one to proceed.")
+			    (mapcar (lambda (doc)
+				      (let* ((title (cadr doc))
+					     (name (str:downcase title))
+					     
+					     )
+					(htm (:p :class "doc-div" (:a 
+								   :href (format nil "/deck/~a/~a"
+										 (car doc)
+										 name)
+								   (str title))
+						 (str (format nil " - added on ~a" (extract-timestamp
+										    (format nil "~a" (universal-to-timestamp
+												      (caddr doc)))))))
+					     
+					     
+					     )))
+				    (reverse (get-user-documents cookie)))
+			    (:div :id "toast-container" :class "toast-container")
+			    (footer *request* cookie))
+		     (:script (str (home-js)))
+		     (:script
+		      :async t
+		      :src "https://platform.twitter.com/widgets.js"
+		      :charset "utf-8")
+		     (:script (str (copy-to-clipboard)))
+		     ))
+	    (progn  (set-cookie "cookie" :expires (- (get-universal-time) 10000))
+		    (hunchentoot:redirect "/")))
+	(hunchentoot:redirect "/"))))
 
 (defun extract-timestamp (timestamp)
   "Extracts the date and time in YYYY-MM-DD,HH:MM:SS format from a given TIMESTAMP."
@@ -1585,61 +1804,59 @@ consent is stored server side, such that we track the user across all devices."
 	(a :margin-left 2px :margin-right 2px)
 	(".copyright" :color ,fg-color :text-align left)) ))))
 
-(let ((match-fn (define-matching-functions "^(/feedback)$" *decklm-host* request)))
-  (define-easy-handler (feedback :uri match-fn
-				 :acceptor-names '(ninx::ninx)
-				 :host *decklm-host*) ()
-    ;; feedback doesn't require an account
-    (incr-events "feedback")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (if cookie
-	  (unless (get-email-from-cookie cookie)
-	    (progn  (set-cookie "cookie" :expires (- (get-universal-time) 10000))
-		    (hunchentoot:redirect "/feedback"))))
-      (with-html-output-to-string (*standard-output*)
-	"<!DOCTYPE html>"
-	(:html :lang "en"
-	       (:head
-		(:title "Feedback | DeckLM")
-		(:meta :charset "UTF-8")
-		(:link :rel "manifest" :href "/decklm/manifest.json")
-		(:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-		(:meta :name "description" :content "The home page for DeckLM")
-		(:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-		(:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-		(:style (str (feedback-css))))
-	       (:body :id "parent"
-		      (:a :href "/home" :class "logo-link"
-			  (:div :class "logo"
-				(:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
-				"DeckLM"))
-		      (:h3 "Describe how you would like to see the service improved.")
-		      (:p :class "feedback-title" "Optional: Provide a description of what you want in the slide deck.")
-		      (:textarea :class "feedback" :placeholder "Suggest improvements here" :id "feedback")
-		      (:button :id "submit-btn" "Submit")
-		      (:div :id "progress-container" :style "display: none;"
-			    (:progress :id "upload-progress" :value "0" :max "100"))
-		      (:div :id "loading-indicator" :style "display: none;"
-			    "Submitting... Please wait.")
-		      (:div :id "toast-container" :class "toast-container")
-		      (footer *request* cookie))
-	       (:script (str (feedback-js)))
-	       )))))
+(define-easy-handler (feedback :uri (define-matching-functions "^/feedback$" *decklm-host*)
+			       :acceptor-names '(ninx::ninx)
+			       :host *decklm-host*) ()
+  ;; feedback doesn't require an account
+  (incr-events "feedback")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie")))
+    (if cookie
+	(unless (get-email-from-cookie cookie)
+	  (progn  (set-cookie "cookie" :expires (- (get-universal-time) 10000))
+		  (hunchentoot:redirect "/feedback"))))
+    (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
+      (:html :lang "en"
+	     (:head
+	      (:title "Feedback | DeckLM")
+	      (:meta :charset "UTF-8")
+	      (:link :rel "manifest" :href "/decklm/manifest.json")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:meta :name "description" :content "The home page for DeckLM")
+	      (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+	      (:style (str (feedback-css))))
+	     (:body :id "parent"
+		    (:a :href "/home" :class "logo-link"
+			(:div :class "logo"
+			      (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
+			      "DeckLM"))
+		    (:h3 "Describe how you would like to see the service improved.")
+		    (:p :class "feedback-title" "Optional: Provide a description of what you want in the slide deck.")
+		    (:textarea :class "feedback" :placeholder "Suggest improvements here" :id "feedback")
+		    (:button :id "submit-btn" "Submit")
+		    (:div :id "progress-container" :style "display: none;"
+			  (:progress :id "upload-progress" :value "0" :max "100"))
+		    (:div :id "loading-indicator" :style "display: none;"
+			  "Submitting... Please wait.")
+		    (:div :id "toast-container" :class "toast-container")
+		    (footer *request* cookie))
+	     (:script (str (feedback-js)))
+	     ))))
 
-(let ((match-fn (define-matching-functions "^(/process-feedback)$" *decklm-host* request)))
-  (define-easy-handler (process-feedback :uri match-fn
-					 :acceptor-names '(ninx::ninx)
-					 :host *decklm-host*) ()
-    ;; save the feedback to the database, optionally with the person who sent it, if logged in
-    (incr-events "process-feedback")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie"))
-	  (feedback (post-parameter "feedback")))
-      (when feedback (save-feedback feedback cookie))
-      "saved")))
+(define-easy-handler (process-feedback :uri (define-matching-functions "^/process-feedback$" *decklm-host*)
+				       :acceptor-names '(ninx::ninx)
+				       :host *decklm-host*) ()
+  ;; save the feedback to the database, optionally with the person who sent it, if logged in
+  (incr-events "process-feedback")
+  (save-ip-visit (remote-addr* *request*))
+  (save-country-visit (remote-addr*))
+  (let ((cookie (cookie-in "cookie"))
+	(feedback (post-parameter "feedback")))
+    (when feedback (save-feedback feedback cookie))
+    "saved"))
 
 (defun pdf-bytes-to-ppt-bytes (bytes)
   "convert pdf bytes to ppt bytes"
@@ -1675,148 +1892,144 @@ consent is stored server side, such that we track the user across all devices."
       (delete-file pptx-path)
       )))
 
-(let ((match-fn (define-matching-functions "^/download-deck/([^/]+)/([^/]+)$" *decklm-host* request)))
-  (define-easy-handler (download-file :uri match-fn
-				      :acceptor-names '(ninx::ninx)
-				      :host *decklm-host*) (type)
-    (trivia:match (str:split "/" (script-name*))
-      ((list "" "download-deck" doc-id doc-name)
-       ;; this will get data from the db and send back binary data to the user.
-       ;; should we restrict downloads to users who have account's with us? i don't know, for now we won't
-       ;; bytes returned are pptx bytes
-       (incr-events "download-deck")
-       (save-ip-visit (remote-addr* *request*))
-       (save-country-visit (remote-addr*))
-       (let* ((json-data (get-document-data doc-id))
-	      (name (format nil "~a.~a" doc-name type))
-	      (bytes (if (equal type "pptx") (make-pptx-bytes json-data) (make-pdf-bytes json-data))))
-	 (if (equal type "pptx")
-	     (progn
-	       (setf (content-type*) "application/vnd.openxmlformats-officedocument.presentationml.presentation")
-	       (setf (content-length*) (length bytes))
-	       (setf (header-out "Content-disposition")
-		     (format nil "attachment; filename=\"~a\"; filename*=\"~a\"" name name))
-	       bytes)
-	     (progn
-	       (setf (content-type*) "application/pdf")
-	       (setf (content-length*) (length bytes))
-	       (setf (header-out "Content-disposition")
-		     (format nil "attachment; filename=\"~a\"; filename*=\"~a\"" name name))
-	       bytes)))
-       ))))
-
-(let ((match-fn (define-matching-functions "^(/register-active)$" *decklm-host* request)))
-  (define-easy-handler (register-active :uri match-fn
-					:acceptor-names '(ninx::ninx)
-					:host *decklm-host* :default-request-type :post) (pathname) 
-    ;; this will register all active users
-    (incr-active pathname)
-    ""))
-
-(let ((match-fn (define-matching-functions "^(/register-duration)$" *decklm-host* request)))
-  (define-easy-handler (register-duration :uri match-fn
-					  :acceptor-names '(ninx::ninx)
-					  :host *decklm-host* :default-request-type :post) (pathname duration)
-    (save-duration (if (equal pathname "") "index" pathname) (read-from-string duration))
-    ""))
-
-(let ((match-fn (define-matching-functions "^(/share-email)$" *decklm-host* request)))
-  (define-easy-handler (share-email :uri match-fn
+(define-easy-handler (download-file :uri (define-matching-functions "^/download-deck/([^/]+)/([^/]+)$" *decklm-host*)
 				    :acceptor-names '(ninx::ninx)
-				    :host *decklm-host*) ()
-    ;; we will design the sharing via email template here.
-    (access-code-html 1234)))
+				    :host *decklm-host*) (type)
+  (trivia:match (str:split "/" (script-name*))
+    ((list "" "download-deck" doc-id doc-name)
+     ;; this will get data from the db and send back binary data to the user.
+     ;; should we restrict downloads to users who have account's with us? i don't know, for now we won't
+     ;; bytes returned are pptx bytes
+     (incr-events "download-deck")
+     (save-ip-visit (remote-addr* *request*))
+     (save-country-visit (remote-addr*))
+     (let* ((json-data (get-document-data doc-id))
+	    (name (format nil "~a.~a" doc-name type))
+	    (bytes (if (equal type "pptx") (make-pptx-bytes json-data) (make-pdf-bytes json-data))))
+       (if (equal type "pptx")
+	   (progn
+	     (setf (content-type*) "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+	     (setf (content-length*) (length bytes))
+	     (setf (header-out "Content-disposition")
+		   (format nil "attachment; filename=\"~a\"; filename*=\"~a\"" name name))
+	     bytes)
+	   (progn
+	     (setf (content-type*) "application/pdf")
+	     (setf (content-length*) (length bytes))
+	     (setf (header-out "Content-disposition")
+		   (format nil "attachment; filename=\"~a\"; filename*=\"~a\"" name name))
+	     bytes)))
+     )))
 
-(let ((match-fn (define-matching-functions "^/deck/([^/]+)/([^/]+)$" *decklm-host* request)))
-  (define-easy-handler (deck-page :uri match-fn
+(define-easy-handler (register-active :uri (define-matching-functions "^/register-active$" *decklm-host*)
+				      :acceptor-names '(ninx::ninx)
+				      :host *decklm-host* :default-request-type :post) (pathname) 
+  ;; this will register all active users
+  (incr-active pathname)
+  "")
+
+(define-easy-handler (register-duration :uri (define-matching-functions "^/register-duration$" *decklm-host*)
+					:acceptor-names '(ninx::ninx)
+					:host *decklm-host* :default-request-type :post)
+    (pathname duration)
+  (save-duration (if (equal pathname "") "index" pathname) (read-from-string duration))
+  "")
+
+(define-easy-handler (share-email :uri (define-matching-functions "^/share-email$" *decklm-host*)
 				  :acceptor-names '(ninx::ninx)
 				  :host *decklm-host*) ()
-    (trivia:match (str:split "/" (script-name*))
-      ((list "" "deck" doc-id doc-name)
-       ;; this route lists the user's generated decks
-       (incr-events "deck")
-       (save-ip-visit (remote-addr* *request*))
-       (save-country-visit (remote-addr*))
-       (let ((cookie (cookie-in "cookie")))
-	 (let* ((doc (get-document-details doc-id))
-		(title (cadr doc))
-		(name (format nil "~a.pdf" (str:downcase title)))
-		(share-link (format nil "/deck/~a/~a"
-				    (car doc)
-				    (str:replace-all " " "-" name)))
-		(whatsapp-link (format nil "whatsapp://send?text=~a%0A%0A~a"
-				       (url-encode (format nil "Download the slide deck of \"~a\" at: " title))
-				       share-link))
-		(email-link (format nil "mailto:?subject=~a slide deck.&body=~a"
-				    title
-				    (format nil "Download the PDF slide deck of \"~a\" at ~a" title share-link)))
-		(telegram-link (format nil "https://t.me/share/url?url=~a&text=%0A%0A~a" share-link
-				       (url-encode (format nil "Download the slide deck of ~a from the above link." title)))))
-	   (with-html-output-to-string (*standard-output*)
-	     "<!DOCTYPE html>"
-	     (:html :lang "en"
-		    (:head
-		     (:title "Download Deck | DeckLM")
-		     (:meta :charset "UTF-8")
-		     (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-		     (:meta :name "description" :content "The home page for DeckLM")
-		     (:link :rel "manifest" :href "/decklm/manifest.json")
-		     (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-		     (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-		     (:style (str (user-decks-css))))
-		    (:body :id "parent"
-			   (:a :href "/home" :class "logo-link"
-			       (:div :class "logo"
-				     (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
-				     "DeckLM"))
-			   (:div :id "container"
-				 (:h4 (str (format nil "File: ~a" title)))
-				 (str (format nil " Added on ~a" (extract-timestamp
-								  (format nil "~a" (universal-to-timestamp
-										    (caddr doc))))))
-				 :br :br
-				 "PDF is designed for better for reading"
-				 :br :br
-				 "Slides are designed for better for editing."
-				 :br :br
-				 (:div :id :buttons
-				       (let* ((link (format nil "/download-deck/~a/~a"
-							    (car doc)
-							    (str:replace-all " " "-" doc-name))))
-					 (htm
-					  (:a :href (format nil "~a.pdf?type=pdf" link) (:button :id "pdf-button" "Download PDF"))
-					  (:a :href (format nil "~a.pptx?type=pptx" link) (:button :id "ppt-button" "Download Slides")))))
-				 )
-			   
-			   (when (is-mobile-browser *request*) ;; add a whatsapp share button on mobile
-			     (htm (:a :class "share-link" :title "Share to WhatsApp"
-				      :href whatsapp-link
-				      (:img :src "/decklm/icons/whatsapp.png" :alt "" :class "wp"))))
-			   (:a :class "share-link" :title "Share by Email"
-			       :href email-link
-			       (:img :src "/decklm/icons/mail.png" :class "wp" :alt ""))
-			   (:a :class "share-link" :title "Share via Telegram"
-			       :href telegram-link
-			       (:img :src "/decklm/icons/telegram.png" :class "wp" :alt ""))
-			   (:a :href "https://twitter.com/share?ref_src=twsrc%5Etfw"
-			       :class "share-link twitter-share-button"
-			       :data-text (format nil "Download the slide deck of ~a from this url: " title)
-			       :data-url share-link
-			       :data-show-count "false"
-			       (:img :src "/decklm/icons/x.png" :alt "" :class "wp"))
-			   (:a :href "#" :id "copy-link" :class "share-link"
-			       :onclick (format nil "copyToClipboard(~s)" share-link)
-			       "Copy 🔗")
-			   (:hr)
-			   (:div :id "toast-container" :class "toast-container")
-			   (footer *request* cookie))
-		    (:script (str (home-js)))
-		    (:script
-		     :async t
-		     :src "https://platform.twitter.com/widgets.js"
-		     :charset "utf-8")
-		    (:script (str (copy-to-clipboard)))
-		    ))))))))
+  ;; we will design the sharing via email template here.
+  (access-code-html 1234))
+
+(define-easy-handler (deck-page :uri (define-matching-functions "^/deck/([^/]+)/([^/]+)$" *decklm-host*)
+				:acceptor-names '(ninx::ninx)
+				:host *decklm-host*) ()
+  (trivia:match (str:split "/" (script-name*))
+    ((list "" "deck" doc-id doc-name)
+     ;; this route lists the user's generated decks
+     (incr-events "deck")
+     (save-ip-visit (remote-addr* *request*))
+     (save-country-visit (remote-addr*))
+     (let ((cookie (cookie-in "cookie")))
+       (let* ((doc (get-document-details doc-id))
+	      (title (cadr doc))
+	      (name (format nil "~a.pdf" (str:downcase title)))
+	      (share-link (format nil "/deck/~a/~a"
+				  (car doc)
+				  (str:replace-all " " "-" name)))
+	      (whatsapp-link (format nil "whatsapp://send?text=~a%0A%0A~a"
+				     (url-encode (format nil "Download the slide deck of \"~a\" at: " title))
+				     share-link))
+	      (email-link (format nil "mailto:?subject=~a slide deck.&body=~a"
+				  title
+				  (format nil "Download the PDF slide deck of \"~a\" at ~a" title share-link)))
+	      (telegram-link (format nil "https://t.me/share/url?url=~a&text=%0A%0A~a" share-link
+				     (url-encode (format nil "Download the slide deck of ~a from the above link." title)))))
+	 (with-html-output-to-string (*standard-output*)
+	   "<!DOCTYPE html>"
+	   (:html :lang "en"
+		  (:head
+		   (:title "Download Deck | DeckLM")
+		   (:meta :charset "UTF-8")
+		   (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+		   (:meta :name "description" :content "The home page for DeckLM")
+		   (:link :rel "manifest" :href "/decklm/manifest.json")
+		   (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
+		   (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
+		   (:style (str (user-decks-css))))
+		  (:body :id "parent"
+			 (:a :href "/home" :class "logo-link"
+			     (:div :class "logo"
+				   (:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
+				   "DeckLM"))
+			 (:div :id "container"
+			       (:h4 (str (format nil "File: ~a" title)))
+			       (str (format nil " Added on ~a" (extract-timestamp
+								(format nil "~a" (universal-to-timestamp
+										  (caddr doc))))))
+			       :br :br
+			       "PDF is designed for better for reading"
+			       :br :br
+			       "Slides are designed for better for editing."
+			       :br :br
+			       (:div :id :buttons
+				     (let* ((link (format nil "/download-deck/~a/~a"
+							  (car doc)
+							  (str:replace-all " " "-" doc-name))))
+				       (htm
+					(:a :href (format nil "~a.pdf?type=pdf" link) (:button :id "pdf-button" "Download PDF"))
+					(:a :href (format nil "~a.pptx?type=pptx" link) (:button :id "ppt-button" "Download Slides")))))
+			       )
+			 
+			 (when (is-mobile-browser *request*) ;; add a whatsapp share button on mobile
+			   (htm (:a :class "share-link" :title "Share to WhatsApp"
+				    :href whatsapp-link
+				    (:img :src "/decklm/icons/whatsapp.png" :alt "" :class "wp"))))
+			 (:a :class "share-link" :title "Share by Email"
+			     :href email-link
+			     (:img :src "/decklm/icons/mail.png" :class "wp" :alt ""))
+			 (:a :class "share-link" :title "Share via Telegram"
+			     :href telegram-link
+			     (:img :src "/decklm/icons/telegram.png" :class "wp" :alt ""))
+			 (:a :href "https://twitter.com/share?ref_src=twsrc%5Etfw"
+			     :class "share-link twitter-share-button"
+			     :data-text (format nil "Download the slide deck of ~a from this url: " title)
+			     :data-url share-link
+			     :data-show-count "false"
+			     (:img :src "/decklm/icons/x.png" :alt "" :class "wp"))
+			 (:a :href "#" :id "copy-link" :class "share-link"
+			     :onclick (format nil "copyToClipboard(~s)" share-link)
+			     "Copy 🔗")
+			 (:hr)
+			 (:div :id "toast-container" :class "toast-container")
+			 (footer *request* cookie))
+		  (:script (str (home-js)))
+		  (:script
+		   :async t
+		   :src "https://platform.twitter.com/widgets.js"
+		   :charset "utf-8")
+		  (:script (str (copy-to-clipboard)))
+		  )))))))
 
 ;;; payments
 ;;; when we get this, we first verify the transaction on the server, because you know, fraud, and then we redirect the user to home
@@ -1834,23 +2047,21 @@ consent is stored server side, such that we track the user across all devices."
 	(when (get-user-id email)
 	  (incr-user-tokens (get-user-id email) (* *tokens-per-dollar* (read-from-string amount))))))))
 
-(let ((match-fn (define-matching-functions "^(/verify-payment)$" *decklm-host* request)))
-  (define-easy-handler (verify-payment :uri match-fn
-				       :acceptor-names '(ninx::ninx)
-				       :host *decklm-host*) (cc amt tx st)
-    (verify-payment-fun tx)
-    (redirect "/")))
+(define-easy-handler (verify-payment :uri (define-matching-functions "^/verify-payment$" *decklm-host*)
+				     :acceptor-names '(ninx::ninx)
+				     :host *decklm-host*) (cc amt tx st)
+  (verify-payment-fun tx)
+  (redirect "/"))
 
 ;; this defines the success-webhook that will listen for notifications from paypal.
-(let ((match-fn (define-matching-functions "^(/success-webhook)$" *decklm-host* request)))
-  (define-easy-handler (success-webhook :uri match-fn
-					:acceptor-names '(ninx::ninx)
-					:host *decklm-host*) ()
-    (let* ((body-string (flexi-streams:octets-to-string (raw-post-data) :external-format :utf8))
-	   (body-hash (jzon:parse body-string))
-	   (id (gethash "id" body-hash))
-	   (update-time (gethash "update_time" body-hash)))
-      (verify-payment-fun id))))
+(define-easy-handler (success-webhook :uri (define-matching-functions "^/success-webhook$" *decklm-host*)
+				      :acceptor-names '(ninx::ninx)
+				      :host *decklm-host*) ()
+  (let* ((body-string (flexi-streams:octets-to-string (raw-post-data) :external-format :utf8))
+	 (body-hash (jzon:parse body-string))
+	 (id (gethash "id" body-hash))
+	 (update-time (gethash "update_time" body-hash)))
+    (verify-payment-fun id)))
 
 (defun update-payment-info ()
   "this will run every 60 seconds, fetches all the transactions in the last 2 days, saves the data and adds tokens to the respective users.
@@ -2032,420 +2243,191 @@ store the user-id as null and await a claim or process the claim manually."
 	    (push (list key v1) acc))))
     `(,@acc ,@list2)))
 
-(let ((match-fn (define-matching-functions "^(/realtime-analytics)$" *decklm-host* request)))
-  (define-easy-handler (realtime-analytics :uri match-fn
-					   :acceptor-names '(ninx::ninx)
-					   :host *decklm-host*) ()
-    (let* ((daily-cost (compute-costs 1))
-	   (daily-sales (compute-sales 1))
-	   (daily-profit (compute-profit 1))
+(define-easy-handler (realtime-analytics :uri (define-matching-functions "^/realtime-analytics$" *decklm-host*)
+					 :acceptor-names '(ninx::ninx)
+					 :host *decklm-host*) ()
+  (let* ((daily-cost (compute-costs 1))
+	 (daily-sales (compute-sales 1))
+	 (daily-profit (compute-profit 1))
 
-	   (weekly-cost (compute-costs 7))
-	   (weekly-sales (compute-sales 7))
-	   (weekly-profit (compute-profit 7))
+	 (weekly-cost (compute-costs 7))
+	 (weekly-sales (compute-sales 7))
+	 (weekly-profit (compute-profit 7))
 
-	   (monthly-cost (compute-costs 28))
-	   (monthly-sales (compute-sales 28))
-	   (monthly-profit (compute-profit 28)))
-      (with-html-output-to-string (*standard-output*)
-	(htm
-	 (:html
-	  (:head
-	   (:title "Realtime Analytics")
-	   (:style (str (cl-css:css
-			 `((.ana-div :width 50vh)
-			   (.left-div :float left)
-			   (.right-div :float right))))))
-	  (:body
-	   (:div :class "ana-div left-div"
-		 (:h4 "Tokenomics Daily")
-		 (:table
-		     (:tr (:th "type")
-		      (:th "Amount"))
-		   (:tr (:td "Cost") (:td (str (format nil "~,7f" daily-cost))))
-		   (:tr (:td "Sales") (:td (str (format nil "~,7f" daily-sales))))
-		   (:tr (:td "Profit") (:td (str (format nil "~,7f" daily-profit))))
-		   (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 2 1))))))
+	 (monthly-cost (compute-costs 28))
+	 (monthly-sales (compute-sales 28))
+	 (monthly-profit (compute-profit 28)))
+    (with-html-output-to-string (*standard-output*)
+      (htm
+       (:html
+	(:head
+	 (:title "Realtime Analytics")
+	 (:style (str (cl-css:css
+		       `((.ana-div :width 50vh)
+			 (.left-div :float left)
+			 (.right-div :float right))))))
+	(:body
+	 (:div :class "ana-div left-div"
+	       (:h4 "Tokenomics Daily")
+	       (:table
+		   (:tr (:th "type")
+		    (:th "Amount"))
+		 (:tr (:td "Cost") (:td (str (format nil "~,7f" daily-cost))))
+		 (:tr (:td "Sales") (:td (str (format nil "~,7f" daily-sales))))
+		 (:tr (:td "Profit") (:td (str (format nil "~,7f" daily-profit))))
+		 (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 2 1))))))
 
-		 (:h4 "Tokenomics Weekly")
-		 (:table
-		     (:tr (:th "type")
-		      (:th "Amount"))
-		   (:tr (:td "Cost") (:td (str (format nil "~,7f" weekly-cost))))
-		   (:tr (:td "Sales") (:td (str (format nil "~,7f" weekly-sales))))
-		   (:tr (:td "Profit") (:td (str (format nil "~,7f" weekly-profit))))
- 		   (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 14 7))))))
+	       (:h4 "Tokenomics Weekly")
+	       (:table
+		   (:tr (:th "type")
+		    (:th "Amount"))
+		 (:tr (:td "Cost") (:td (str (format nil "~,7f" weekly-cost))))
+		 (:tr (:td "Sales") (:td (str (format nil "~,7f" weekly-sales))))
+		 (:tr (:td "Profit") (:td (str (format nil "~,7f" weekly-profit))))
+ 		 (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 14 7))))))
 
-		 (:h4 "Tokenomics Monthly")
-		 (:table
-		     (:tr (:th "type")
-		      (:th "Amount"))
-		   (:tr (:td "Cost") (:td (str (format nil "~,7f" monthly-cost))))
-		   (:tr (:td "Sales") (:td (str (format nil "~,7f" monthly-sales))))
-		   (:tr (:td "Profit") (:td (str (format nil "~,7f" monthly-profit))))
- 		   (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 56 28))))))
+	       (:h4 "Tokenomics Monthly")
+	       (:table
+		   (:tr (:th "type")
+		    (:th "Amount"))
+		 (:tr (:td "Cost") (:td (str (format nil "~,7f" monthly-cost))))
+		 (:tr (:td "Sales") (:td (str (format nil "~,7f" monthly-sales))))
+		 (:tr (:td "Profit") (:td (str (format nil "~,7f" monthly-profit))))
+ 		 (:tr (:td "% Growth") (:td (str (format nil "~,7f" (compute-profit-growth 56 28))))))
 
-		 (:h4 "Daily Active")
-		 (:table
-		     (:tr (:th "Page") (:th "Number") (:th "Growth"))
-		   (:tr (:td "Index") (:td (str (get-active "index"))) (:td (str (format nil "~,7f"
-											 (compute-growth
-											  (get-active "index" :duration 2)
-											  (get-active "index" :duration 1))))))
-		   (:tr (:td "Accounts") (:td (str (get-active "accounts"))) (:td (str (format nil "~,7f"
-											       (compute-growth
-												(get-active "accounts" :duration 2)
-												(get-active "accounts" :duration 1))))))
-		   (:tr (:td "Deck") (:td (str (get-active "deck"))) (:td (str (format nil "~,7f"
+	       (:h4 "Daily Active")
+	       (:table
+		   (:tr (:th "Page") (:th "Number") (:th "Growth"))
+		 (:tr (:td "Index") (:td (str (get-active "index"))) (:td (str (format nil "~,7f"
 										       (compute-growth
-											(get-active "deck" :duration 2)
-											(get-active "deck" :duration 1))))))
-		   (:tr (:td "Home") (:td (str (get-active "home"))) (:td (str (format nil "~,7f"
-										       (compute-growth
-											(get-active "home" :duration 2)
-											(get-active "home" :duration 1)))))))
+											(get-active "index" :duration 2)
+											(get-active "index" :duration 1))))))
+		 (:tr (:td "Accounts") (:td (str (get-active "accounts"))) (:td (str (format nil "~,7f"
+											     (compute-growth
+											      (get-active "accounts" :duration 2)
+											      (get-active "accounts" :duration 1))))))
+		 (:tr (:td "Deck") (:td (str (get-active "deck"))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-active "deck" :duration 2)
+										      (get-active "deck" :duration 1))))))
+		 (:tr (:td "Home") (:td (str (get-active "home"))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-active "home" :duration 2)
+										      (get-active "home" :duration 1)))))))
 
-		 (:h4 "Daily Events")
-		 (:table
-		     (:tr (:th "Page") (:th "Number") (:th "Growth"))
-		   (:tr (:td "Index") (:td (str (get-events "index")))(:td (str (format nil "~,7f"
-											(compute-growth
-											 (get-events "index" :duration 2)
-											 (get-events "index" :duration 1))))))
-		   (:tr (:td "Accounts") (:td (str (get-events "accounts")))(:td (str (format nil "~,7f"
+	       (:h4 "Daily Events")
+	       (:table
+		   (:tr (:th "Page") (:th "Number") (:th "Growth"))
+		 (:tr (:td "Index") (:td (str (get-events "index")))(:td (str (format nil "~,7f"
+										      (compute-growth
+										       (get-events "index" :duration 2)
+										       (get-events "index" :duration 1))))))
+		 (:tr (:td "Accounts") (:td (str (get-events "accounts")))(:td (str (format nil "~,7f"
+											    (compute-growth
+											     (get-events "accounts" :duration 2)
+											     (get-events "accounts" :duration 1))))))
+		 (:tr (:td "Deck") (:td (str (get-events "deck"))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-events "deck" :duration 2)
+										      (get-events "deck" :duration 1))))))
+		 (:tr (:td "Home") (:td (str (get-events "home"))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-events "home" :duration 2)
+										      (get-events "home" :duration 1))))))))))
+       (:div :class "ana-div right-div"
+	     (:h4 "Parsing Error - Daily")
+	     (:table
+		 (:tr (:th "Model") (:th "Number") (:th "% change"))
+	       (let* ((model-data-1 (get-all-parsing-errors :duration 2))
+		      (model-data-2 (get-all-parsing-errors :duration 1))
+		      (merged-data (merge-lists model-data-2 model-data-1)))
+		 (dolist (data merged-data)
+		   (htm
+		    (:tr (:td (str (car data)))
+			 (:td (str (cadr data)))
+			 (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
+									(if old old 0))
+								      (cadr data))))))))))
+
+	     (:h4 "Parsing Error - Weekly")
+	     (:table
+		 (:tr (:th "Model") (:th "Number") (:th "% change"))
+	       (let* ((model-data-1 (get-all-parsing-errors :duration 14))
+		      (model-data-2 (get-all-parsing-errors :duration 7))
+		      (merged-data (merge-lists model-data-2 model-data-1)))
+		 (dolist (data merged-data)
+		   (htm
+		    (:tr (:td (str (car data)))
+			 (:td (str (cadr data)))
+			 (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
+									(if old old 0))
+								      (cadr data))))))))))
+
+	     (:h4 "Parsing Error - Monthly")
+	     (:table
+		 (:tr (:th "Model") (:th "Number") (:th "% change"))
+	       (let* ((model-data-1 (get-all-parsing-errors :duration 56))
+		      (model-data-2 (get-all-parsing-errors :duration 28))
+		      (merged-data (merge-lists model-data-2 model-data-1)))
+		 (dolist (data merged-data)
+		   (htm
+		    (:tr (:td (str (car data)))
+			 (:td (str (cadr data)))
+			 (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
+									(if old old 0))
+								      (cadr data))))))))))
+
+	     
+	     (:h4 "Unique visitors")
+	     (:table
+		 (:tr (:th "Type")  (:th "Number") (:th "% change"))
+	       (:tr (:td "Daily") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
 											      (compute-growth
-											       (get-events "accounts" :duration 2)
-											       (get-events "accounts" :duration 1))))))
-		   (:tr (:td "Deck") (:td (str (get-events "deck"))) (:td (str (format nil "~,7f"
-										       (compute-growth
-											(get-events "deck" :duration 2)
-											(get-events "deck" :duration 1))))))
-		   (:tr (:td "Home") (:td (str (get-events "home"))) (:td (str (format nil "~,7f"
-										       (compute-growth
-											(get-events "home" :duration 2)
-											(get-events "home" :duration 1))))))))))
-	 (:div :class "ana-div right-div"
-	       (:h4 "Parsing Error - Daily")
-	       (:table
-		   (:tr (:th "Model") (:th "Number") (:th "% change"))
-		 (let* ((model-data-1 (get-all-parsing-errors :duration 2))
-			(model-data-2 (get-all-parsing-errors :duration 1))
-			(merged-data (merge-lists model-data-2 model-data-1)))
-		   (dolist (data merged-data)
-		     (htm
-		      (:tr (:td (str (car data)))
-			   (:td (str (cadr data)))
-			   (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
-									  (if old old 0))
-									(cadr data))))))))))
-
-	       (:h4 "Parsing Error - Weekly")
-	       (:table
-		   (:tr (:th "Model") (:th "Number") (:th "% change"))
-		 (let* ((model-data-1 (get-all-parsing-errors :duration 14))
-			(model-data-2 (get-all-parsing-errors :duration 7))
-			(merged-data (merge-lists model-data-2 model-data-1)))
-		   (dolist (data merged-data)
-		     (htm
-		      (:tr (:td (str (car data)))
-			   (:td (str (cadr data)))
-			   (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
-									  (if old old 0))
-									(cadr data))))))))))
-
-	       (:h4 "Parsing Error - Monthly")
-	       (:table
-		   (:tr (:th "Model") (:th "Number") (:th "% change"))
-		 (let* ((model-data-1 (get-all-parsing-errors :duration 56))
-			(model-data-2 (get-all-parsing-errors :duration 28))
-			(merged-data (merge-lists model-data-2 model-data-1)))
-		   (dolist (data merged-data)
-		     (htm
-		      (:tr (:td (str (car data)))
-			   (:td (str (cadr data)))
-			   (:td (str (format nil "~,7f" (compute-growth (let ((old (caddr data)))
-									  (if old old 0))
-									(cadr data))))))))))
-
-	       
-	       (:h4 "Unique visitors")
-	       (:table
-		   (:tr (:th "Type")  (:th "Number") (:th "% change"))
-		 (:tr (:td "Daily") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
+											       (get-unique-visitors-by-ip 2)
+											       (get-unique-visitors-by-ip 1))))))
+	       (:tr (:td "Weekly") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
+											       (compute-growth
+												(get-unique-visitors-by-ip 14)
+												(get-unique-visitors-by-ip 7))))))
+	       (:tr (:td "Monthly") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
 												(compute-growth
-												 (get-unique-visitors-by-ip 2)
-												 (get-unique-visitors-by-ip 1))))))
-		 (:tr (:td "Weekly") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
-												 (compute-growth
-												  (get-unique-visitors-by-ip 14)
-												  (get-unique-visitors-by-ip 7))))))
-		 (:tr (:td "Monthly") (:td (str (get-unique-visitors-by-ip 1))) (:td (str (format nil "~,7f"
-												  (compute-growth
-												   (get-unique-visitors-by-ip 28)
-												   (get-unique-visitors-by-ip 56)))))))
+												 (get-unique-visitors-by-ip 28)
+												 (get-unique-visitors-by-ip 56)))))))
 
-	       (:h4 "Top Countries - Daily Visits")
-	       (:table
-		   (:tr (:th "Country") (:th "Count"))
-		 (dolist (data (get-top-country-visitors))
-		   (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+	     (:h4 "Top Countries - Daily Visits")
+	     (:table
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-top-country-visitors))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
-	       (:h4 "Top Countries - Weekly Visits")
-	       (:table
-		   (:tr (:th "Country") (:th "Count"))
-		 (dolist (data (get-top-country-visitors :duration 7))
-		   (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+	     (:h4 "Top Countries - Weekly Visits")
+	     (:table
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-top-country-visitors :duration 7))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
-	       (:h4 "Top Countries - Monthly Visits")
-	       (:table
-		   (:tr (:th "Country") (:th "Count"))
-		 (dolist (data (get-top-country-visitors :duration 28))
-		   (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+	     (:h4 "Top Countries - Monthly Visits")
+	     (:table
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-top-country-visitors :duration 28))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
-	       (:h4 "Top Countries - Daily Decks")
-	       (:table
-		   (:tr (:th "Country") (:th "Count"))
-		 (dolist (data (get-country-deck-creations))
-		   (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+	     (:h4 "Top Countries - Daily Decks")
+	     (:table
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-country-deck-creations))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
-	       (:h4 "Top Countries - Weekly Decks")
-	       (:table
-		   (:tr (:th "Country") (:th "Count"))
-		 (dolist (data (get-country-deck-creations :duration 7))
-		   (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+	     (:h4 "Top Countries - Weekly Decks")
+	     (:table
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-country-deck-creations :duration 7))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
 
-	       (:h4 "Top Countries - Monthly Decks")
-	       (:table
-		   (:tr (:th "Country") (:th "Count"))
-		 (dolist (data (get-country-deck-creations :duration 28))
-		   (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
-	       
-	       ))))))
-
-
-(defun index-css ()
-  (cl-css:css
-   `((body :margin 0 :padding 0 :background-color "white" 
-           :font-family "Arial, sans-serif" :line-height 1.5)
-     (.main :margin "20px auto" :background-color "#e8e8e8" 
-            :padding "20px" :border-radius "15px" 
-            :box-shadow "0 4px 8px rgba(0, 0, 0, 0.2)"
-            :max-width "1200px")
-     (.header :display :flex :justify-content :space-between 
-              :align-items :center :margin-bottom "20px")
-     (.outer-logo :display :flex :flex-direction :column 
-                  :align-items :flex-start :gap "10px")
-     (.logo :display :flex :flex-direction :row :align-items :center :gap "10px")
-     (a :font-weight bold)
-     ("a:visited" :color blue)
-     (.logo-image :width "50px" :border-radius "5px")
-     (.logo-link :font-size "2em" :font-weight :bold :text-decoration :none 
-                 :color "#1e90ff")
-     ("a.logo-link:visited" :color "#1e90ff")
-     (.logo-description :font-style :italic :font-size "0.9em" 
-                        :background-color "yellow" :padding "10px" 
-                        :border-radius "5px" :transform "rotate(-5deg)" 
-                        :transform-origin "top left")
-     (.nav-links :display :flex :gap "15px" :align-items :center)
-     (".nav-links a" :text-decoration :none :font-weight :bold)
-     (.home :display :inline-block :padding "10px 20px" 
-            :background-color "#28a745" :color "white" 
-            :text-decoration :none :font-weight :bold 
-            :border-radius "20px" :text-align :center :border "none")
-     ("a.home" :color "#e8e8e8")
-     (".home:hover" :background-color "#1e7e34")
-     (.try-div :display :flex :justify-content :center :align-items :center 
-               :padding "10px 20px" :background-color "#28a745" 
-               :color "white" :text-decoration :none 
-               :font-weight :bold :border-radius "20px" 
-               :margin "10px auto" :border "none" :width "150px")
-     (".try-div a" :text-decoration none :color "#e8e8e8")
-     (".try-div:hover" :background-color "#1e7e34")
-
-     (.video-container :position :relative :display :flex 
-                       :justify-content :center :align-items :center 
-                       :margin "20px auto" :width "100%" 
-                       :max-width "1000px")
-     (.video-demo :width "100%" :height "auto" :border-radius "10px")
-     (.video-overlay :position :absolute :top 0 :left 0 
-                     :width "100%" :height "100%" 
-                     :background-color "rgba(255, 255, 255, 0.7)" 
-                     :display :flex :justify-content :center 
-                     :align-items :center :border-radius "10px" 
-                     :pointer-events :none)
-     (.overlay-button :padding "15px 30px" :font-size "1.2em" 
-                      :background-color "#28a745" :color "#e8e8e8" 
-                      :border "none" :border-radius "25px" 
-                      :text-align :center :text-decoration :none 
-                      :font-weight :bold :cursor :pointer 
-                      :pointer-events :all :transition "background-color 0.3s")
-     (".overlay-button:hover" :background-color "#1e7e34")
-
-     (.big-text :font-size "2em" :margin-bottom "20px")
-     (.center-item :text-align center)
-     (.no-margin :margin 0 :font-weight bold)
-     (.sample-pages :display :flex :gap "10px" :justify-content :center 
-                    :margin-top "20px")
-     (.pdf-sample :position :relative :width "calc(50% - 10px)" 
-                  :max-width "calc(50% - 10px)" :flex-basis "calc(50% - 10px)")
-     (".pdf-sample-text" :position :absolute :top "5px" :left "5px" 
-                         :color "#e8e8e8" :font-weight :bold 
-                         :background-color "rgba(0, 0, 0, 0.7)" 
-                         :padding "5px" :border-radius "3px")
-     (".sample-pages img" :width "100%" :height "auto" :display :block 
-                          :border-radius "5px")
-     (.footer :margin-top "20px" :font-size "0.9em")
-     (.rest :font-size "20px")
-     (.small-div :width 60% :margin-left 20%)
-     (.fab
-      :position :fixed :bottom "20px" :right "20px" :z-index 1000
-      :background-color "#1e90ff" :color "#e8e8e8" :border "none"
-      :border-radius "30px" :padding "10px 20px" :font-size "1em"
-      :box-shadow "0px 4px 6px rgba(0, 0, 0, 0.1)"
-      :cursor :pointer :transition "background-color 0.3s, transform 0.2s"
-      :display :inline-block :text-align :center :font-weight :bold)
-     (".fab:hover"
-      :background-color "#1e7e34"
-      :transform "scale(1.05)")
-     (".fab a:visited" :color "#e8e8e8")
-     ("@media (max-width: 768px)"
-      (.main :margin "0px auto" :max-width 100%)
-      (.small-div :width 95% :margin-left 0)
-      (.big-text :font-size 1.5em)
-      (.header :flex-direction column)
-      (.logo-description :font-size 0.8em )
-      (.sample-pages :flex-direction column :gap "15px" :align-items center)
-      (.pdf-sample :width "100%" :max-width "100%" :margin "0 auto")
-      (.pdf-sample-text :font-size 0.6em)
-      (.overlay-button :font-size 0.9em)
-      (.fab
-       :font-size "0.9em" :padding "8px 16px" :bottom "15px" :right "15px")
-      ))))
-
-(let ((match-fn (define-matching-functions "^(/)$" *decklm-host* request)))
-  (define-easy-handler (index :uri match-fn
-			      :acceptor-names '(ninx::ninx)
-			      :host *decklm-host*) ()
-    (incr-events "index")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let* ((cookie (cookie-in "cookie"))
-	   (email (when cookie (get-email-from-cookie cookie))))
-      (if (and email cookie)
-	  (hunchentoot:redirect "/home")
-	  (with-html-output-to-string (*standard-output*)
-	    "<!DOCTYPE html>"
-	    (htm (:html :lang "en"
-			(:head
-			 (:title "DeckLM — Online slide deck creator")
-			 (:meta :charset "UTF-8")
-			 (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-			 (:link :rel "manifest" :href "/decklm/manifest.json")
-			 (:meta :name "description" :content "Landing page for DeckLM, the online slide deck creator")
-			 (:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-			 (:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-			 (:style (str (index-css)))
-			 (:script "<!-- Google tag (gtag.js) -->
-<script async src=\"https://www.googletagmanager.com/gtag/js?id=AW-16666958238\">
-</script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'AW-16666958238');
-</script>")
-			 )
-			(:body
-			 (:div :class "main"
-			       (:div :class "header"
-				     (:div :class "outer-logo"
-					   (:a :href "/home" :class "logo-link"
-					       (:div :class "logo" (:img :src "/decklm/icon-512.png" :class "logo-image")
-						     "DeckLM"))
-					   (:div :class "logo-description" "Simple and easy to use"))
-				     (:div :class "nav-links"
-					   (:a :href "/pricing" "Pricing")
-					   (:a :class "home" :href "/accounts" "Signup or Signin")))
-			       (:div :class "rest"
-				     (:h1 :class "big-text center-item" "Insanely simple slide deck generation!")
-				     (:p :class "center-item" "DeckLM uses your resources—images, PDFs, plain text, and CSV files—to create a slide deck with detailed, relevant information that you can customize, download the finished deck as a PDF or PowerPoint presentation—all in under 5 minutes.")
-				     (:div :class "try-div center-item" (:a :href "/accounts" "Try it for free."))
-				     (:div :class "video-container"
-					   (:video :class "video-demo" :id "demo-video" :controls t
-						   :src (if (is-mobile-browser *request*) "/decklm/demo-mobile.mp4" "/decklm/demo.mp4")
-						   :alt "Demonstration video for the DeckLM.")
-					   (:div :class "video-overlay"
-						 (:a :class "overlay-button" :href "javascript:void(0);" 
-						     :data-target "#demo-video" "▶ See how DeckLM works")))
-
-				     (:script "
-document.addEventListener('DOMContentLoaded', function () {
-  const overlayButton = document.querySelector('.overlay-button');
-  overlayButton.addEventListener('click', function () {
-    const video = document.querySelector(overlayButton.getAttribute('data-target'));
-    if (video) {
-      video.play();
-      overlayButton.parentElement.style.display = 'none';
-    }
-  });
-});
-")
-				     
-				     
-				     (:div :class "sample-pages"
-					   (:div :class "pdf-sample" (:span :class "pdf-sample-text" "PDF sample page")
-						 (:img :src "/decklm/static/images/sample-pdf.png" :alt "Sample PDF page generated."))
-					   (:div :class "pdf-sample" (:span :class "pdf-sample-text" "PowerPoint sample page")
-						 (:img :src "/decklm/static/images/sample-pptx.png" :alt "Sample PPTX page generated.")))
-				     (:div :class "small-div center-item"
-					   (:h3 :class "big-text no-margin center-item" "With clear billing: only pay for what you use.")
-					   (:p :class "center-item" "You are only charged when you generate a slide deck and are charged per word in your resources and the deck created. No hidden charges. See " (:a :href "/pricing" "Pricing."))
-					   (:h3 :class "big-text no-margin center-item" "We want to hear from you.")
-					   (:p :class "center-item" "We take all questions about pricing, how to use and all other inquiries. "
-					       (:a :href "mailto:lam@ninx.xyz" "Email our founder")
-					       ", he wants to hear from you.")))
-			       (:button :class "fab" (:a :href "/accounts" "Try it now"))
-			       (:div :class "footer center-item"
-				     "DeckLM is built and backed by " (:a :href "https://ninx.xyz/about" "Ninx Technology Limited.")
-				     " Enjoy the rest of your day!")))
-			(:script (str (beacon-js)))
-			(:script (str (duration-js)))
-			)))))))
-(let ((match-fn (define-matching-functions "^(/terms-and-privacy)$" *decklm-host* request)))
-  (define-easy-handler (terms-and-privacy :uri match-fn
-					  :acceptor-names '(ninx::ninx)
-					  :host *decklm-host*) ()
-    (incr-events "terms-and-privacy")
-    (save-ip-visit (remote-addr* *request*))
-    (save-country-visit (remote-addr*))
-    (let ((cookie (cookie-in "cookie")))
-      (with-html-output-to-string (*standard-output*)
-	"<!DOCTYPE html>"
-	(:html :lang "en"
-	       (:head
-		(:title "TACS | DeckLM")
-		(:meta :charset "UTF-8")
-		(:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-		(:meta :name "description" :content "The terms and conditions page for DeckLM")
-		(:link :rel "manifest" :href "/decklm/manifest.json")
-		(:link :rel "icon" :href "/decklm/static/icons/web/favicon.ico" :sizes "any")
-		(:link :rel "apple-touch-icon" :href "/decklm/static/icons/web/apple-touch-icon.png")
-		(:style (str (tacs-css))))
-	       (:body :id "parent"
-		      (:a :href "/home" :class "logo-link"
-			  (:div :class "logo"
-				(:img :class "logo-image" :src "/decklm/icon-512.png" :alt "Logo Icon")
-				"DeckLM"))
-		      (:h2 "Terms, Conditons and Privacy")
-		      (:p :id "privacy-div" :class "privacy-div"
-			  "We use one cookie to keep you logged in. We require consent to store this cookie and remember you on your device, otherwise, you will have to login every time."
-			  :br :br
-			  "Consent is asked for once and stored on our servers. You can later revoke this consent by clicking on 'Don't save cookie' on the home page. We don't use third party cookies." 
-			  :br :br
-			  "All images and documents submitted are only stored during making of the slide deck, after which they are deleted. The decks generated are stored on our servers for you to access later on."
-			  :br :br
-			  "We only accept payment via Paypal and do not store any credit card details on our servers. Use the same email you used here when paying."
-			  :br :br)
-		      (footer *request* cookie)
-		      ))))))
+	     (:h4 "Top Countries - Monthly Decks")
+	     (:table
+		 (:tr (:th "Country") (:th "Count"))
+	       (dolist (data (get-country-deck-creations :duration 28))
+		 (htm (:tr (:td (str (car data))) (:td (str (format nil "~a" (cadr data))))))))
+	     
+	     )))))
