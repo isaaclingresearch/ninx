@@ -51,7 +51,7 @@
 		   gtag('js', new Date());
 		   gtag('config', 'G-G5ZPQXQQ8Z');") 
 		  (:title ,title)
-		  (:link :rel "stylesheet" :href "/css/ninx.css")
+		  (:link :rel "stylesheet" :href "/blog-priv/css/ninx.css")
 		  (:style "body {line-height: 1.4; font-size: 16px; padding: 0 10px; margin: 50px auto; max-width: 650px; text-align: left; text-wrap: pretty;} a:visited {color: blue;}")
 		  )
 		 (:body (:div :class "main-container"

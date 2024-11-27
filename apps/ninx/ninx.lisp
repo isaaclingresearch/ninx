@@ -6,11 +6,12 @@
 			       host
 			       (format nil "~a:~a" host ninx:*ninx-https-port*))))
 
+		 ;; (:style "body {line-height: 1.4; font-size: 16px; padding: 0 10px; margin: 50px auto; max-width: 650px; text-align: left; text-wrap: pretty;} a:visited {color: blue;}")
 (defun home-css ()
   (cl-css:css
-   `((body :margin 40px :font-family "Roboto, san-serif")
-     (a :text-decoration none :color blue)
-     ("a:visited" :text-decoration none :color blue))))
+   `((body :line-height 1.4 :font-size 16px :padding "0 10px" :margin "50px auto" :max-width 650px :text-align left :text-wrap pretty)
+     ("a:visited" :color blue)
+     )))
 
 (define-easy-handler (ninx-index :uri (define-matching-functions "^/$" *ninx-host*)
 				 :host *ninx-host*
@@ -33,16 +34,16 @@
 	    (:h1 (:a :href "/" "Ninx Technology Limited."))
 	    (:p "Ninx Technology Limited (Ninxtech) is studying how advances in technology in health, education and agriculture can be applied and spread to all humans. We are engineers, doctors and teachers building software, researching and applying ideas from marketing and spread of technologies to all our products.")
 	    (:h2 "Team")
-	    (:p "Lubwama Abdul Muswawir!")
+	    (:p (:a :target "_blank" :href (format nil "https://~a/lam" ninx-blog::*ninx-blog-host*) "Lubwama Abdul Muswawir"))
 
-	    (:p "Contact us at " (:a :href "mailto:info@ninx.xyz" "Info@ninx.xyz"))
+	    (:b (:p "Mail us at " (:a :href "mailto:info@ninx.xyz" "info@ninx.xyz")))
 	    (:h2 "Products")
 	    (:p (:a :href "https://decklm.com" "Decklm") " - Generate slides from your learning resources in minutes.")
 	    :hr
-	    "Ninx Technology Limited,"
+	    (:b "Ninx Technology Limited,")
 	    :br
-	    "Lugoba North, Kazo Lugoba, Nansana Division."
+	    (:b "Lugoba North, Kazo Lugoba, Nansana Division.")
 	    :br
-	    "P.O.Box 112999, Wakiso"
+	    (:b "P.O.Box 112999, Wakiso,")
 	    :br
-	    "Wakiso, Uganda."))))
+	    (:b "Wakiso, Uganda.")))))
