@@ -143,6 +143,7 @@
                :font-weight :bold :border-radius "20px" 
                :margin "10px auto" :border "none" :width "150px")
      (".try-div a" :text-decoration none :color "#e8e8e8")
+     (".try-div a:visited" :text-decoration none :color "#e8e8e8")
      (".try-div:hover" :background-color "#1e7e34")
 
      (.video-container :position :relative :display :flex 
