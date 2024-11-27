@@ -21,6 +21,10 @@
 			     (:file "decklm.postgres")
 			     (:file "decklm")
 			     ))
+	       (:module "apps/goodpdf"
+			:components ((:file "package")
+				     (:file "goodpdf")
+				     (:file "goodpdf.app")))
 	       (:module "apps/blog"
 		:components ((:file "ninx")
 			     (:file "blog")))

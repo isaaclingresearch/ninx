@@ -1,5 +1,5 @@
 (defpackage :server
-  (:use :cl :ninx hunchentoot :hunchensocket :ninx-app :ninx-blog :decklm)
+  (:use :cl :ninx hunchentoot :hunchensocket :ninx-app :ninx-blog :decklm :goodpdf)
   (:documentation "The container for all the applications")
   (:local-nicknames (:jzon :com.inuoe.jzon) (:ppcre :cl-ppcre))
   (:export :start-server :restart-server :stop-server))
