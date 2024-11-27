@@ -191,6 +191,7 @@
      (".fab:hover"
       :background-color "#1e7e34"
       :transform "scale(1.05)")
+     (".fab a" :color "#e8e8e8")
      (".fab a:visited" :color "#e8e8e8")
      ("@media (max-width: 768px)"
       (.main :margin "0px auto" :max-width 100%)
