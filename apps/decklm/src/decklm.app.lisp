@@ -1399,7 +1399,7 @@ consent is stored server side, such that we track the user across all devices."
 	(link-blue "#1e90ff"))
     (cl-css:css
      `((body :text-align center :background-color ,bg-color :color ,fg-color :margin 20px :font-size 16px)
-       (button :background-color "#00b800" :border "none" :color "#cccccc" :padding "10px 20px" :text-align "center" :text-decoration "none" :display "inline-block" :font-size "16px" :margin "4px 2px" :cursor "pointer" :border-radius "12px" :font-weight bold)
+       (button :background-color "#00b800" :border "none" :color "#e8e8e8" :padding "10px 20px" :text-align "center" :text-decoration "none" :display "inline-block" :font-size "16px" :margin "4px 2px" :cursor "pointer" :border-radius "12px" :font-weight bold)
        (.submit-btn :float right :background-color "#00b800")
        (.upload-btn :float left)
        (.add-symbol :margin-right 8px :font-size :16px :font-weight bold)
@@ -1446,7 +1446,7 @@ consent is stored server side, such that we track the user across all devices."
        
        (".description:focus" :border none :color ,fg-color)
        (.description-title :margin-top 12px)
-       ("@media only screen and (min-width: 768px)" (body :font-size 18px :width 80% :margin-left 10%))
+       (body :font-size 18px :width 80% :margin-left 10%)
        ("@media only screen and (max-width: 768px)"
 	(footer :margin-top 50% :text-align left :font-size 15px)
 	("a.feedback" :font-size 16px :font-weight bold)

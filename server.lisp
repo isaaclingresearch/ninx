@@ -43,3 +43,10 @@ application specific options"
 (defmethod hunchensocket:text-message-received ((endpoint ws-endpoint) ws-user message-json)
   (trivia:match (ninx::name endpoint)
     ("/ws/decklm" (decklm::ws-decklm endpoint ws-user message-json))))
+
+(defun start-test-server ()
+  (start-server :log-to-file nil :schedule-payments nil))
+
+(defun restart-test-server ()
+  (stop-server)
+  (start-test-server))

@@ -3,6 +3,11 @@
 (defun home-js ()
   "the js for the home page"
   (ps:ps
+    (defun scroll-to-bottom ()
+      (ps:chain window (scroll-to (create
+				   top (ps:chain document body scroll-height)
+				   behavior "smooth"))))
+    
     (defun is-mobile-browser ()
       "check if the browser is mobile"
       (let ((user-agent (or (ps:chain navigator user-agent) (ps:chain navigator vendor) (ps:chain window opera))))
@@ -12,7 +17,6 @@
 	  ((ps:chain (regex "/windows phone/i") (test user-agent)) t)
 	  ((ps:chain (regex "/blackberry|bb10|playbook/i") (test user-agent)) t)
 	  (t false))))
-
     
     ;; Only show the drop zone if it's not a mobile browser.
     (ps:chain document (add-event-listener "DOMContentLoaded" (lambda ()
@@ -54,17 +58,25 @@
 								      (if (> index -1)
 									  (ps:chain files-array (splice index 1))))
 								    (ps:chain file-frame (remove))))))
- 		     
-		     (let ((iframe (ps:chain document (create-element "iframe")))
-			   (file-name (ps:chain document (create-element "span"))))
-		       (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
-		       (ps:chain file-frame (append-child iframe))
-		       ;; file name
-		       (ps:chain file-name class-list (add "file-name"))
-		       (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
-		       (ps:chain file-frame (append-child file-name)))
+ 		     (cond
+		       ((ps:chain file type (starts-with "image/"))
+			(let ((img (ps:chain document (create-element "img")))
+			      (reader (new -file-reader)))
+			  (setf (ps:chain reader onload) (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
+			  (ps:chain reader (read-as-data-u-r-l file))
+			  (ps:chain file-frame (append-child img))))
+		       ((eql (ps:chain file type) "application/pdf")
+			(let ((iframe (ps:chain document (create-element "iframe")))
+			      (file-name (ps:chain document (create-element "span"))))
+			  (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
+			  (ps:chain file-frame (append-child iframe))
+			  ;; file name
+			  (ps:chain file-name class-list (add "file-name"))
+			  (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+			  (ps:chain file-frame (append-child file-name)))))
 		     (ps:chain file-frame (append-child close-button))
-		     (ps:chain files-container (append-child file-frame)))))))
+		     (ps:chain files-container (append-child file-frame))
+		     (scroll-to-bottom))))))
 
     ;; Enable drag-and-drop file rearranging within files-container
     (setf files-container (ps:chain document (get-element-by-id "files-container")))
@@ -107,13 +119,13 @@
     (ps:chain document (get-element-by-id "upload-btn")
 	      (add-event-listener "click"
 				  (lambda ()
-				    (ps:chain event (prevent-default))
-				    (let ((pdf-input (ps:chain document (get-element-by-id "pdf-input"))))
-				      (ps:chain pdf-input (click))
-				      (setf (ps:chain pdf-input onchange)
+				    (setf (ps:chain document (get-element-by-id "success-indicator") style display) "none")
+				    (let ((file-input (ps:chain document (get-element-by-id "file-input"))))
+				      (ps:chain file-input (click))
+				      (setf (ps:chain file-input onchange)
 					    (lambda ()
-					      (handle-files (ps:chain pdf-input files))
-					      (setf (ps:chain pdf-input value) "")))))))
+					      (handle-files (ps:chain file-input files))
+					      (setf (ps:chain file-input value) "")))))))
 
     ;; Enable file drag-and-drop in the drop zone
     (setf drop-zone (ps:chain document (get-element-by-id "drop-zone")))
@@ -135,43 +147,150 @@
 					      (ps:chain drop-zone class-list (remove "dragging"))
 		 			      (handle-files (ps:chain event data-transfer files)))))
 
+    (defun show-toast (message duration)
+      "show a toast to the user"
+      (let ((toast-container (ps:chain document (get-element-by-id "toast-container")))
+	    (toast (ps:chain document (create-element "div"))))
+	(ps:chain toast class-list (add "toast"))
+	(setf (ps:chain toast text-content) message)
+	(ps:chain toast-container (append-child toast))
+	(set-timeout (lambda () "remove the toast"
+		       (ps:chain toast class-list (add "fade-out"))
+		       (set-timeout (lambda () "wait fo the fade-out to complete"
+				      (ps:chain toast (remove))) 500))
+		     duration)))
 
+    
     ;; Upload files to the "/files" endpoint using plain JS
-    (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn"))))
+    (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn")))
+	  (progress-container (ps:chain document (get-element-by-id "progress-container")))
+	  (progress-bar (ps:chain document (get-element-by-id "upload-progress")))
+	  (loading-indicator (ps:chain document (get-element-by-id "loading-indicator")))
+	  (error-container (ps:chain document (get-element-by-id "error-container")))
+	  (error-indicator (ps:chain document (get-element-by-id "error-indicator")))
+	  (success-indicator (ps:chain document (get-element-by-id "success-indicator")))
+	  (loading-container (ps:chain document (get-element-by-id "loading-container")))
+	  )
+      (defun base64-to-array (base64data)
+	"This function processes base64data returned from the server and converts it into a Uint8Array."
+	(let* ((binary-string (ps:chain window (atob base64data)))
+               (len (ps:chain binary-string length))
+               (bytes (new (-uint8-array len)))
+               (i 0))
+	  (loop for i from 0 to len do
+	    (setf (aref bytes i) (ps:chain binary-string (char-code-at i))))
+	  bytes))
+
+      (defun download-file (blob name)
+	"This function triggers the download of the file returned by the server. Shows a toast with the filename,
+   hides the progress indicator, and resets forms and file array."
+	(let ((blob-data (new (-blob (array (base64-to-array blob)) 
+				     (create :type "application/vnd.openxmlformats-officedocument.presentationml.presentation"))))
+              (link (ps:chain document (create-element "a")))
+              (filename (+ name ".pptx")))
+	  
+	  (setf (ps:chain link href) (ps:chain window -u-r-l (create-object-u-r-l blob-data)))
+	  (setf (ps:chain link download) filename)
+	  (ps:chain document body (append-child link))
+	  (ps:chain link (click))
+	  (ps:chain document body (remove-child link))
+	  (setf (ps:chain progress-container style display) "none")
+	  (setf (ps:chain loading-indicator style display) "none")
+	  (setf (ps:chain loading-container style display) "none")
+	  (let ((txt (+ "Your deck is saved as " filename " in your downloads folder as " name ".")))
+	    (show-toast txt 500)
+	    (setf (ps:chain success-indicator inner-h-t-m-l) txt))
+	  
+	  (setf (ps:chain success-indicator style display) "block")
+	  (setf files-array (array))
+	  (setf (ps:chain document (get-element-by-id "description") value) "")
+	  (setf (ps:chain document (get-element-by-id "files-container") inner-h-t-m-l) ""))
+	)
+
 
       (defun upload-files ()
-	"Upload files via a normal form submission."
-	(let ((form (or (ps:chain document (create-element "form"))))
-              (body (ps:chain document body))
-              (file-input (ps:chain document (create-element "input")))
-              (desc-input (ps:chain document (create-element "input"))))
-
-	  ;; Set form attributes
-	  (setf (ps:chain form method) "POST")
-	  (setf (ps:chain form action) "/files")
-	  (setf (ps:chain form enctype) "multipart/form-data")
-	  
-	  ;; Append file inputs
+	"upload the files and track progress of the upload"
+	(ps:chain console (log files-array))
+	(let ((form-data (new -form-data))
+	      (xhr (new -x-m-l-http-request))
+	      )
+	  ;; Add files to FormData
 	  (when (> (ps:chain files-array length) 0)
+	    (ps:chain form-data (set "number-of-files" (ps:chain files-array length)))
 	    (loop for i from 0 below (ps:chain files-array length) do
-              (let ((file-field (ps:chain document (create-element "input"))))
-		(setf (ps:chain file-field type) "file")
-		(setf (ps:chain file-field name) (+ "file_" i))
-		(setf data-transfer (new (-data-transfer)))
-		(ps:chain data-transfer items (add (aref files-array i)))
-		(setf (ps:chain file-field files) (ps:chain data-transfer files))
-		(ps:chain form (append-child file-field)))))
+	      (ps:chain form-data (append (+ "file_" i) (aref files-array i)))))
+	  
+	  ;; Open the request
+	  (ps:chain xhr (open "POST" "/convert-pdf-to-pptx" t))
+	  ;; Track progress
+	  (setf (ps:chain xhr upload onprogress)
+		(lambda (event)
+		  (when (ps:chain event length-computable)
+		    (setf (ps:chain progress-bar value)
+			  (/ (* 100 (ps:chain event loaded)) (ps:chain event total)))
+		    (when (eql (ps:chain event loaded) (ps:chain event total))
+		      (setf (ps:chain progress-container style display) "none")
+		      (setf (ps:chain loading-indicator style display) "block")
+		      (setf (ps:chain loading-container style display) "block")
+		      (setf (ps:chain loading-indicator inner-h-t-m-l) "Generating deck, sit back and wait...")))))
 
-	  ;; Append form to document and submit
-	  (ps:chain body (append-child form))
-	  (ps:chain form (submit))))
+	  (setf (ps:chain xhr onloadstart) (lambda ()
+					     "Show loading indicator when uploading starts"
+					     (setf (ps:chain loading-container style display) "none")
+					     (setf (ps:chain success-indicator style display) "none")
+					     (setf (ps:chain progress-container style display) "block")
+					     (setf (ps:chain loading-indicator style display) "block")
+					     (setf (ps:chain error-container style display) "none")
+					     (setf (ps:chain error-indicator style display) "none")
+					     ))
+
+	  (setf (ps:chain xhr onload)
+		(lambda ()
+		  "handle upload completion and process response"
+		  (if (and (eql (ps:chain xhr ready-state) 4) (eql (ps:chain xhr status) 200))
+		      (let* ((response-json (ps:chain xhr response-text))
+			     (response (ps:chain -j-s-o-n (parse response-json))))
+			(ps:chain console (log response))
+			(setf (ps:chain progress-container style display) "none")
+			(setf (ps:chain loading-indicator style display) "none")
+			(if (eql (ps:chain response success) t)
+			    (setf (ps:chain window location href) (+ "/deck/" (ps:chain response docid) "/" (ps:chain response title)))
+			    ;; (progn (download-file (ps:chain response data) (ps:chain response title))
+			    ;; 	   (incr-user-doc-count)
+			    ;; 	   (change-user-balance (ps:chain response balance)))
+			    (progn
+			      (ps:chain console (log response))
+			      (show-toast "An error occured during making the deck, please try again" 3000)
+			      (let* ((error-code (ps:chain response error-code))
+				     (error-text (cond
+						   ((eql error-code 429) "Server currently busy, please try again later.")
+						   ((eql error-code 500) "Your documents are too long, they will take forever to process. Decrease the number and/or size of the documents and try again.")
+						   ((eql error-code 503) "Server currently experiencing some technical problems. Try again later.")
+						   ((eql error-code 504) "The documents are taking very long to process, won't finish in time. Decrease number and/or size of the documents and try again.")
+						   (t "An error occurred while processing the request. Please try again.")))))
+			      (setf (ps:chain progress-container style display) "none")
+			      (setf (ps:chain loading-indicator style display) "none")
+			      (setf (ps:chain loading-container style display) "none")
+			      (setf (ps:chain error-indicator inner-h-t-m-l) error-text)
+			      (setf (ps:chain error-container style display) "block")
+			      (setf (ps:chain error-indicator style display) "block")
+			      )))
+		      (progn (show-toast "An error occured during making the deck, please try again" 3000)
+			     (setf (ps:chain loading-container style display) "none")
+			     (setf (ps:chain progress-container style display) "none")
+			     (setf (ps:chain loading-indicator style display) "none")
+			     (setf (ps:chain error-container style display) "block")
+			     (setf (ps:chain error-indicator style display) "block")
+			     ))))
+
+	  ;; Send the request only if there's a description or files to send
+	  (when (> (length files-array) 0)
+	    (ps:chain xhr (send form-data))
+	    (show-toast "Data is being submitted" 1500))))
 
       (ps:chain submit-btn (add-event-listener "click" (lambda ()
 							 "submit button click listener"
-							 (ps:chain event (prevent-default))
-							 (upload-files))))
-
-      )))
+							 (upload-files)))))))
 
 (defun home-css ()
   "the css for the /home endpoint"
@@ -182,7 +301,7 @@
 	(link-blue "#1e90ff"))
     (cl-css:css
      `((body :text-align center :background-color ,bg-color :color ,fg-color :margin 20px :font-size 16px)
-       (button :background-color "#00b800" :border "none" :color "#cccccc" :padding "10px 20px" :text-align "center" :text-decoration "none" :display "inline-block" :font-size "16px" :margin "4px 2px" :cursor "pointer" :border-radius "12px" :font-weight bold)
+       (button :background-color "#00b800" :border "none" :color "#e8e8e8" :padding "10px 20px" :text-align "center" :text-decoration "none" :display "inline-block" :font-size "16px" :margin "4px 2px" :cursor "pointer" :border-radius "12px" :font-weight bold)
        (.submit-btn :float right :background-color "#00b800")
        (.upload-btn :float left)
        (.add-symbol :margin-right 8px :font-size :16px :font-weight bold)
@@ -229,11 +348,13 @@
        
        (".description:focus" :border none :color ,fg-color)
        (.description-title :margin-top 12px)
-       ("@media only screen and (min-width: 768px)" (body :font-size 18px :width 80% :margin-left 10%))
+       (.ad :width 75% :height 5% :margin-top 3%)
+       	(body :font-size 18px :width 80% :margin-left 10%)
        ("@media only screen and (max-width: 768px)"
 	(footer :margin-top 50% :text-align left :font-size 15px)
 	("a.feedback" :font-size 16px :font-weight bold)
 	(a :margin-left 2px :margin-right 2px)
+	(.ad :width 95%)
 	(".copyright" :color ,fg-color :text-align left))))))
 
 (define-easy-handler (pdf-to-ppt
@@ -247,16 +368,42 @@
 	    (:meta :name "keywords" :content "pdf to ppt, pdf to pptx, online, most accurate, free, fast")
 	    (:style (str (home-css))))
 	   (:body
-	    (:h1 "Convert PDF to POWERPOINT")
-	    (:p "Convert your PDFs to POWERPOINT.")
-	    (:form :action "/process/pdf-to-ppt"
-		   (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		   (:input :type "file" :id "pdf-input" :style "display: none;" :multiple t :allow "application/pdf")
-		   (:div :id "files-container")
-		   (:div :class "btns"
-			 (:button :class "upload-btn" :id "upload-btn"
-				  (:span :class "add-symbol" "+")
-				  "Add PDF")
-			 (:button :class "submit-btn" :id "submit-btn" "Convert to PPTX"))
-		   )
-	    (:script (str (home-js)))))))
+	    (:div :class "1main"
+		  (:h1 "Convert PDF to POWERPOINT")
+		  (:p "Convert your PDFs to POWERPOINT.")
+
+		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		  (:input :type "file" :id "file-input" :style "display: none;" :multiple t :allow "application/pdf")
+		  (:div :id "files-container")
+		  (:div :class "btns"
+			(:button :class "upload-btn" :id "upload-btn"
+				 (:span :class "add-symbol" "+")
+				 "Add image/PDF")
+			(:button :class "submit-btn" :id "submit-btn" "Convert to PPTX"))
+		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			(:div :class "bar")
+			(:div :class "bar")
+			(:div :class "bar"))
+		  (:div :id "progress-container" :style "display: none;"
+			(:progress :id "upload-progress" :value "0" :max "100"))
+		  (:div :id "loading-indicator" :style "display: none;"
+			"Submitting... Please wait.")
+		  (:div :id "error-container" :style "display: none;"
+			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			"An error occurred, please try again.")
+		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			"The deck has been created, downloaded and saved in downloads.")
+		  (:div :id "toast-container" :class "toast-container")
+		  
+		  
+		  (:script (str (home-js))))
+	    (:div :class "ad")))))
+
+
+(define-easy-handler (convert-pdf-to-pptx
+		      :uri (define-matching-functions "^/convert-pdf-to-pptx$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((files (post-parameters*)))
+    (format *terminal-io* "~%~a~%" files))
+  "okay")
