@@ -431,22 +431,22 @@
 	      (:div :class "main"
 		    (:h1 "Convert PDF to POWERPOINT")
 		    (:p "Your files have been converted to POWERPOINT.")
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download/pdf-to-pptx/~a" dir) "Download now."))
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    
 		    (:script (str (home-js))))
 	      (:div :class "ad"))))))
 
-(define-easy-handler (download-pdf-to-pptx
-		      :uri (define-matching-functions "^/download/pdf-to-(pptx|ppt|powerpoint)/([^/]+)$" *goodpdf-host*)
+(define-easy-handler (download-pdf-file
+		      :uri (define-matching-functions "^/download-file/([^/]+)$" *goodpdf-host*)
 		      :host *goodpdf-host*) ()
-  (let* ((dir (fourth (str:split "/" (script-name*))))
-	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
-    (trivia:match (get-downloadable-data dir path)
+  (let* ((dir (third (str:split "/" (script-name*)))))
+    (trivia:match (get-downloadable-data dir)
       ((list type file-name data)
        (setf (content-type*) type)
        (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
        (setf (content-length*) (primitive-object-size data))
-       data))))
+       data)
+      (else (format *terminal-io* "~a" else)))))
 
 ;; PDF TO DOCS
 
@@ -517,22 +517,11 @@
 	      (:div :class "main"
 		    (:h1 "Convert PDF to WORD")
 		    (:p "Your files have been converted to WORD.")
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download/pdf-to-word/~a" dir) "Download now."))
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    
 		    (:script (str (home-js))))
 	      (:div :class "ad"))))))
 
-(define-easy-handler (download-pdf-to-word
-		      :uri (define-matching-functions "^/download/pdf-to-(word|doc|docx)/([^/]+)$" *goodpdf-host*)
-		      :host *goodpdf-host*) ()
-  (let* ((dir (fourth (str:split "/" (script-name*))))
-	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
-    (trivia:match (get-downloadable-data dir path)
-      ((list type file-name data)
-       (setf (content-type*) type)
-       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
-       (setf (content-length*) (primitive-object-size data))
-       data))))
 
 ;;; DOCX TO PDF
 
@@ -584,7 +573,7 @@
 		      :host *goodpdf-host*) ()
   (let ((files (post-parameters*))
 	(uuid (to-string (make-v4))))
-    (convert-format-to-pdf uuid files)
+    (convert-format-to-format "pdf" uuid files)
     (jzon:stringify (hash-create `(("directory" ,uuid)
 				   ("success" t))))))
 
@@ -603,22 +592,9 @@
 	      (:div :class "main"
 		    (:h1 "Convert WORD to PDF")
 		    (:p "Your files have been converted to PDF.")
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download/word-to-pdf/~a" dir) "Download now."))
-		    
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    (:script (str (home-js))))
 	      (:div :class "ad"))))))
-
-(define-easy-handler (download-word-to-pdf
-		      :uri (define-matching-functions "^/download/(doc|docx|word)-to-pdf/([^/]+)$" *goodpdf-host*)
-		      :host *goodpdf-host*) ()
-  (let* ((dir (fourth (str:split "/" (script-name*))))
-	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
-    (trivia:match (get-downloadable-data dir path)
-      ((list type file-name data)
-       (setf (content-type*) type)
-       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
-       (setf (content-length*) (primitive-object-size data))
-       data))))
 
 ;;; PPTX TO PDF
 
@@ -670,7 +646,7 @@
 		      :host *goodpdf-host*) ()
   (let ((files (post-parameters*))
 	(uuid (to-string (make-v4))))
-    (convert-format-to-pdf uuid files)
+    (convert-format-to-format "pdf" uuid files)
     (jzon:stringify (hash-create `(("directory" ,uuid)
 				   ("success" t))))))
 
@@ -689,24 +665,232 @@
 	      (:div :class "main"
 		    (:h1 "Convert Powerpoint to PDF")
 		    (:p "Your files have been converted to PDF.")
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download/pptx-to-pdf/~a" dir) "Download now."))
-		    
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    (:script (str (home-js))))
 	      (:div :class "ad"))))))
 
-(define-easy-handler (download-pptx-to-pdf
-		      :uri (define-matching-functions "^/download/(ppt|pptx|powerpoint)-to-pdf/([^/]+)$" *goodpdf-host*)
-		      :host *goodpdf-host*) ()
-  (let* ((dir (fourth (str:split "/" (script-name*))))
-	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
-    (trivia:match (get-downloadable-data dir path)
-      ((list type file-name data)
-       (setf (content-type*) type)
-       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
-       (setf (content-length*) (primitive-object-size data))
-       data))))
+;;; Excel TO PDF
 
-;;;============ PDF CONVERSION FUNCTIONS ===========================
+(define-easy-handler (excel-to-pdf
+		      :uri (define-matching-functions "^/(xlsx|xls|excel)-to-pdf$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (with-html-output-to-string (*standard-output*)
+    (:html :lang "en"
+	   (:head
+	    (:title "Convert Excel sheets to Word Documents. Excel sheets to Word documents FREE online.")
+	    (:meta :name "description" :content "Convert Excel sheets to Word Documents in seconds.")
+	    (:meta :name "keywords" :content "excel to word, xlsx to word, xlsx to docx, xlsx to docx, xls to doc, online, free.")
+	    (:style (str (home-css))))
+	   (:body
+	    (:div :class "main"
+		  (:h1 "Convert Excel to Word")
+		  (:p "Convert your Excel sheets to Word Documents")
+
+		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:div :id "files-container")
+		  (:div :class "btns"
+			(:button :class "upload-btn" :id "upload-btn"
+				 (:span :class "add-symbol" "+")
+				 "Add Excel")
+			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			(:div :class "bar")
+			(:div :class "bar")
+			(:div :class "bar"))
+		  (:div :id "progress-container" :style "display: none;"
+			(:progress :id "upload-progress" :value "0" :max "100"))
+		  (:div :id "loading-indicator" :style "display: none;"
+			"Submitting... Please wait.")
+		  (:div :id "error-container" :style "display: none;"
+			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			"An error occurred, please try again.")
+		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			"The deck has been created, downloaded and saved in downloads.")
+		  (:div :id "toast-container" :class "toast-container")
+		  
+		  
+		  (:script (str (home-js))))
+	    (:div :class "ad")))))
+
+(define-easy-handler (convert-excel-to-pdf-route
+		      :uri (define-matching-functions "^/convert-(excel|xlsx|xls)-to-pdf$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((files (post-parameters*))
+	(uuid (to-string (make-v4))))
+    (convert-format-to-format "pdf" uuid files)
+    (jzon:stringify (hash-create `(("directory" ,uuid)
+				   ("success" t))))))
+
+(define-easy-handler (process-excel-to-pdf
+		      :uri (define-matching-functions "^/(excel|xlsx|xls)-to-pdf/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((dir (caddr (str:split "/" (script-name*)))))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	   (:head
+	    (:title "Convert Excel sheets to Word Documents. Excel sheets to Word documents FREE online.")
+	    (:meta :name "description" :content "Convert Excel sheets to Word Documents in seconds.")
+	    (:meta :name "keywords" :content "excel to word, xlsx to word, xlsx to docx, xlsx to docx, xls to doc, online, free.")
+	    (:style (str (home-css))))     
+	     (:body
+	      (:div :class "main"
+		    (:h1 "Convert Excel to Word.")
+		    (:p "Your files have been converted to Word.")
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:script (str (home-js))))
+	      (:div :class "ad"))))))
+
+
+;;; Excel TO Word
+
+;; (define-easy-handler (excel-to-word
+;; 		      :uri (define-matching-functions "^/(xlsx|xls|excel)-to-(doc|docx|word)$" *goodpdf-host*)
+;; 		      :host *goodpdf-host*) ()
+;;   (with-html-output-to-string (*standard-output*)
+;;     (:html :lang "en"
+;; 	   (:head
+;; 	    (:title "Convert Excel sheets to Word Documents. Excel sheets to Word documents FREE online.")
+;; 	    (:meta :name "description" :content "Convert Excel sheets to Word Documents in seconds.")
+;; 	    (:meta :name "keywords" :content "excel to word, xlsx to word, xlsx to docx, xlsx to docx, xls to doc, online, free.")
+;; 	    (:style (str (home-css))))
+;; 	   (:body
+;; 	    (:div :class "main"
+;; 		  (:h1 "Convert Excel to Word")
+;; 		  (:p "Convert your Excel sheets to Word Documents")
+
+;; 		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+;; 		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+;; 		  (:div :id "files-container")
+;; 		  (:div :class "btns"
+;; 			(:button :class "upload-btn" :id "upload-btn"
+;; 				 (:span :class "add-symbol" "+")
+;; 				 "Add Excel")
+;; 			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+;; 		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
+;; 			(:div :class "bar")
+;; 			(:div :class "bar")
+;; 			(:div :class "bar"))
+;; 		  (:div :id "progress-container" :style "display: none;"
+;; 			(:progress :id "upload-progress" :value "0" :max "100"))
+;; 		  (:div :id "loading-indicator" :style "display: none;"
+;; 			"Submitting... Please wait.")
+;; 		  (:div :id "error-container" :style "display: none;"
+;; 			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+;; 		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
+;; 			"An error occurred, please try again.")
+;; 		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+;; 			"The deck has been created, downloaded and saved in downloads.")
+;; 		  (:div :id "toast-container" :class "toast-container")
+		  
+		  
+;; 		  (:script (str (home-js))))
+;; 	    (:div :class "ad")))))
+
+;; (define-easy-handler (convert-excel-to-word-route
+;; 		      :uri (define-matching-functions "^/convert-(excel|xlsx|xls)-to-(doc|docx|word)$" *goodpdf-host*)
+;; 		      :host *goodpdf-host*) ()
+;;   (let ((files (post-parameters*))
+;; 	(uuid (to-string (make-v4))))
+;;     (convert-format-to-format "docx" uuid files)
+;;     (jzon:stringify (hash-create `(("directory" ,uuid)
+;; 				   ("success" t))))))
+
+;; (define-easy-handler (process-excel-to-word
+;; 		      :uri (define-matching-functions "^/(excel|xlsx|xls)-to-(doc|docx|word)/([^/]+)$" *goodpdf-host*)
+;; 		      :host *goodpdf-host*) ()
+;;   (let ((dir (caddr (str:split "/" (script-name*)))))
+;;     (with-html-output-to-string (*standard-output*)
+;;       (:html :lang "en"
+;; 	   (:head
+;; 	    (:title "Convert Excel sheets to Word Documents. Excel sheets to Word documents FREE online.")
+;; 	    (:meta :name "description" :content "Convert Excel sheets to Word Documents in seconds.")
+;; 	    (:meta :name "keywords" :content "excel to word, xlsx to word, xlsx to docx, xlsx to docx, xls to doc, online, free.")
+;; 	    (:style (str (home-css))))     
+;; 	     (:body
+;; 	      (:div :class "main"
+;; 		    (:h1 "Convert Excel to Word.")
+;; 		    (:p "Your files have been converted to Word.")
+;; 		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+;; 		    (:script (str (home-js))))
+;; 	      (:div :class "ad"))))))
+
+
+;; ;;; DOCX TO EXCEL
+
+;; (define-easy-handler (word-to-excel
+;; 		      :uri (define-matching-functions "^/(doc|docx|word)-to-(xlsx|xls|excel)$" *goodpdf-host*)
+;; 		      :host *goodpdf-host*) ()
+;;   (with-html-output-to-string (*standard-output*)
+;;     (:html :lang "en"
+;; 	   (:head
+;; 	    (:title "Convert Word to Excel. WORD documents to Excel sheets FREE online.")
+;; 	    (:meta :name "description" :content "Convert Word documnets to Excel sheets. Convert Word to Excel in seconds.")
+;; 	    (:meta :name "keywords" :content "word to excel, doc to xlsx, docx to xlsx, online, free.")
+;; 	    (:style (str (home-css))))
+;; 	   (:body
+;; 	    (:div :class "1main"
+;; 		  (:h1 "Convert WORD to Excel")
+;; 		  (:p "Convert your WORD documents to Excel sheets.")
+
+;; 		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add Docs button")
+;; 		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+;; 		  (:div :id "files-container")
+;; 		  (:div :class "btns"
+;; 			(:button :class "upload-btn" :id "upload-btn"
+;; 				 (:span :class "add-symbol" "+")
+;; 				 "Add Docs")
+;; 			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+;; 		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
+;; 			(:div :class "bar")
+;; 			(:div :class "bar")
+;; 			(:div :class "bar"))
+;; 		  (:div :id "progress-container" :style "display: none;"
+;; 			(:progress :id "upload-progress" :value "0" :max "100"))
+;; 		  (:div :id "loading-indicator" :style "display: none;"
+;; 			"Submitting... Please wait.")
+;; 		  (:div :id "error-container" :style "display: none;"
+;; 			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+;; 		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
+;; 			"An error occurred, please try again.")
+;; 		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+;; 			"The deck has been created, downloaded and saved in downloads.")
+;; 		  (:div :id "toast-container" :class "toast-container")
+		  
+		  
+;; 		  (:script (str (home-js))))
+;; 	    (:div :class "ad")))))
+
+;; (define-easy-handler (convert-word-to-excel-route
+;; 		      :uri (define-matching-functions "^/convert-(doc|docx|word)-to-(excel|xlsx|xls)$" *goodpdf-host*)
+;; 		      :host *goodpdf-host*) ()
+;;   (let ((files (post-parameters*))
+;; 	(uuid (to-string (make-v4))))
+;;     (convert-format-to-format "xlsx" uuid files)
+;;     (jzon:stringify (hash-create `(("directory" ,uuid)
+;; 				   ("success" t))))))
+
+;; (define-easy-handler (process-word-to-excel
+;; 		      :uri (define-matching-functions "^/(doc|docx|word)-to-(excel|xlsx|xls)/([^/]+)$" *goodpdf-host*)
+;; 		      :host *goodpdf-host*) ()
+;;   (let ((dir (caddr (str:split "/" (script-name*)))))
+;;     (with-html-output-to-string (*standard-output*)
+;;       (:html :lang "en"
+;; 	   (:head
+;; 	    (:title "Convert Word to Excel. WORD documents to Excel sheets FREE online.")
+;; 	    (:meta :name "description" :content "Convert Word documnets to Excel sheets. Convert Word to Excel in seconds.")
+;; 	    (:meta :name "keywords" :content "word to excel, doc to xlsx, docx to xlsx, online, free.")
+;; 	    (:style (str (home-css))))     
+;; 	     (:body
+;; 	      (:div :class "main"
+;; 		    (:h1 "Convert WORD to Excel")
+;; 		    (:p "Your files have been converted to Excel.")
+;; 		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+;; 		    (:script (str (home-js))))
+;; 	      (:div :class "ad"))))))
+
+;;;============ CONVERSION FUNCTIONS ===========================
 
 (defun pdf-to-format (dir file-path format &aux (infilter (trivia:match format
 							    ("pptx" "impress_pdf_import")
@@ -735,11 +919,12 @@
 
 (deftest convert-pdf-to-word (convert-pdf-to-format "docx" (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/goodpdf/files/test/test.pdf" "test.pdf" "application/pdf"))) nil)
 
-(defun get-downloadable-data (dir path)
+(defun get-downloadable-data (dir &aux (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
   "counts the number of files in a given directory, if it is 1, returns it and its content-type.
    if it has more than 1, then the files are compressed into a zip and that is returned to the user."
   (let* ((files (uiop:directory-files path))
 	 (len (length files)))
+    (format t "~%~a~%~%" len)
     (cond
       ((= len 1)
        (list (cl-mime-from-string:mime-type-from-string (namestring (car files)))
@@ -755,15 +940,15 @@
 	       zip-name
 	       (ninx::read-binary-file-to-octets zip-path)))))))
 
-(defun format-to-pdf (dir file-path)
+(defun format-to-format (to dir file-path)
   "convert a given format to pdf
   dir is the uuid dir name for the request."
-  (let ((cmd (format nil "/usr/bin/libreoffice --headless --convert-to pdf --outdir ~s ~s"
-		     (namestring (truename dir)) (namestring (truename file-path)))))
+  (let ((cmd (format nil "/usr/bin/libreoffice --headless --convert-to ~a --outdir ~s ~s"
+		     to (namestring (truename dir)) (namestring (truename file-path)))))
     (uiop:run-program cmd)
     (delete-file file-path)))
 
-(defun convert-format-to-pdf ( uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" uuid)))
+(defun convert-format-to-format (to uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" uuid)))
   "given a list of post parameters, create a directory for them at uuid.
    copy all files to it, then convert them to pptx, remove the pdf files,
    and return after that."
@@ -773,5 +958,9 @@
       ((list _ path file-name _)
        (let ((pdf-path (format nil "~a~a" dir file-name)))
     	  (uiop:copy-file path pdf-path)
-	 (format-to-pdf dir pdf-path)))
+	 (format-to-format to dir pdf-path)))
       (_ nil))))
+
+(deftest convert-xlsx-to-docx (convert-format-to-format "docx" (to-string (make-v4)) '(("file" #p"~/common-lisp/ninx/apps/goodpdf/test.xlsx" "test.xlsx" "any"))))
+
+(deftest convert-xlsx-to-pdf (convert-format-to-format "pdf" (to-string (make-v4)) '(("file" #p"~/common-lisp/ninx/apps/goodpdf/test.xlsx" "test.xlsx" "any"))))
