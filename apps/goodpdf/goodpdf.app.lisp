@@ -743,6 +743,81 @@
 	      (:div :class "ad"))))))
 
 
+
+;;; Epub TO PDF
+
+(define-easy-handler (epub-to-pdf-route
+		      :uri (define-matching-functions "^/epub-to-pdf$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (with-html-output-to-string (*standard-output*)
+    (:html :lang "en"
+	   (:head
+	    (:title "Convert EPUB to PDF. FREE online.")
+	    (:meta :name "description" :content "Convert EPUB to PDF in seconds.")
+	    (:meta :name "keywords" :content "epub to pdf, online, free.")
+	    (:style (str (home-css))))
+	   (:body
+	    (:div :class "main"
+		  (:h1 "Convert EPUB to PDF")
+		  (:p "Convert your EPUB files to PDF.")
+
+		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add EPUB button")
+		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:div :id "files-container")
+		  (:div :class "btns"
+			(:button :class "upload-btn" :id "upload-btn"
+				 (:span :class "add-symbol" "+")
+				 "Add EPUB")
+			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			(:div :class "bar")
+			(:div :class "bar")
+			(:div :class "bar"))
+		  (:div :id "progress-container" :style "display: none;"
+			(:progress :id "upload-progress" :value "0" :max "100"))
+		  (:div :id "loading-indicator" :style "display: none;"
+			"Submitting... Please wait.")
+		  (:div :id "error-container" :style "display: none;"
+			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			"An error occurred, please try again.")
+		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			"The deck has been created, downloaded and saved in downloads.")
+		  (:div :id "toast-container" :class "toast-container")
+		  
+		  
+		  (:script (str (home-js))))
+	    (:div :class "ad")))))
+
+(define-easy-handler (convert-epub-to-pdf-route
+		      :uri (define-matching-functions "^/convert-epub-to-pdf$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((files (post-parameters*))
+	(uuid (to-string (make-v4))))
+    (convert-epub-to-pdf uuid files)
+    (jzon:stringify (hash-create `(("directory" ,uuid)
+				   ("success" t))))))
+
+(define-easy-handler (process-epub-to-pdf
+		      :uri (define-matching-functions "^/epub-to-pdf/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((dir (caddr (str:split "/" (script-name*)))))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	   (:head
+	    (:title "Convert EPUB to PDF. FREE online.")
+	    (:meta :name "description" :content "Convert EPUB to PDF in seconds.")
+	    (:meta :name "keywords" :content "epub to pdf, online, free.")
+	    (:style (str (home-css))))     
+	     (:body
+	      (:div :class "main"
+		    (:h1 "Convert EPUB to PDF.")
+		    (:p "Your files have been converted to PDF.")
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:script (str (home-js))))
+	      (:div :class "ad"))))))
+
+
 ;;; Excel TO Word
 
 ;; (define-easy-handler (excel-to-word
@@ -894,7 +969,8 @@
 
 (defun pdf-to-format (dir file-path format &aux (infilter (trivia:match format
 							    ("pptx" "impress_pdf_import")
-							    ("docx" "writer_pdf_import"))))
+							    ("docx" "writer_pdf_import")
+							    )))
   "convert a file pdf to a given format
   dir is the uuid dir name for the request."
   (let ((cmd (format nil "/usr/bin/libreoffice --headless --infilter=~s --convert-to ~a --outdir ~s ~s"
@@ -914,6 +990,30 @@
     	  (uiop:copy-file path pdf-path)
 	 (pdf-to-format dir pdf-path format)))
       (_ nil))))
+
+
+(defun epub-to-pdf (epub-path pdf-path)
+  "convert a file pdf to a given format
+  dir is the uuid dir name for the request."
+  (let* ((cmd (format nil "/usr/bin/pandoc -f epub -t pdf ~a -o ~a" epub-path pdf-path)))
+    (uiop:run-program cmd)
+    (delete-file epub-path)))
+
+(defun convert-epub-to-pdf (uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" uuid)))
+  "given a list of post parameters, create a directory for them at uuid.
+   copy all files to it, then convert them to pptx, remove the pdf files,
+   and return after that."
+  (ensure-directories-exist dir)
+  (dolist (param post-parameters)
+    (trivia:match param
+      ((list _ path file-name "application/epub+zip")
+       (let ((epub-path (format nil "~a~a" dir file-name))
+	     (pdf-path (format nil "~a~a.pdf" dir (pathname-name file-name))))
+    	  (uiop:copy-file path epub-path)
+	 (epub-to-pdf epub-path pdf-path)))
+      (_ nil))))
+
+(deftest convert-epub-to-pdf (convert-epub-to-pdf (to-string (make-v4)) '(("test.epub" #p"~/common-lisp/ninx/apps/goodpdf/test.epub" "test.epub" "application/epub+zip"))) nil)
 
 (deftest convert-pdf-to-pptx (convert-pdf-to-format "pptx" (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/goodpdf/files/test/test.pdf" "test.pdf" "application/pdf"))) nil)
 

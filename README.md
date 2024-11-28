@@ -85,3 +85,6 @@ Then in SBCL's shell
 
 (start-server)
 ```
+
+### For GoodPDF.
+install default-jre libreoffice-java texlive-latex-base pandoc texlive-latex-recommended
