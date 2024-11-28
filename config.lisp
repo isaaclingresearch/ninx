@@ -118,3 +118,20 @@
 
        ;; Return the handler function name
        handler-fn-name)))
+
+(defun read-binary-file-to-octets (file-path)
+  "Read the binary file at FILE-PATH and return its contents as a vector of octets."
+  (with-open-file (stream file-path :direction :input :element-type '(unsigned-byte 8))
+    (let* ((file-size (file-length stream))
+           (octets (make-array file-size :element-type '(unsigned-byte 8))))
+      (read-sequence octets stream)
+      octets)))
+
+
+(defun write-octets-to-binary-file (octets file-path)
+  "Write the octet array OCTETS to the binary file at FILE-PATH."
+  (with-open-file (stream file-path :direction :output
+                                    :element-type '(unsigned-byte 8)
+                                    :if-exists :supersede
+                                    :if-does-not-exist :create)
+    (write-sequence octets stream)))

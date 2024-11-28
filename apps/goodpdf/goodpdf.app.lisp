@@ -3,8 +3,9 @@
 (defun home-js ()
   "the js for the home page"
   (ps:ps
+    
     (defun scroll-to-bottom ()
-      (ps:chain window (scroll-to (create
+      (ps:chain window (scroll-to (ps:create
 				   top (ps:chain document body scroll-height)
 				   behavior "smooth"))))
     
@@ -254,7 +255,7 @@
 			(setf (ps:chain progress-container style display) "none")
 			(setf (ps:chain loading-indicator style display) "none")
 			(if (eql (ps:chain response success) t)
-			    (setf (ps:chain window location href) (+ "/deck/" (ps:chain response docid) "/" (ps:chain response title)))
+			    (setf (ps:chain window location href) (+ "/pdf-to-pptx/" (ps:chain response directory)))
 			    ;; (progn (download-file (ps:chain response data) (ps:chain response title))
 			    ;; 	   (incr-user-doc-count)
 			    ;; 	   (change-user-balance (ps:chain response balance)))
@@ -349,7 +350,9 @@
        (".description:focus" :border none :color ,fg-color)
        (.description-title :margin-top 12px)
        (.ad :width 75% :height 5% :margin-top 3%)
-       	(body :font-size 18px :width 80% :margin-left 10%)
+       (body :font-size 18px :width 80% :margin-left 10%)
+       ("a.download-btn" :color "#e8e8e8" :text-decoration none)
+       ("a:visited.download-btn" :color "#e8e8e8" :text-decoration none)
        ("@media only screen and (max-width: 768px)"
 	(footer :margin-top 50% :text-align left :font-size 15px)
 	("a.feedback" :font-size 16px :font-weight bold)
@@ -400,10 +403,86 @@
 		  (:script (str (home-js))))
 	    (:div :class "ad")))))
 
+(defun pdf-to-pptx (dir file-path)
+  "convert a file pdf to a pptx
+  dir is the uuid dir name for the request."
+  (let ((cmd (format nil "/usr/bin/soffice --infilter=\"impress_pdf_import\" --convert-to pptx --outdir ~s ~s"
+		     (namestring (truename dir)) (namestring (truename file-path)))))
+    (uiop:run-program cmd)
+    (delete-file file-path)))
 
-(define-easy-handler (convert-pdf-to-pptx
+(defun convert-pdf-to-pptx (uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" uuid)))
+  "given a list of post parameters, create a directory for them at uuid.
+   copy all files to it, then convert them to pptx, remove the pdf files,
+   and return after that."
+  (ensure-directories-exist dir)
+  (dolist (param post-parameters)
+    (trivia:match param
+      ((list _ path file-name "application/pdf")
+       (let ((pdf-path (format nil "~a~a" dir file-name)))
+    	  (uiop:copy-file path pdf-path)
+	 (pdf-to-pptx dir pdf-path)))
+      (_ nil))))
+
+(deftest convert-pdf-to-pptx (convert-pdf-to-pptx (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/goodpdf/files/test/test.pdf" "test.pdf" "application/pdf"))) nil)
+
+(define-easy-handler (convert-pdf-to-pptx-route
 		      :uri (define-matching-functions "^/convert-pdf-to-pptx$" *goodpdf-host*)
 		      :host *goodpdf-host*) ()
-  (let ((files (post-parameters*)))
-    (format *terminal-io* "~%~a~%" files))
-  "okay")
+  (let ((files (post-parameters*))
+	(uuid (to-string (make-v4))))
+    (convert-pdf-to-pptx uuid files)
+    (jzon:stringify (hash-create `(("directory" ,uuid)
+				   ("success" t))))))
+
+(define-easy-handler (process-pdf-to-pptx
+		      :uri (define-matching-functions "^/pdf-to-pptx/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((dir (caddr (str:split "/" (script-name*)))))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:title "Convert PDF to Powerpoint. PDF to PPT slides FREE online.")
+	      (:meta :name "description" :content "Convert PDF to editable Powerpoint PPT and PPTX slideshows and presentations. Convert PDF to the most accurate PPT in seconds.")
+	      (:meta :name "keywords" :content "pdf to ppt, pdf to pptx, online, most accurate, free, fast")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (:h1 "Convert PDF to POWERPOINT")
+		    (:p "Your files have been converted to POWERPOINT.")
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download/pdf-to-pptx/~a" dir) "Download now."))
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad"))))))
+
+(defun get-downloadable-data (dir path)
+  "counts the number of files in a given directory, if it is 1, returns it and its content-type.
+   if it has more than 1, then the files are compressed into a zip and that is returned to the user."
+  (let* ((files (uiop:directory-files path))
+	 (len (length files)))
+    (cond
+      ((= len 1)
+       (list (cl-mime-from-string:mime-type-from-string (namestring (car files)))
+	     (format nil "~a.~a" (pathname-name (car files)) (pathname-type (car files)))
+	     (ninx::read-binary-file-to-octets (car files))))
+      ((> len 1)
+       (let* ((zip-name (format nil "~a.zip" dir))
+	      (zip-path (namestring (format nil "~~/common-lisp/ninx/apps/goodpdf/zip/~a" zip-name))))
+	 (uiop:run-program (format nil "/usr/bin/zip -r -j ~a ~a"
+				   zip-path
+				   (namestring path)))
+	 (list "application/zip"
+	       zip-name
+	       (ninx::read-binary-file-to-octets zip-path)))))))
+
+(define-easy-handler (download-pdf-to-pptx
+		      :uri (define-matching-functions "^/download/pdf-to-pptx/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let* ((dir (fourth (str:split "/" (script-name*))))
+	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
+    (trivia:match (get-downloadable-data dir path)
+      ((list type file-name data)
+       (setf (content-type*) type)
+       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
+       (setf (content-length*) (primitive-object-size data))
+       data))))
