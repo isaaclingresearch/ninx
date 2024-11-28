@@ -222,7 +222,8 @@
 	      (ps:chain form-data (append (+ "file_" i) (aref files-array i)))))
 	  
 	  ;; Open the request
-	  (ps:chain xhr (open "POST" "/convert-pdf-to-pptx" t))
+	  (let* ((action (ps:chain window location pathname)))
+	    (ps:chain xhr (open "POST" (+ "/convert-" (ps:chain action (substr 1))) t)))
 	  ;; Track progress
 	  (setf (ps:chain xhr upload onprogress)
 		(lambda (event)
@@ -255,7 +256,10 @@
 			(setf (ps:chain progress-container style display) "none")
 			(setf (ps:chain loading-indicator style display) "none")
 			(if (eql (ps:chain response success) t)
-			    (setf (ps:chain window location href) (+ "/pdf-to-pptx/" (ps:chain response directory)))
+			    (setf (ps:chain window location href) 
+				  (+ (ps:chain window location pathname) "/" (ps:chain response directory)))
+
+	;;		    (setf (ps:chain window location href) (+ "/pdf-to-pptx/" (ps:chain response directory)))
 			    ;; (progn (download-file (ps:chain response data) (ps:chain response title))
 			    ;; 	   (incr-user-doc-count)
 			    ;; 	   (change-user-balance (ps:chain response balance)))
@@ -361,7 +365,7 @@
 	(".copyright" :color ,fg-color :text-align left))))))
 
 (define-easy-handler (pdf-to-ppt
-		      :uri (define-matching-functions "^/pdf-to-ppt$" *goodpdf-host*)
+		      :uri (define-matching-functions "^/pdf-to-(ppt|pptx|powerpoint)$" *goodpdf-host*)
 		      :host *goodpdf-host*) ()
   (with-html-output-to-string (*standard-output*)
     (:html :lang "en"
@@ -381,7 +385,7 @@
 		  (:div :class "btns"
 			(:button :class "upload-btn" :id "upload-btn"
 				 (:span :class "add-symbol" "+")
-				 "Add image/PDF")
+				 "Add PDF")
 			(:button :class "submit-btn" :id "submit-btn" "Convert to PPTX"))
 		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
 			(:div :class "bar")
@@ -403,40 +407,17 @@
 		  (:script (str (home-js))))
 	    (:div :class "ad")))))
 
-(defun pdf-to-pptx (dir file-path)
-  "convert a file pdf to a pptx
-  dir is the uuid dir name for the request."
-  (let ((cmd (format nil "/usr/bin/soffice --infilter=\"impress_pdf_import\" --convert-to pptx --outdir ~s ~s"
-		     (namestring (truename dir)) (namestring (truename file-path)))))
-    (uiop:run-program cmd)
-    (delete-file file-path)))
-
-(defun convert-pdf-to-pptx (uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" uuid)))
-  "given a list of post parameters, create a directory for them at uuid.
-   copy all files to it, then convert them to pptx, remove the pdf files,
-   and return after that."
-  (ensure-directories-exist dir)
-  (dolist (param post-parameters)
-    (trivia:match param
-      ((list _ path file-name "application/pdf")
-       (let ((pdf-path (format nil "~a~a" dir file-name)))
-    	  (uiop:copy-file path pdf-path)
-	 (pdf-to-pptx dir pdf-path)))
-      (_ nil))))
-
-(deftest convert-pdf-to-pptx (convert-pdf-to-pptx (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/goodpdf/files/test/test.pdf" "test.pdf" "application/pdf"))) nil)
-
 (define-easy-handler (convert-pdf-to-pptx-route
-		      :uri (define-matching-functions "^/convert-pdf-to-pptx$" *goodpdf-host*)
+		      :uri (define-matching-functions "^/convert-pdf-to-(ppt|pptx|powerpoint)$" *goodpdf-host*)
 		      :host *goodpdf-host*) ()
   (let ((files (post-parameters*))
 	(uuid (to-string (make-v4))))
-    (convert-pdf-to-pptx uuid files)
+    (convert-pdf-to-format "pptx" uuid files)
     (jzon:stringify (hash-create `(("directory" ,uuid)
 				   ("success" t))))))
 
 (define-easy-handler (process-pdf-to-pptx
-		      :uri (define-matching-functions "^/pdf-to-pptx/([^/]+)$" *goodpdf-host*)
+		      :uri (define-matching-functions "^/pdf-to-(ppt|pptx|powerpoint)/([^/]+)$" *goodpdf-host*)
 		      :host *goodpdf-host*) ()
   (let ((dir (caddr (str:split "/" (script-name*)))))
     (with-html-output-to-string (*standard-output*)
@@ -454,6 +435,305 @@
 		    
 		    (:script (str (home-js))))
 	      (:div :class "ad"))))))
+
+(define-easy-handler (download-pdf-to-pptx
+		      :uri (define-matching-functions "^/download/pdf-to-(pptx|ppt|powerpoint)/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let* ((dir (fourth (str:split "/" (script-name*))))
+	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
+    (trivia:match (get-downloadable-data dir path)
+      ((list type file-name data)
+       (setf (content-type*) type)
+       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
+       (setf (content-length*) (primitive-object-size data))
+       data))))
+
+;; PDF TO DOCS
+
+(define-easy-handler (pdf-to-word
+		      :uri (define-matching-functions "^/pdf-to-(word|doc|docx)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (with-html-output-to-string (*standard-output*)
+    (:html :lang "en"
+	   (:head
+	    (:title "Convert PDF to Word. PDF to Word FREE online.")
+	    (:meta :name "description" :content "Convert PDF to editable Word documents. Convert PDF to the most accurate Word documents in seconds.")
+	    (:meta :name "keywords" :content "pdf to word, pdf to doc, pdf to docx, online, most accurate, free, fast")
+	    (:style (str (home-css))))
+	   (:body
+	    (:div :class "1main"
+		  (:h1 "Convert PDF to WORD")
+		  (:p "Convert your PDFs to WORD.")
+
+		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:div :id "files-container")
+		  (:div :class "btns"
+			(:button :class "upload-btn" :id "upload-btn"
+				 (:span :class "add-symbol" "+")
+				 "Add PDF")
+			(:button :class "submit-btn" :id "submit-btn" "Convert to DOCX"))
+		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			(:div :class "bar")
+			(:div :class "bar")
+			(:div :class "bar"))
+		  (:div :id "progress-container" :style "display: none;"
+			(:progress :id "upload-progress" :value "0" :max "100"))
+		  (:div :id "loading-indicator" :style "display: none;"
+			"Submitting... Please wait.")
+		  (:div :id "error-container" :style "display: none;"
+			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			"An error occurred, please try again.")
+		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			"The deck has been created, downloaded and saved in downloads.")
+		  (:div :id "toast-container" :class "toast-container")
+		  
+		  
+		  (:script (str (home-js))))
+	    (:div :class "ad")))))
+
+(define-easy-handler (convert-pdf-to-word-route
+		      :uri (define-matching-functions "^/convert-pdf-to-(word|doc|docx)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((files (post-parameters*))
+	(uuid (to-string (make-v4))))
+    (convert-pdf-to-format "docx" uuid files)
+    (jzon:stringify (hash-create `(("directory" ,uuid)
+				   ("success" t))))))
+
+(define-easy-handler (process-pdf-to-word
+		      :uri (define-matching-functions "^/pdf-to-(word|doc|docx)/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((dir (caddr (str:split "/" (script-name*)))))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:title "Convert PDF to WORD. PDF to WORD documents FREE online.")
+	      (:meta :name "description" :content "Convert PDF to editable Word documents. Convert PDF to the most accurate Word documents in seconds.")
+	      (:meta :name "keywords" :content "pdf to word, pdf to doc, pdf to docx, online, most accurate, free, fast")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (:h1 "Convert PDF to WORD")
+		    (:p "Your files have been converted to WORD.")
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download/pdf-to-word/~a" dir) "Download now."))
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad"))))))
+
+(define-easy-handler (download-pdf-to-word
+		      :uri (define-matching-functions "^/download/pdf-to-(word|doc|docx)/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let* ((dir (fourth (str:split "/" (script-name*))))
+	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
+    (trivia:match (get-downloadable-data dir path)
+      ((list type file-name data)
+       (setf (content-type*) type)
+       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
+       (setf (content-length*) (primitive-object-size data))
+       data))))
+
+;;; DOCX TO PDF
+
+(define-easy-handler (word-to-pdf
+		      :uri (define-matching-functions "^/(doc|docx|word)-to-pdf$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (with-html-output-to-string (*standard-output*)
+    (:html :lang "en"
+	   (:head
+	    (:title "Convert Word to PDF. WORD documents to PDF FREE online.")
+	    (:meta :name "description" :content "Convert Word documnets to PDFs. Convert Word to PDFs in seconds.")
+	    (:meta :name "keywords" :content "word to pdf, doc to pdf, docx to pdf, online, free.")
+	    (:style (str (home-css))))
+	   (:body
+	    (:div :class "1main"
+		  (:h1 "Convert WORD to PDF")
+		  (:p "Convert your WORD documents to PDFs.")
+
+		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:div :id "files-container")
+		  (:div :class "btns"
+			(:button :class "upload-btn" :id "upload-btn"
+				 (:span :class "add-symbol" "+")
+				 "Add Docs")
+			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			(:div :class "bar")
+			(:div :class "bar")
+			(:div :class "bar"))
+		  (:div :id "progress-container" :style "display: none;"
+			(:progress :id "upload-progress" :value "0" :max "100"))
+		  (:div :id "loading-indicator" :style "display: none;"
+			"Submitting... Please wait.")
+		  (:div :id "error-container" :style "display: none;"
+			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			"An error occurred, please try again.")
+		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			"The deck has been created, downloaded and saved in downloads.")
+		  (:div :id "toast-container" :class "toast-container")
+		  
+		  
+		  (:script (str (home-js))))
+	    (:div :class "ad")))))
+
+(define-easy-handler (convert-word-to-pdf-route
+		      :uri (define-matching-functions "^/convert-(doc|docx|word)-to-pdf$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((files (post-parameters*))
+	(uuid (to-string (make-v4))))
+    (convert-format-to-pdf uuid files)
+    (jzon:stringify (hash-create `(("directory" ,uuid)
+				   ("success" t))))))
+
+(define-easy-handler (process-word-to-pdf
+		      :uri (define-matching-functions "^/(doc|docx|word)-to-pdf/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((dir (caddr (str:split "/" (script-name*)))))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:title "Convert Word to PDF. WORD documents to PDF FREE online.")
+	      (:meta :name "description" :content "Convert Word documnets to PDFs. Convert Word to PDFs in seconds.")
+	      (:meta :name "keywords" :content "word to pdf, doc to pdf, docx to pdf, online, free.")
+	      (:style (str (home-css))))     
+	     (:body
+	      (:div :class "main"
+		    (:h1 "Convert WORD to PDF")
+		    (:p "Your files have been converted to PDF.")
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download/word-to-pdf/~a" dir) "Download now."))
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad"))))))
+
+(define-easy-handler (download-word-to-pdf
+		      :uri (define-matching-functions "^/download/(doc|docx|word)-to-pdf/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let* ((dir (fourth (str:split "/" (script-name*))))
+	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
+    (trivia:match (get-downloadable-data dir path)
+      ((list type file-name data)
+       (setf (content-type*) type)
+       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
+       (setf (content-length*) (primitive-object-size data))
+       data))))
+
+;;; PPTX TO PDF
+
+(define-easy-handler (pptx-to-pdf
+		      :uri (define-matching-functions "^/(ppt|pptx|powerpoint)-to-pdf$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (with-html-output-to-string (*standard-output*)
+    (:html :lang "en"
+	   (:head
+	    (:title "Convert Powerpoint to PDF. Powerpoint slides to PDF FREE online.")
+	    (:meta :name "description" :content "Convert Powerpoint slides to PDFs. Convert Powerpoint to PDFs in seconds.")
+	    (:meta :name "keywords" :content "powerpoint to pdf, ppt to pdf, pptx to pdf, online, free.")
+	    (:style (str (home-css))))
+	   (:body
+	    (:div :class "1main"
+		  (:h1 "Convert Powerpoint to PDF")
+		  (:p "Convert your Powerpoint documents to PDFs.")
+
+		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:div :id "files-container")
+		  (:div :class "btns"
+			(:button :class "upload-btn" :id "upload-btn"
+				 (:span :class "add-symbol" "+")
+				 "Add Powerpoint")
+			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			(:div :class "bar")
+			(:div :class "bar")
+			(:div :class "bar"))
+		  (:div :id "progress-container" :style "display: none;"
+			(:progress :id "upload-progress" :value "0" :max "100"))
+		  (:div :id "loading-indicator" :style "display: none;"
+			"Submitting... Please wait.")
+		  (:div :id "error-container" :style "display: none;"
+			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			"An error occurred, please try again.")
+		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			"The deck has been created, downloaded and saved in downloads.")
+		  (:div :id "toast-container" :class "toast-container")
+		  
+		  
+		  (:script (str (home-js))))
+	    (:div :class "ad")))))
+
+(define-easy-handler (convert-pptx-to-pdf-route
+		      :uri (define-matching-functions "^/convert-(ppt|pptx|powerpoint)-to-pdf$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((files (post-parameters*))
+	(uuid (to-string (make-v4))))
+    (convert-format-to-pdf uuid files)
+    (jzon:stringify (hash-create `(("directory" ,uuid)
+				   ("success" t))))))
+
+(define-easy-handler (process-pptx-to-pdf
+		      :uri (define-matching-functions "^/(ppt|pptx|powerpoint)-to-pdf/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let ((dir (caddr (str:split "/" (script-name*)))))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	(:head
+	    (:title "Convert Powerpoint to PDF. Powerpoint slides to PDF FREE online.")
+	    (:meta :name "description" :content "Convert Powerpoint slides to PDFs. Convert Powerpoint to PDFs in seconds.")
+	    (:meta :name "keywords" :content "powerpoint to pdf, ppt to pdf, pptx to pdf, online, free.")
+	    (:style (str (home-css))))     
+	     (:body
+	      (:div :class "main"
+		    (:h1 "Convert Powerpoint to PDF")
+		    (:p "Your files have been converted to PDF.")
+		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download/pptx-to-pdf/~a" dir) "Download now."))
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad"))))))
+
+(define-easy-handler (download-pptx-to-pdf
+		      :uri (define-matching-functions "^/download/(ppt|pptx|powerpoint)-to-pdf/([^/]+)$" *goodpdf-host*)
+		      :host *goodpdf-host*) ()
+  (let* ((dir (fourth (str:split "/" (script-name*))))
+	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
+    (trivia:match (get-downloadable-data dir path)
+      ((list type file-name data)
+       (setf (content-type*) type)
+       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
+       (setf (content-length*) (primitive-object-size data))
+       data))))
+
+;;;============ PDF CONVERSION FUNCTIONS ===========================
+
+(defun pdf-to-format (dir file-path format &aux (infilter (trivia:match format
+							    ("pptx" "impress_pdf_import")
+							    ("docx" "writer_pdf_import"))))
+  "convert a file pdf to a given format
+  dir is the uuid dir name for the request."
+  (let ((cmd (format nil "/usr/bin/libreoffice --headless --infilter=~s --convert-to ~a --outdir ~s ~s"
+		     infilter format (namestring (truename dir)) (namestring (truename file-path)))))
+    (uiop:run-program cmd)
+    (delete-file file-path)))
+
+(defun convert-pdf-to-format (format uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" uuid)))
+  "given a list of post parameters, create a directory for them at uuid.
+   copy all files to it, then convert them to pptx, remove the pdf files,
+   and return after that."
+  (ensure-directories-exist dir)
+  (dolist (param post-parameters)
+    (trivia:match param
+      ((list _ path file-name "application/pdf")
+       (let ((pdf-path (format nil "~a~a" dir file-name)))
+    	  (uiop:copy-file path pdf-path)
+	 (pdf-to-format dir pdf-path format)))
+      (_ nil))))
+
+(deftest convert-pdf-to-pptx (convert-pdf-to-format "pptx" (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/goodpdf/files/test/test.pdf" "test.pdf" "application/pdf"))) nil)
+
+(deftest convert-pdf-to-word (convert-pdf-to-format "docx" (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/goodpdf/files/test/test.pdf" "test.pdf" "application/pdf"))) nil)
 
 (defun get-downloadable-data (dir path)
   "counts the number of files in a given directory, if it is 1, returns it and its content-type.
@@ -475,14 +755,23 @@
 	       zip-name
 	       (ninx::read-binary-file-to-octets zip-path)))))))
 
-(define-easy-handler (download-pdf-to-pptx
-		      :uri (define-matching-functions "^/download/pdf-to-pptx/([^/]+)$" *goodpdf-host*)
-		      :host *goodpdf-host*) ()
-  (let* ((dir (fourth (str:split "/" (script-name*))))
-	 (path (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" dir)))
-    (trivia:match (get-downloadable-data dir path)
-      ((list type file-name data)
-       (setf (content-type*) type)
-       (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
-       (setf (content-length*) (primitive-object-size data))
-       data))))
+(defun format-to-pdf (dir file-path)
+  "convert a given format to pdf
+  dir is the uuid dir name for the request."
+  (let ((cmd (format nil "/usr/bin/libreoffice --headless --convert-to pdf --outdir ~s ~s"
+		     (namestring (truename dir)) (namestring (truename file-path)))))
+    (uiop:run-program cmd)
+    (delete-file file-path)))
+
+(defun convert-format-to-pdf ( uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/goodpdf/files/~a/" uuid)))
+  "given a list of post parameters, create a directory for them at uuid.
+   copy all files to it, then convert them to pptx, remove the pdf files,
+   and return after that."
+  (ensure-directories-exist dir)
+  (dolist (param post-parameters)
+    (trivia:match param
+      ((list _ path file-name _)
+       (let ((pdf-path (format nil "~a~a" dir file-name)))
+    	  (uiop:copy-file path pdf-path)
+	 (format-to-pdf dir pdf-path)))
+      (_ nil))))
