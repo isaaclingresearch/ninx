@@ -373,6 +373,11 @@
 	    (:title "Convert PDF to Powerpoint. PDF to PPT slides FREE online.")
 	    (:meta :name "description" :content "Convert PDF to editable Powerpoint PPT and PPTX slideshows and presentations. Convert PDF to the most accurate PPT in seconds.")
 	    (:meta :name "keywords" :content "pdf to ppt, pdf to pptx, online, most accurate, free, fast")
+	    (:meta :charset "UTF-8")
+	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")    
 	    (:style (str (home-css))))
 	   (:body
 	    (:div :class "1main"
@@ -423,6 +428,12 @@
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	      (:title "Convert PDF to Powerpoint. PDF to PPT slides FREE online.")
 	      (:meta :name "description" :content "Convert PDF to editable Powerpoint PPT and PPTX slideshows and presentations. Convert PDF to the most accurate PPT in seconds.")
 	      (:meta :name "keywords" :content "pdf to ppt, pdf to pptx, online, most accurate, free, fast")
@@ -456,6 +467,12 @@
   (with-html-output-to-string (*standard-output*)
     (:html :lang "en"
 	   (:head
+	    (:meta :charset "UTF-8")
+	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	    (:title "Convert PDF to Word. PDF to Word FREE online.")
 	    (:meta :name "description" :content "Convert PDF to editable Word documents. Convert PDF to the most accurate Word documents in seconds.")
 	    (:meta :name "keywords" :content "pdf to word, pdf to doc, pdf to docx, online, most accurate, free, fast")
@@ -509,6 +526,12 @@
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	      (:title "Convert PDF to WORD. PDF to WORD documents FREE online.")
 	      (:meta :name "description" :content "Convert PDF to editable Word documents. Convert PDF to the most accurate Word documents in seconds.")
 	      (:meta :name "keywords" :content "pdf to word, pdf to doc, pdf to docx, online, most accurate, free, fast")
@@ -531,6 +554,12 @@
   (with-html-output-to-string (*standard-output*)
     (:html :lang "en"
 	   (:head
+	    (:meta :charset "UTF-8")
+	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	    (:title "Convert Word to PDF. WORD documents to PDF FREE online.")
 	    (:meta :name "description" :content "Convert Word documnets to PDFs. Convert Word to PDFs in seconds.")
 	    (:meta :name "keywords" :content "word to pdf, doc to pdf, docx to pdf, online, free.")
@@ -584,6 +613,12 @@
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	      (:title "Convert Word to PDF. WORD documents to PDF FREE online.")
 	      (:meta :name "description" :content "Convert Word documnets to PDFs. Convert Word to PDFs in seconds.")
 	      (:meta :name "keywords" :content "word to pdf, doc to pdf, docx to pdf, online, free.")
@@ -604,6 +639,12 @@
   (with-html-output-to-string (*standard-output*)
     (:html :lang "en"
 	   (:head
+	    (:meta :charset "UTF-8")
+	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	    (:title "Convert Powerpoint to PDF. Powerpoint slides to PDF FREE online.")
 	    (:meta :name "description" :content "Convert Powerpoint slides to PDFs. Convert Powerpoint to PDFs in seconds.")
 	    (:meta :name "keywords" :content "powerpoint to pdf, ppt to pdf, pptx to pdf, online, free.")
@@ -656,10 +697,16 @@
   (let ((dir (caddr (str:split "/" (script-name*)))))
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
-	(:head
-	    (:title "Convert Powerpoint to PDF. Powerpoint slides to PDF FREE online.")
-	    (:meta :name "description" :content "Convert Powerpoint slides to PDFs. Convert Powerpoint to PDFs in seconds.")
-	    (:meta :name "keywords" :content "powerpoint to pdf, ppt to pdf, pptx to pdf, online, free.")
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
+	      (:title "Convert Powerpoint to PDF. Powerpoint slides to PDF FREE online.")
+	      (:meta :name "description" :content "Convert Powerpoint slides to PDFs. Convert Powerpoint to PDFs in seconds.")
+	      (:meta :name "keywords" :content "powerpoint to pdf, ppt to pdf, pptx to pdf, online, free.")
 	    (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -677,6 +724,12 @@
   (with-html-output-to-string (*standard-output*)
     (:html :lang "en"
 	   (:head
+	    (:meta :charset "UTF-8")
+	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	    (:title "Convert Excel sheets to Word Documents. Excel sheets to Word documents FREE online.")
 	    (:meta :name "description" :content "Convert Excel sheets to Word Documents in seconds.")
 	    (:meta :name "keywords" :content "excel to word, xlsx to word, xlsx to docx, xlsx to docx, xls to doc, online, free.")
@@ -729,7 +782,13 @@
   (let ((dir (caddr (str:split "/" (script-name*)))))
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
-	   (:head
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	    (:title "Convert Excel sheets to Word Documents. Excel sheets to Word documents FREE online.")
 	    (:meta :name "description" :content "Convert Excel sheets to Word Documents in seconds.")
 	    (:meta :name "keywords" :content "excel to word, xlsx to word, xlsx to docx, xlsx to docx, xls to doc, online, free.")
@@ -757,6 +816,12 @@
 	   (to-capital (str:upcase to)))
       (htm (:html :lang "en"
 		  (:head
+		   (:meta :charset "UTF-8")
+		   (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+		   (:link :rel "manifest" :href "/spotpdf/manifest.json")
+		   (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+		   (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 		   (:title (cl-who:fmt "Convert ~a to ~a. FREE online." from-capital to-capital))
 		   (:meta :name "description" :content (cl-who:fmt "Convert ~a to ~a in seconds." from-capital to-capital))
 		   (:meta :name "keywords" :content (cl-who:fmt "~a to ~a, online, free." from to))
@@ -816,6 +881,12 @@
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	   (:head
+	    (:meta :charset "UTF-8")
+	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
 	    (:title (cl-who:fmt "Convert ~a to ~a. FREE online." from-capital to-capital))
 	    (:meta :name "description" :content (cl-who:fmt "Convert ~a to ~a in seconds." from-capital to-capital))
 	    (:meta :name "keywords" :content (cl-who:fmt "~a to ~a, online, free." from to))
