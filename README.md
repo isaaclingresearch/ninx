@@ -87,4 +87,4 @@ Then in SBCL's shell
 ```
 
 ### For GoodPDF.
-install default-jre libreoffice-java texlive-latex-base pandoc texlive-latex-recommended
+install default-jre libreoffice-java texlive-latex-base pandoc texlive-latex-recommended calibre
