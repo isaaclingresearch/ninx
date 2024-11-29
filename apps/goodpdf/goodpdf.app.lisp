@@ -380,7 +380,7 @@
 		  (:p "Convert your PDFs to POWERPOINT.")
 
 		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :multiple t :allow "application/pdf")
+		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf" :multiple t)
 		  (:div :id "files-container")
 		  (:div :class "btns"
 			(:button :class "upload-btn" :id "upload-btn"
@@ -466,7 +466,7 @@
 		  (:p "Convert your PDFs to WORD.")
 
 		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf" :multiple t)
 		  (:div :id "files-container")
 		  (:div :class "btns"
 			(:button :class "upload-btn" :id "upload-btn"
@@ -541,7 +541,7 @@
 		  (:p "Convert your WORD documents to PDFs.")
 
 		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".doc, .docx" :multiple t)
 		  (:div :id "files-container")
 		  (:div :class "btns"
 			(:button :class "upload-btn" :id "upload-btn"
@@ -614,7 +614,7 @@
 		  (:p "Convert your Powerpoint documents to PDFs.")
 
 		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".ppt, .pptx" :multiple t)
 		  (:div :id "files-container")
 		  (:div :class "btns"
 			(:button :class "upload-btn" :id "upload-btn"
@@ -687,7 +687,7 @@
 		  (:p "Convert your Excel sheets to Word Documents")
 
 		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".xlsx, .xls" :multiple t)
 		  (:div :id "files-container")
 		  (:div :class "btns"
 			(:button :class "upload-btn" :id "upload-btn"
@@ -767,7 +767,7 @@
 			 (:p (cl-who:fmt "Convert your ~a files to ~a." from-capital to-capital))
 
 			 (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Add ~a button" from-capital))
-			 (:input :type "file" :id "file-input" :style "display: none;" :allow "application/pdf" :multiple)
+			 (:input :type "file" :id "file-input" :style "display: none;" :accept (format nil ".~a" from) :multiple t)
 			 (:div :id "files-container")
 			 (:div :class "btns"
 			       (:button :class "upload-btn" :id "upload-btn"
