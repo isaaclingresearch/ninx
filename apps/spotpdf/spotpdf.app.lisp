@@ -381,6 +381,19 @@
 			     ("xls" . ("pdf"))
 			     ("xlsx" . ("pdf"))))
 
+
+(defun make-sitemap (&key (path #p"~/common-lisp/ninx/priv/spotpdf/sitemap.xml") (alist *file-types*))
+  "Save a sitemap to the given PATH from the provided ALIST in XML format."
+  (with-open-file (stream (truename path) :direction :output :if-exists :supersede :if-does-not-exist :create)
+    (format stream "<?xml version=\"1.0\" encoding=\"UTF-8\"?>~%")
+    (format stream "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">~%")
+    (dolist (entry alist)
+      (let ((from (car entry))
+            (tos (cdr entry)))
+        (dolist (to tos)
+          (format stream "  <url><loc>~a-to-~a</loc></url>~%" from to))))
+    (format stream "</urlset>")))
+
 (defun header ()
   (with-html-output (*standard-output*)
     (htm

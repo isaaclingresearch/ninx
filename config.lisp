@@ -58,7 +58,8 @@
 							    :ssl-certificate-file *ninx-ssl-cert*
 							    :ssl-privatekey-file *ninx-ssl-key*
 							    :document-root (truename "~/common-lisp/ninx/priv/")
-							    :error-template-directory (truename "~/common-lisp/ninx/priv/errors/")))
+							    :error-template-directory (truename "~/common-lisp/ninx/priv/errors/")
+							    ))
 
 (defvar *ninx-http-acceptor* (make-instance 'http-to-https-acceptor :port *ninx-http-port*))
 
@@ -140,3 +141,52 @@
   (multiple-value-bind (second minute hour date month year day-of-week dst-p tz)
       (decode-universal-time (get-universal-time))
     year))
+
+(defmethod acceptor-status-message ((acceptor ws-ssl-acceptor) http-status-code &rest properties &key &allow-other-keys)
+  "Customize the acceptor message to pass some custom errors to the templates."
+  (labels
+      ((substitute-request-context-variables (string)
+         (let* ((host (cl-ppcre:regex-replace-all "(.xyz|.com|:8000|:80|:443|:8443)" (hunchentoot:header-in* :host) ""))
+		(host-capital (str:upcase host))
+		(logo-file (format nil "/~a/static/icons/web/icon-512.png" host))
+		(icon (format nil "/~a/static/icons/web/favicon.ico" host))
+		(apple-icon (format nil "/~a/static/icons/web/apple-touch-icon.png" host))
+		(properties (append `(:script-name ,(script-name*)
+                                      :lisp-implementation-type ,(lisp-implementation-type)
+                                      :lisp-implementation-version ,(lisp-implementation-version)
+                                      :hunchentoot-version ,*hunchentoot-version*
+				      :host ,host
+				      :host-capital ,host-capital
+				      :icon ,icon
+				      :apple-icon ,apple-icon
+				      :logo-file ,logo-file)
+                                    properties)))
+           (unless *show-lisp-backtraces-p*
+             (setf (getf properties :backtrace) nil))
+           (cl-ppcre:regex-replace-all "(?i)\\$\\{([a-z0-9-_]+)\\}"
+                                       string
+                                       (lambda (target-string start end match-start match-end reg-starts reg-ends)
+                                         (declare (ignore start end match-start match-end))
+                                         (let ((variable-name (hunchentoot::string-as-keyword (subseq target-string
+                                                                                         (aref reg-starts 0)
+                                                                                         (aref reg-ends 0)))))
+                                           (escape-for-html (princ-to-string (getf properties variable-name variable-name))))))))
+       (file-contents (file)
+         (let ((buf (make-string (file-length file))))
+           (read-sequence buf file)
+           buf))
+       (error-contents-from-template ()
+         (let ((error-file-template-pathname (and (acceptor-error-template-directory acceptor)
+                                                  (probe-file (make-pathname :name (princ-to-string http-status-code)
+                                                                             :type "html"
+                                                                             :defaults (acceptor-error-template-directory acceptor))))))
+           (when error-file-template-pathname
+             (with-open-file (file error-file-template-pathname :if-does-not-exist nil :element-type 'character)
+               (when file
+                 (setf (content-type*) "text/html")
+                 (substitute-request-context-variables (file-contents file))))))))
+    (or (unless (< 300 http-status-code)
+          (call-next-method))              ; don't ever try template for positive return codes
+        (when *show-lisp-errors-p*
+          (error-contents-from-template))  ; try template
+        (call-next-method))))

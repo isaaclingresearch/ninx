@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeckLM | 504</title>
-    <link rel="icon" href="/decklm/static/icons/web/favicon.ico" sizes="any">
-    <link rel="apple-touch-icon" href="/decklm/static/icons/web/apple-touch-icon.png">
+    <title>${host-capital} | 504</title>
+    <link rel="icon" href=${icon} sizes="any">
+    <link rel="apple-touch-icon" href=${apple-icon}>
     <style>
         /* 504.css */
 
@@ -26,7 +26,7 @@
 
         .container {
             width: 100%;
-            max-width: 400px;
+            max-width: 504px;
             padding: 20px;
         }
 
@@ -51,18 +51,18 @@
         }
 
         .logo {
-            height: 40px;
-            margin-right: 10px;
+            height: 40px; /* Adjust the height as needed */
+            margin-right: 10px; /* Add space between the logo and the brand name */
         }
 
         .card h1 {
             font-size: 2em;
-          /*  color: #007bff;*/
+           /* color: black#007bff;  Site's blue color */
         }
 
         .card h2 {
             font-size: 1.5em;
-            color: #ff0000;
+            color: #ff0000; /* Red color for error code */
         }
 
         .card p {
@@ -76,7 +76,7 @@
         }
 
         .link-container a {
-            color: #007bff;
+            color: #007bff; /* Sites blue color */
             text-decoration: none;
             font-size: 1em;
         }
@@ -113,12 +113,12 @@
         <div class="card">
             <div class="brand-container">
                 <a href="/">
-                    <img src="/decklm/static/icons/web/icon-512.png" class="logo" alt="DeckLM Logo">
+                    <img class="logo" src=${logo-file}>
                 </a>
-                <a href="/"><h1>DeckLM</h1></a>
+                <a href= "/"><h1>${host-capital}</h1></a>
             </div>
             <h2>Error 504</h2>
-            <p>Gateway Timeout. The server, while acting as a gateway or proxy, did not receive a timely response from the upstream server.</p>
+            <p>Page not found on this site</p>
             <div class="link-container">
                 <a href="/" id="home-link">Home</a>
             </div>
