@@ -259,7 +259,7 @@
 			    (setf (ps:chain window location href) 
 				  (+ (ps:chain window location pathname) "/" (ps:chain response directory)))
 
-	;;		    (setf (ps:chain window location href) (+ "/pdf-to-pptx/" (ps:chain response directory)))
+			    ;;		    (setf (ps:chain window location href) (+ "/pdf-to-pptx/" (ps:chain response directory)))
 			    ;; (progn (download-file (ps:chain response data) (ps:chain response title))
 			    ;; 	   (incr-user-doc-count)
 			    ;; 	   (change-user-balance (ps:chain response balance)))
@@ -325,10 +325,11 @@
        (.buy-tokens-large :font-size 21px :font-weight bold)
        (footer :text-align center :margin-top 10%)
        (a :color ,link-blue :text-decoration none :decoration none :margin-left 10px :margin-right 10px)
+       (a.dropdown-item :color ,link-blue :text-decoration none :decoration none :margin-left 10px :margin-right 10px)
        ("a:hover::after" :color ,link-blue)
        ("a:visited" :color ,link-blue :decoration none)
        ("a:hover" :color ,link-blue :decoration underline)
-       ("a:not(.logo-link)::after" :content "\"↪\"" :font-weight "bold" :color "inherit" :vertical-align baseline)
+					;  ("a:not(.logo-link)::after" :content "\"↪\"" :font-weight "bold" :color "inherit" :vertical-align baseline)
        (.logo :display flex :justify-content center :flex-direction :row :align-items :center :gap "10px")
        ("a.logo-link" :text-align center :color ,link-blue :text-decoration none :font-size 30px)
        (.logo-image :width 50px)
@@ -345,18 +346,15 @@
        (.bar :width "30px" :height "100%" :background-color "#00b800" :position "absolute" :left "-30px" :animation "move 2s cubic-bezier(0.42, 0, 0.58, 1) infinite")
        (".bar:nth-child(2)" :animation-delay "1s")
        ("@keyframes move" ("0%" :left "-30px") ("50%" :left "100%") ("51%" :left "-30px") ("100%" :left "100%"))
-       
-       ;; (.loading-container :width "150px" :height "10px" :background-color "#e0e0e0" :overflow "hidden" :position "relative" :border-radius "5px" :border 0 :margin "0 auto")
-       ;; (.bar :width "30px" :height "100%" :background-color "#00b800" :position "absolute" :left "-30px" :animation "move 2s linear infinite")
-       ;; (".bar:nth-child(2)" :animation-delay "1s")
-       ;; ("@keyframes move" ("0%" :left "-30px") ("50%" :left "100%") ("51%" :left "-30px") ("100%" :left "100%"))
-       
        (".description:focus" :border none :color ,fg-color)
        (.description-title :margin-top 12px)
        (.ad :width 75% :height 5% :margin-top 3%)
        (body :font-size 18px :width 80% :margin-left 10%)
        ("a.download-btn" :color "#e8e8e8" :text-decoration none)
        ("a:visited.download-btn" :color "#e8e8e8" :text-decoration none)
+       (.submenu-item :background-color "#e8e8e8")
+       (a.active :color black)
+       (footer :position absolute :width 80% :bottom 0 :height 60px :line-height 60px :background-color "#f5f5f5")
        ("@media only screen and (max-width: 768px)"
 	(footer :margin-top 50% :text-align left :font-size 15px)
 	("a.feedback" :font-size 16px :font-weight bold)
@@ -364,53 +362,137 @@
 	(.ad :width 95%)
 	(".copyright" :color ,fg-color :text-align left))))))
 
-(define-easy-handler (pdf-to-ppt
-		      :uri (define-matching-functions "^/pdf-to-(ppt|pptx|powerpoint)$" *spotpdf-host*)
+(defparameter *file-types* '(("azw3" . ("docx" "epub" "fb2" "lit" "mobi" "pdf" "pdb" "rtf" "txt"))
+			     ("doc" . ("pdf"))
+			     ("docx" . ("azw3" "epub" "fb2" "lit" "mobi" "pdf" "pdb" "rtf" "txt"))
+			     ("epub" . ("azw3" "docx" "fb2" "lit" "mobi" "pdf" "pdb" "rtf" "txt"))
+			     ("excel" . ("pdf"))
+			     ("fb2" . ("azw3" "docx" "epub" "lit" "mobi" "pdf" "pdb" "rtf" "txt"))
+			     ("lit" . ("azw3" "docx" "epub" "fb2" "mobi" "pdf" "pdb" "rtf" "txt"))
+			     ("mobi" . ("azw3" "docx" "epub" "fb2" "lit" "pdf" "pdb" "rtf" "txt"))
+			     ("pdf" . ("azw3" "doc" "docx" "epub" "fb2" "lit" "mobi" "pdb" "powerpoint" "ppt" "pptx" "rtf" "txt" "word"))
+			     ("pdb" . ("azw3" "docx" "epub" "fb2" "lit" "mobi" "pdf" "rtf" "txt"))
+			     ("powerpoint" . ("pdf"))
+			     ("ppt" . ("pdf"))
+			     ("pptx" . ("pdf"))
+			     ("rtf" . ("azw3" "docx" "epub" "fb2" "lit" "mobi" "pdf" "pdb" "txt"))
+			     ("txt" . ("azw3" "docx" "epub" "fb2" "lit" "mobi" "pdf" "pdb" "rtf"))
+			     ("word" . ("pdf"))
+			     ("xls" . ("pdf"))
+			     ("xlsx" . ("pdf"))))
+
+(defun header ()
+  (with-html-output (*standard-output*)
+    (htm
+     (:nav :class "navbar navbar-expand-lg"
+	   (:div :class "container-fluid"
+		 (:a :class "navbar-brand" :href "/"
+		     (:img :src "/spotpdf/spotpdf-logo.png" :width "68" :height "60" :class "d-inline-block align-top" :alt ""))
+		 (:button :class "navbar-toggler" :type "button" :data-bs-toggle "collapse" :data-bs-target "navbar-content"
+			  :aria-controls "navbar-content" :aria-expanded "false" :aria-label "Toggle navigation"
+			  (:span :class "navbar-toggler-icon"))
+		 (:ul :class "navbar-nav me-auto mb-2 mb-lg-0"
+		      (:li :class "nav-item dropdown"
+			   (:a :class "nav-link dropdown-toggle" :href "#" :id "convert-menu" :role "button" :data-bs-toggle "dropdown"
+			       :aria-expanded "false" "Convert Documents")
+			   (:div :class "dropdown-menu convert-menu" :aria-labelledby "convert-menu"
+				 (loop for (from . to-list) in *file-types*
+				       do
+					  (let ((from-capital (str:upcase from)))
+					    (htm
+					     (:div :class "dropdown dropend"
+						   (:a :class "dropdown-item dropdown-toggle m-0 p-0 ps-1" :href "#" :id (format nil "~a-menu" from) :role "button" :data-bs-toggle "dropdown" :aria-expanded "false" (cl-who:fmt "~a to" from-capital))
+						   (:div :class "dropdown-menu" :aria-labelledby (format nil "~a-menu" from)
+							 (loop for to in (remove-duplicates (sort to-list #'string<) :test #'string=)
+							       do
+								  (let* ((from-to (format nil "/~a-to-~a" from to))
+									 (from-to-class (format nil "m-0 p-0 ps-1 dropdown-item m-0 submenu-item ~a" (if (string= from-to (script-name*)) "" "active-link"))))
+								    (htm (:a :href from-to :class from-to-class (cl-who:fmt "~a to ~a" from-capital (str:upcase to)))))))))))))))))))
+
+(defun footer ()
+  (with-html-output (*standard-output*)
+    (htm (:footer :class "footer"
+		  (:div :class "container"
+			(:b (cl-who:fmt "© Ninx Technology Limited ~a - A one stop conversion site." (ninx:get-current-year))))))))
+
+(define-easy-handler (home
+		      :uri (define-matching-functions "^/$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (with-html-output-to-string (*standard-output*)
     (:html :lang "en"
 	   (:head
-	    (:title "Convert PDF to Powerpoint. PDF to PPT slides FREE online.")
-	    (:meta :name "description" :content "Convert PDF to editable Powerpoint PPT and PPTX slideshows and presentations. Convert PDF to the most accurate PPT in seconds.")
-	    (:meta :name "keywords" :content "pdf to ppt, pdf to pptx, online, most accurate, free, fast")
+	    (:title "SpotPDF. FAST. FREE. ONLINE.")
+	    (:meta :name "description" :content "Convert documents from one format to another. FAST. FREE. ONLINE.")
+	    (:meta :name "keywords" :content "spotpdf spot pdf convert pdf, word, excel, powerpoint.")
 	    (:meta :charset "UTF-8")
 	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
 	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
 	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
-	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")    
+	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+	    (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	    (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	    (:style (str (home-css))))
 	   (:body
-	    (:div :class "1main"
-		  (:h1 "Convert PDF to POWERPOINT")
-		  (:p "Convert your PDFs to POWERPOINT.")
+	    (:main :role "main" :class "container"
+		   (header))
+	    (:div :class "ad")
+	    (footer))
+	   (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))
 
-		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf" :multiple t)
-		  (:div :id "files-container")
-		  (:div :class "btns"
-			(:button :class "upload-btn" :id "upload-btn"
-				 (:span :class "add-symbol" "+")
-				 "Add PDF")
-			(:button :class "submit-btn" :id "submit-btn" "Convert to PPTX"))
-		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
-			(:div :class "bar")
-			(:div :class "bar")
-			(:div :class "bar"))
-		  (:div :id "progress-container" :style "display: none;"
-			(:progress :id "upload-progress" :value "0" :max "100"))
-		  (:div :id "loading-indicator" :style "display: none;"
-			"Submitting... Please wait.")
-		  (:div :id "error-container" :style "display: none;"
-			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
-		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
-			"An error occurred, please try again.")
-		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			"The deck has been created, downloaded and saved in downloads.")
-		  (:div :id "toast-container" :class "toast-container")
-		  
-		  
-		  (:script (str (home-js))))
-	    (:div :class "ad")))))
+(define-easy-handler (pdf-to-ppt
+		      :uri (define-matching-functions "^/pdf-to-(ppt|pptx|powerpoint)$" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (let* ((to (cadr (str:split "-to-" (script-name*))))
+	 (to-capital (str:upcase to)))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:title (cl-who:fmt "Convert PDF to ~a. FAST. FREE. ONLINE." to-capital))
+	      (:meta :name "description" :content (format nil "Convert PDFs to accurate, editable ~a slideshows/presentations. FAST. FREE. ONLINE." to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")    
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
+		    (:p (cl-who:fmt "Convert your PDFs to ~a" to-capital))
+
+		    (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf" :multiple t)
+		    (:div :id "files-container")
+		    (:div :class "btns"
+			  (:button :class "upload-btn" :id "upload-btn"
+				   (:span :class "add-symbol" "+")
+				   "Add PDF")
+			  (:button :class "submit-btn" :id "submit-btn" (cl-who:fmt "Convert to ~a" to-capital)))
+		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			  (:div :class "bar")
+			  (:div :class "bar")
+			  (:div :class "bar"))
+		    (:div :id "progress-container" :style "display: none;"
+			  (:progress :id "upload-progress" :value "0" :max "100"))
+		    (:div :id "loading-indicator" :style "display: none;"
+			  "Submitting... Please wait.")
+		    (:div :id "error-container" :style "display: none;"
+			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			  "An error occurred, please try again.")
+		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			  "The deck has been created, downloaded and saved in downloads.")
+		    (:div :id "toast-container" :class "toast-container")
+		    
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 (define-easy-handler (convert-pdf-to-pptx-route
 		      :uri (define-matching-functions "^/convert-pdf-to-(ppt|pptx|powerpoint)$" *spotpdf-host*)
@@ -424,28 +506,36 @@
 (define-easy-handler (process-pdf-to-pptx
 		      :uri (define-matching-functions "^/pdf-to-(ppt|pptx|powerpoint)/([^/]+)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (let ((dir (caddr (str:split "/" (script-name*)))))
+  (let* ((dir-list (str:split "/" (script-name*)))
+	 (dir (caddr dir-list))
+	 (to (cadr (str:split "-to-" (cadr dir-list))))
+	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	     (:head
+	      (:title (cl-who:fmt "Convert PDF to ~a. ONLINE. FREE." to-capital))
+	      (:meta :name "description" :content (format nil "Convert PDFs to accurate, editable ~a slideshows/presentations. FAST. FREE. ONLINE" to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
 	      (:meta :charset "UTF-8")
 	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
 	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
 	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
-	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
-
-	      (:title "Convert PDF to Powerpoint. PDF to PPT slides FREE online.")
-	      (:meta :name "description" :content "Convert PDF to editable Powerpoint PPT and PPTX slideshows and presentations. Convert PDF to the most accurate PPT in seconds.")
-	      (:meta :name "keywords" :content "pdf to ppt, pdf to pptx, online, most accurate, free, fast")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")    
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
-		    (:h1 "Convert PDF to POWERPOINT")
-		    (:p "Your files have been converted to POWERPOINT.")
+		    (header)
+		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
+		    (:p (cl-who:fmt "Your files have been converted to ~a." to-capital))
 		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    
 		    (:script (str (home-js))))
-	      (:div :class "ad"))))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 (define-easy-handler (download-pdf-file
 		      :uri (define-matching-functions "^/download-file/([^/]+)$" *spotpdf-host*)
@@ -462,56 +552,63 @@
 ;; PDF TO DOCS
 
 (define-easy-handler (pdf-to-word
-		      :uri (define-matching-functions "^/pdf-to-(word|doc|docx)$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/pdf-to-(word|doc)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (with-html-output-to-string (*standard-output*)
-    (:html :lang "en"
-	   (:head
-	    (:meta :charset "UTF-8")
-	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
-	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
-	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+  (let* ((to (cadr (str:split "-to-" (script-name*))))
+	 (to-capital (str:upcase to)))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	    (:title "Convert PDF to Word. PDF to Word FREE online.")
-	    (:meta :name "description" :content "Convert PDF to editable Word documents. Convert PDF to the most accurate Word documents in seconds.")
-	    (:meta :name "keywords" :content "pdf to word, pdf to doc, pdf to docx, online, most accurate, free, fast")
-	    (:style (str (home-css))))
-	   (:body
-	    (:div :class "1main"
-		  (:h1 "Convert PDF to WORD")
-		  (:p "Convert your PDFs to WORD.")
+	      (:title (cl-who:fmt "Convert PDF to ~a. FAST. FREE. ONLINE." to-capital))
+	      (:meta :name "description" :content (format nil "Convert PDF to accurate, editable ~a documents. FAST. FREE. ONLINE" to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
+		    (:p (cl-who:fmt "Convert your PDFs to ~a." to-capital))
 
-		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf" :multiple t)
-		  (:div :id "files-container")
-		  (:div :class "btns"
-			(:button :class "upload-btn" :id "upload-btn"
-				 (:span :class "add-symbol" "+")
-				 "Add PDF")
-			(:button :class "submit-btn" :id "submit-btn" "Convert to DOCX"))
-		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
-			(:div :class "bar")
-			(:div :class "bar")
-			(:div :class "bar"))
-		  (:div :id "progress-container" :style "display: none;"
-			(:progress :id "upload-progress" :value "0" :max "100"))
-		  (:div :id "loading-indicator" :style "display: none;"
-			"Submitting... Please wait.")
-		  (:div :id "error-container" :style "display: none;"
-			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
-		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
-			"An error occurred, please try again.")
-		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			"The deck has been created, downloaded and saved in downloads.")
-		  (:div :id "toast-container" :class "toast-container")
-		  
-		  
-		  (:script (str (home-js))))
-	    (:div :class "ad")))))
+		    (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf" :multiple t)
+		    (:div :id "files-container")
+		    (:div :class "btns"
+			  (:button :class "upload-btn" :id "upload-btn"
+				   (:span :class "add-symbol" "+")
+				   "Add PDF")
+			  (:button :class "submit-btn" :id "submit-btn" (cl-who:fmt "Convert to ~a" to-capital)))
+		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			  (:div :class "bar")
+			  (:div :class "bar")
+			  (:div :class "bar"))
+		    (:div :id "progress-container" :style "display: none;"
+			  (:progress :id "upload-progress" :value "0" :max "100"))
+		    (:div :id "loading-indicator" :style "display: none;"
+			  "Submitting... Please wait.")
+		    (:div :id "error-container" :style "display: none;"
+			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			  "An error occurred, please try again.")
+		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			  "The deck has been created, downloaded and saved in downloads.")
+		    (:div :id "toast-container" :class "toast-container")
+		    
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 (define-easy-handler (convert-pdf-to-word-route
-		      :uri (define-matching-functions "^/convert-pdf-to-(word|doc|docx)$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/convert-pdf-to-(word|doc)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (let ((files (post-parameters*))
 	(uuid (to-string (make-v4))))
@@ -520,9 +617,12 @@
 				   ("success" t))))))
 
 (define-easy-handler (process-pdf-to-word
-		      :uri (define-matching-functions "^/pdf-to-(word|doc|docx)/([^/]+)$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/pdf-to-(word|doc)/([^/]+)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (let ((dir (caddr (str:split "/" (script-name*)))))
+  (let* ((dir-list (str:split "/" (script-name*)))
+	 (dir (caddr dir-list))
+	 (to (cadr (str:split "-to-" (cadr dir-list))))
+	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	     (:head
@@ -532,73 +632,85 @@
 	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	      (:title "Convert PDF to WORD. PDF to WORD documents FREE online.")
-	      (:meta :name "description" :content "Convert PDF to editable Word documents. Convert PDF to the most accurate Word documents in seconds.")
-	      (:meta :name "keywords" :content "pdf to word, pdf to doc, pdf to docx, online, most accurate, free, fast")
+	      (:title (cl-who:fmt "Convert PDF to ~a. FAST. FREE. ONLINE." to-capital))
+	      (:meta :name "description" :content (format nil "Convert PDF to accurate, editable ~a documents. FAST. FREE. ONLINE" to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
-		    (:h1 "Convert PDF to WORD")
-		    (:p "Your files have been converted to WORD.")
+		    (header)
+		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
+		    (:p (cl-who:fmt "Your files have been converted to ~a." to-capital))
 		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    
 		    (:script (str (home-js))))
-	      (:div :class "ad"))))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 
 ;;; DOCX TO PDF
 
 (define-easy-handler (word-to-pdf
-		      :uri (define-matching-functions "^/(doc|docx|word)-to-pdf$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/(doc|word)-to-pdf$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (with-html-output-to-string (*standard-output*)
-    (:html :lang "en"
-	   (:head
-	    (:meta :charset "UTF-8")
-	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
-	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
-	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+  (let* ((to (str:replace-all "/" "" (car (str:split "-to-" (script-name*)))))
+	 (to-capital (str:upcase to)))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	    (:title "Convert Word to PDF. WORD documents to PDF FREE online.")
-	    (:meta :name "description" :content "Convert Word documnets to PDFs. Convert Word to PDFs in seconds.")
-	    (:meta :name "keywords" :content "word to pdf, doc to pdf, docx to pdf, online, free.")
-	    (:style (str (home-css))))
-	   (:body
-	    (:div :class "1main"
-		  (:h1 "Convert WORD to PDF")
-		  (:p "Convert your WORD documents to PDFs.")
+	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." to-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a documents to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" to-capital to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf,  online, free." to))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert ~a to PDF" to-capital))
+		    (:p (cl-who:fmt "Convert your ~a documents to PDFs." to-capital))
 
-		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".doc, .docx" :multiple t)
-		  (:div :id "files-container")
-		  (:div :class "btns"
-			(:button :class "upload-btn" :id "upload-btn"
-				 (:span :class "add-symbol" "+")
-				 "Add Docs")
-			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
-		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
-			(:div :class "bar")
-			(:div :class "bar")
-			(:div :class "bar"))
-		  (:div :id "progress-container" :style "display: none;"
-			(:progress :id "upload-progress" :value "0" :max "100"))
-		  (:div :id "loading-indicator" :style "display: none;"
-			"Submitting... Please wait.")
-		  (:div :id "error-container" :style "display: none;"
-			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
-		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
-			"An error occurred, please try again.")
-		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			"The deck has been created, downloaded and saved in downloads.")
-		  (:div :id "toast-container" :class "toast-container")
-		  
-		  
-		  (:script (str (home-js))))
-	    (:div :class "ad")))))
+		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Add ~a button" to-capital))
+		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".doc, .docx" :multiple t)
+		    (:div :id "files-container")
+		    (:div :class "btns"
+			  (:button :class "upload-btn" :id "upload-btn"
+				   (:span :class "add-symbol" "+")
+				   (cl-who:fmt "Add ~a" to-capital))
+			  (:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			  (:div :class "bar")
+			  (:div :class "bar")
+			  (:div :class "bar"))
+		    (:div :id "progress-container" :style "display: none;"
+			  (:progress :id "upload-progress" :value "0" :max "100"))
+		    (:div :id "loading-indicator" :style "display: none;"
+			  "Submitting... Please wait.")
+		    (:div :id "error-container" :style "display: none;"
+			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			  "An error occurred, please try again.")
+		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			  "The deck has been created, downloaded and saved in downloads.")
+		    (:div :id "toast-container" :class "toast-container")
+		    
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 (define-easy-handler (convert-word-to-pdf-route
-		      :uri (define-matching-functions "^/convert-(doc|docx|word)-to-pdf$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/convert-(doc|word)-to-pdf$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (let ((files (post-parameters*))
 	(uuid (to-string (make-v4))))
@@ -607,9 +719,12 @@
 				   ("success" t))))))
 
 (define-easy-handler (process-word-to-pdf
-		      :uri (define-matching-functions "^/(doc|docx|word)-to-pdf/([^/]+)$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/(doc|word)-to-pdf/([^/]+)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (let ((dir (caddr (str:split "/" (script-name*)))))
+  (let* ((dir-list (caddr (str:split "/" (script-name*))))
+	 (dir (caddr dir-list))
+	 (from (car (str:split "-to-" (cadr dir-list))))
+	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	     (:head
@@ -619,68 +734,80 @@
 	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	      (:title "Convert Word to PDF. WORD documents to PDF FREE online.")
-	      (:meta :name "description" :content "Convert Word documnets to PDFs. Convert Word to PDFs in seconds.")
-	      (:meta :name "keywords" :content "word to pdf, doc to pdf, docx to pdf, online, free.")
+	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." from-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a documents to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf,  online, free." from))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
-		    (:h1 "Convert WORD to PDF")
+		    (header)
+		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
 		    (:p "Your files have been converted to PDF.")
 		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    (:script (str (home-js))))
-	      (:div :class "ad"))))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 ;;; PPTX TO PDF
 
 (define-easy-handler (pptx-to-pdf
 		      :uri (define-matching-functions "^/(ppt|pptx|powerpoint)-to-pdf$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (with-html-output-to-string (*standard-output*)
-    (:html :lang "en"
-	   (:head
-	    (:meta :charset "UTF-8")
-	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
-	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
-	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+  (let* ((from (str:replace-all "/" "" (car (str:split "-to-" (script-name*)))))
+	 (from-capital (str:upcase from)))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	    (:title "Convert Powerpoint to PDF. Powerpoint slides to PDF FREE online.")
-	    (:meta :name "description" :content "Convert Powerpoint slides to PDFs. Convert Powerpoint to PDFs in seconds.")
-	    (:meta :name "keywords" :content "powerpoint to pdf, ppt to pdf, pptx to pdf, online, free.")
-	    (:style (str (home-css))))
-	   (:body
-	    (:div :class "1main"
-		  (:h1 "Convert Powerpoint to PDF")
-		  (:p "Convert your Powerpoint documents to PDFs.")
+	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." from-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a slides to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf, online, free." from-capital))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
+		    (:p (cl-who:fmt "Convert your ~a documents to PDFs." from-capital))
 
-		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".ppt, .pptx" :multiple t)
-		  (:div :id "files-container")
-		  (:div :class "btns"
-			(:button :class "upload-btn" :id "upload-btn"
-				 (:span :class "add-symbol" "+")
-				 "Add Powerpoint")
-			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
-		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
-			(:div :class "bar")
-			(:div :class "bar")
-			(:div :class "bar"))
-		  (:div :id "progress-container" :style "display: none;"
-			(:progress :id "upload-progress" :value "0" :max "100"))
-		  (:div :id "loading-indicator" :style "display: none;"
-			"Submitting... Please wait.")
-		  (:div :id "error-container" :style "display: none;"
-			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
-		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
-			"An error occurred, please try again.")
-		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			"The deck has been created, downloaded and saved in downloads.")
-		  (:div :id "toast-container" :class "toast-container")
-		  
-		  
-		  (:script (str (home-js))))
-	    (:div :class "ad")))))
+		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Add ~a button" from-capital))
+		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".ppt, .pptx" :multiple t)
+		    (:div :id "files-container")
+		    (:div :class "btns"
+			  (:button :class "upload-btn" :id "upload-btn"
+				   (:span :class "add-symbol" "+")
+				   (cl-who:fmt "Add ~a" from-capital))
+			  (:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			  (:div :class "bar")
+			  (:div :class "bar")
+			  (:div :class "bar"))
+		    (:div :id "progress-container" :style "display: none;"
+			  (:progress :id "upload-progress" :value "0" :max "100"))
+		    (:div :id "loading-indicator" :style "display: none;"
+			  "Submitting... Please wait.")
+		    (:div :id "error-container" :style "display: none;"
+			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			  "An error occurred, please try again.")
+		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			  "The deck has been created, downloaded and saved in downloads.")
+		    (:div :id "toast-container" :class "toast-container")
+		    
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 (define-easy-handler (convert-pptx-to-pdf-route
 		      :uri (define-matching-functions "^/convert-(ppt|pptx|powerpoint)-to-pdf$" *spotpdf-host*)
@@ -694,7 +821,10 @@
 (define-easy-handler (process-pptx-to-pdf
 		      :uri (define-matching-functions "^/(ppt|pptx|powerpoint)-to-pdf/([^/]+)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (let ((dir (caddr (str:split "/" (script-name*)))))
+  (let* ((dir-list (str:split "/" (script-name*)))
+	 (dir (caddr dir-list))
+	 (from (car (str:split "-to-" (cadr dir-list))))
+	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	     (:head
@@ -704,68 +834,80 @@
 	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	      (:title "Convert Powerpoint to PDF. Powerpoint slides to PDF FREE online.")
-	      (:meta :name "description" :content "Convert Powerpoint slides to PDFs. Convert Powerpoint to PDFs in seconds.")
-	      (:meta :name "keywords" :content "powerpoint to pdf, ppt to pdf, pptx to pdf, online, free.")
-	    (:style (str (home-css))))     
+	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." from-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a slides to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf, online, free." from-capital))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
-		    (:h1 "Convert Powerpoint to PDF")
+		    (header)
+		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
 		    (:p "Your files have been converted to PDF.")
 		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    (:script (str (home-js))))
-	      (:div :class "ad"))))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 ;;; Excel TO PDF
 
 (define-easy-handler (excel-to-pdf
 		      :uri (define-matching-functions "^/(xlsx|xls|excel)-to-pdf$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (with-html-output-to-string (*standard-output*)
-    (:html :lang "en"
-	   (:head
-	    (:meta :charset "UTF-8")
-	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
-	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
-	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+  (let* ((from (str:replace-all "/" "" (car (str:split "-to-" (script-name*)))))
+	 (from-capital (str:upcase from)))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	    (:title "Convert Excel sheets to Word Documents. Excel sheets to Word documents FREE online.")
-	    (:meta :name "description" :content "Convert Excel sheets to Word Documents in seconds.")
-	    (:meta :name "keywords" :content "excel to word, xlsx to word, xlsx to docx, xlsx to docx, xls to doc, online, free.")
-	    (:style (str (home-css))))
-	   (:body
-	    (:div :class "main"
-		  (:h1 "Convert Excel to Word")
-		  (:p "Convert your Excel sheets to Word Documents")
+	      (:title (cl-who:fmt "Convert ~a sheets to PDF Documents. FAST. FREE. ONLINE." from-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a sheets to PDF Documents in seconds. FAST. FREE. ONLINE" from-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to word, online, free." from))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
+		    (:p (cl-who:fmt "Convert your ~a sheets to PDF Documents" from-capital))
 
-		  (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
-		  (:input :type "file" :id "file-input" :style "display: none;" :accept ".xlsx, .xls" :multiple t)
-		  (:div :id "files-container")
-		  (:div :class "btns"
-			(:button :class "upload-btn" :id "upload-btn"
-				 (:span :class "add-symbol" "+")
-				 "Add Excel")
-			(:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
-		  (:div :id "loading-container" :class "loading-container" :style "display: none;"
-			(:div :class "bar")
-			(:div :class "bar")
-			(:div :class "bar"))
-		  (:div :id "progress-container" :style "display: none;"
-			(:progress :id "upload-progress" :value "0" :max "100"))
-		  (:div :id "loading-indicator" :style "display: none;"
-			"Submitting... Please wait.")
-		  (:div :id "error-container" :style "display: none;"
-			(:progress :id "error-progress" :value "100" :style "color: #FF6060"))
-		  (:div :id "error-indicator" :style "display: none; color: #FF6060"
-			"An error occurred, please try again.")
-		  (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			"The deck has been created, downloaded and saved in downloads.")
-		  (:div :id "toast-container" :class "toast-container")
-		  
-		  
-		  (:script (str (home-js))))
-	    (:div :class "ad")))))
+		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Add ~a button" from-capital))
+		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".xlsx, .xls" :multiple t)
+		    (:div :id "files-container")
+		    (:div :class "btns"
+			  (:button :class "upload-btn" :id "upload-btn"
+				   (:span :class "add-symbol" "+")
+				   (cl-who:fmt "Add ~a" from-capital))
+			  (:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			  (:div :class "bar")
+			  (:div :class "bar")
+			  (:div :class "bar"))
+		    (:div :id "progress-container" :style "display: none;"
+			  (:progress :id "upload-progress" :value "0" :max "100"))
+		    (:div :id "loading-indicator" :style "display: none;"
+			  "Submitting... Please wait.")
+		    (:div :id "error-container" :style "display: none;"
+			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			  "An error occurred, please try again.")
+		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
+			  "The deck has been created, downloaded and saved in downloads.")
+		    (:div :id "toast-container" :class "toast-container")
+		    
+		    
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 (define-easy-handler (convert-excel-to-pdf-route
 		      :uri (define-matching-functions "^/convert-(excel|xlsx|xls)-to-pdf$" *spotpdf-host*)
@@ -779,7 +921,10 @@
 (define-easy-handler (process-excel-to-pdf
 		      :uri (define-matching-functions "^/(excel|xlsx|xls)-to-pdf/([^/]+)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (let ((dir (caddr (str:split "/" (script-name*)))))
+  (let* ((dir-list (str:split "/" (script-name*)))
+	 (dir (caddr dir-list))
+	 (from (car (str:split "-to-" (cadr dir-list))))
+	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
 	     (:head
@@ -789,24 +934,29 @@
 	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	    (:title "Convert Excel sheets to Word Documents. Excel sheets to Word documents FREE online.")
-	    (:meta :name "description" :content "Convert Excel sheets to Word Documents in seconds.")
-	    (:meta :name "keywords" :content "excel to word, xlsx to word, xlsx to docx, xlsx to docx, xls to doc, online, free.")
-	    (:style (str (home-css))))     
+	      (:title (cl-who:fmt "Convert ~a sheets to PDF Documents. FAST. FREE. ONLINE. " from-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a sheets to PDF Documents in seconds. ONLINE. FREE. ACCURATE" from-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to word, online, free." from))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
-		    (:h1 "Convert Excel to Word.")
-		    (:p "Your files have been converted to Word.")
+		    (header)
+		    (:h1 (cl-who:fmt "Convert ~a to PDF." from-capital))
+		    (:p "Your files have been converted to PDF.")
 		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    (:script (str (home-js))))
-	      (:div :class "ad"))))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 
 
 ;;; Epub/MOBI/AZW3/PDF TO PDF/Epub/Mobi/AZW3
 
 (define-easy-handler (epub-to-pdf-route
-		      :uri (define-matching-functions "^/(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf)-to-(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf)$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf|docx)-to-(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf|docx)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (with-html-output-to-string (*standard-output*)
     (let* ((from-to (str:split "-to-" (script-name*)))
@@ -822,12 +972,15 @@
 		   (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
 		   (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-		   (:title (cl-who:fmt "Convert ~a to ~a. FREE online." from-capital to-capital))
-		   (:meta :name "description" :content (cl-who:fmt "Convert ~a to ~a in seconds." from-capital to-capital))
-		   (:meta :name "keywords" :content (cl-who:fmt "~a to ~a, online, free." from to))
-		   (:style (str (home-css))))
+		   (:title (cl-who:fmt "Convert ~a to ~a. FAST. FREE. ONLINE." from-capital to-capital))
+		   (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE" from-capital to-capital))
+		   (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to ~a, online, free." from to))
+		   (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+		   (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	     	   (:style (str (home-css))))
 		  (:body
 		   (:div :class "main"
+			 (header)
 			 (:h1 (cl-who:fmt "Convert ~a to ~a" from-capital to-capital))
 			 (:p (cl-who:fmt "Convert your ~a files to ~a." from-capital to-capital))
 
@@ -857,10 +1010,12 @@
 			 
 			 
 			 (:script (str (home-js))))
-		   (:div :class "ad")))))))
+		   (:div :class "ad")
+		   (footer)
+		   (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js")))))))
 
 (define-easy-handler (convert-epub-to-pdf-route
-		      :uri (define-matching-functions "^/convert-(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf)-to-(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf)$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/convert-(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf|docx)-to-(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf|docx)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (let ((files (post-parameters*))
 	(uuid (to-string (make-v4)))
@@ -870,34 +1025,39 @@
 				   ("success" t))))))
 
 (define-easy-handler (process-epub-to-pdf
-		      :uri (define-matching-functions "^/(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf)-to-(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf)/([^/]+)$" *spotpdf-host*)
+		      :uri (define-matching-functions "^/(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf|docx)-to-(mobi|azw3|epub|pdf|pdb|fb2|lit|txt|rtf|docx)/([^/]+)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (let* ((to-from (str:split "-to-" (cadr (str:split "/" (script-name*)))))
-	(to (cadr to-from))
-	(to-capital (str:upcase to))
-	(from (car to-from))
-	(from-capital (str:upcase from))
-	(dir (caddr (str:split "/" (script-name*)))))
+	 (to (cadr to-from))
+	 (to-capital (str:upcase to))
+	 (from (car to-from))
+	 (from-capital (str:upcase from))
+	 (dir (caddr (str:split "/" (script-name*)))))
     (with-html-output-to-string (*standard-output*)
       (:html :lang "en"
-	   (:head
-	    (:meta :charset "UTF-8")
-	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
-	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
-	    (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
-	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
-	    (:title (cl-who:fmt "Convert ~a to ~a. FREE online." from-capital to-capital))
-	    (:meta :name "description" :content (cl-who:fmt "Convert ~a to ~a in seconds." from-capital to-capital))
-	    (:meta :name "keywords" :content (cl-who:fmt "~a to ~a, online, free." from to))
-	    (:style (str (home-css))))     
+	      (:title (cl-who:fmt "Convert ~a to ~a. FAST. FREE. ONLINE." from-capital to-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE." from-capital to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to ~a, online, free." from to))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
+		    (header)
 		    (:h1 (cl-who:fmt "Convert ~a to ~a." from-capital to-capital))
 		    (:p (cl-who:fmt "Your files have been converted to ~a." to-capital))
 		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
 		    (:script (str (home-js))))
-	      (:div :class "ad"))))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
 ;;;============ CONVERSION FUNCTIONS ===========================
 
@@ -921,7 +1081,7 @@
     (trivia:match param
       ((list _ path file-name "application/pdf")
        (let ((pdf-path (format nil "~a~a" dir file-name)))
-    	  (uiop:copy-file path pdf-path)
+    	 (uiop:copy-file path pdf-path)
 	 (pdf-to-format dir pdf-path format)))
       (_ nil))))
 
@@ -943,7 +1103,7 @@
       ((list _ path file-name _)
        (let ((epub-path (format nil "~a~a" dir file-name))
 	     (pdf-path (format nil "~a~a.pdf" dir (pathname-name file-name))))
-    	  (uiop:copy-file path epub-path)
+    	 (uiop:copy-file path epub-path)
 	 (epub-to-pdf epub-path pdf-path)))
       (_ nil))))
 
@@ -1016,7 +1176,7 @@
     (trivia:match param
       ((list _ path file-name _)
        (let ((pdf-path (format nil "~a~a" dir file-name)))
-    	  (uiop:copy-file path pdf-path)
+    	 (uiop:copy-file path pdf-path)
 	 (format-to-format to dir pdf-path)))
       (_ nil))))
 

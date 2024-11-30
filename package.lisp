@@ -9,4 +9,5 @@
 	    ;; ws types
 	    decklm-ws-type 
 	    ws-endpoint
-	    :match-path :define-matching-functions))
+   :match-path :define-matching-functions
+   :get-current-year))

@@ -135,3 +135,8 @@
                                     :if-exists :supersede
                                     :if-does-not-exist :create)
     (write-sequence octets stream)))
+
+(defun get-current-year ()
+  (multiple-value-bind (second minute hour date month year day-of-week dst-p tz)
+      (decode-universal-time (get-universal-time))
+    year))
