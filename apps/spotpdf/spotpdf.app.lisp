@@ -31,53 +31,190 @@
 
     (setf files-array (array)) ;; this will hold the files
     
+    ;; (defun handle-files (files)
+    ;;   "this function will handle addition of files when a user submits or drops them"
+    ;;   (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
+    ;; 	(ps:chain -array (from files)
+    ;; 		  (for-each
+    ;; 		   (lambda (file)
+    ;; 		     ;; first add the file to form-data created above
+    ;; 		     (ps:chain files-array (push file))
+    ;; 		     (let ((file-frame (ps:chain document (create-element "div")))
+    ;; 			   (close-button (ps:chain document (create-element "button")))
+    ;; 			   (frame-id (generate-random-id))
+    ;; 			   (btn-id (generate-random-id)))
+    ;; 		       ;; handle frame
+    ;; 		       (ps:chain file-frame class-list (add "file-frame"))
+    ;; 		       (ps:chain file-frame (set-attribute "id" frame-id))
+    ;; 		       (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
+
+    ;; 		       ;; handle close button
+    ;; 		       (ps:chain close-button class-list (add "close-btn"))
+    ;; 		       (ps:chain close-button (set-attribute "id" btn-id))
+    ;; 		       (setf (ps:chain close-button inner-h-t-m-l) "&times;")
+    ;; 		       (ps:chain close-button (add-event-listener "click"
+    ;; 								  (lambda ()
+    ;; 								    ;; remove the file from files-array
+    ;; 								    (let ((index (ps:chain files-array (index-of file))))
+    ;; 								      (if (> index -1)
+    ;; 									  (ps:chain files-array (splice index 1))))
+    ;; 								    (ps:chain file-frame (remove))))))
+    ;; 		     (cond
+    ;; 		       ((ps:chain file type (starts-with "image/"))
+    ;; 			(let ((img (ps:chain document (create-element "img")))
+    ;; 			      (reader (new -file-reader)))
+    ;; 			  (setf (ps:chain reader onload) (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
+    ;; 			  (ps:chain reader (read-as-data-u-r-l file))
+    ;; 			  (ps:chain file-frame (append-child img))))
+    ;; 		       ((eql (ps:chain file type) "application/pdf")
+    ;; 			(let ((iframe (ps:chain document (create-element "iframe")))
+    ;; 			      (file-name (ps:chain document (create-element "span"))))
+    ;; 			  (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
+    ;; 			  (ps:chain file-frame (append-child iframe))
+    ;; 			  ;; file name
+    ;; 			  (ps:chain file-name class-list (add "file-name"))
+    ;; 			  (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+    ;; 			  (ps:chain file-frame (append-child file-name)))))
+    ;; 		     (ps:chain file-frame (append-child close-button))
+    ;; 		     (ps:chain files-container (append-child file-frame))
+    ;; 		     (scroll-to-bottom))))))
+
+    ;;   (defun handle-files (files)
+    ;; "This function will handle addition of files when a user submits or drops them."
+    ;; (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
+    ;;   (ps:chain -array (from files)
+    ;;             (for-each
+    ;;              (lambda (file)
+    ;;                ;; First add the file to form-data created above
+    ;;                (ps:chain files-array (push file))
+    ;;                (let ((file-frame (ps:chain document (create-element "div")))
+    ;;                      (close-button (ps:chain document (create-element "button")))
+    ;;                      (frame-id (generate-random-id))
+    ;;                      (btn-id (generate-random-id)))
+    ;;                  ;; Handle frame
+    ;;                  (ps:chain file-frame class-list (add "file-frame"))
+    ;;                  (ps:chain file-frame (set-attribute "id" frame-id))
+    ;;                  (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
+
+    ;;                  ;; Handle close button
+    ;;                  (ps:chain close-button class-list (add "close-btn"))
+    ;;                  (ps:chain close-button (set-attribute "id" btn-id))
+    ;;                  (setf (ps:chain close-button inner-h-t-m-l) "&times;")
+    ;;                  (ps:chain close-button (add-event-listener "click"
+    ;;                                                             (lambda ()
+    ;;                                                               ;; Remove the file from files-array
+    ;;                                                               (let ((index (ps:chain files-array (index-of file))))
+    ;;                                                                 (if (> index -1)
+    ;;                                                                     (ps:chain files-array (splice index 1))))
+    ;;                                                               (ps:chain file-frame (remove))))))
+
+    ;;                  (cond
+    ;;                    ;; Handle images
+    ;;                    ((ps:chain file type (starts-with "image/"))
+    ;;                     (let ((img (ps:chain document (create-element "img")))
+    ;;                           (reader (new -file-reader)))
+    ;;                       (setf (ps:chain reader onload) (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
+    ;;                       (ps:chain reader (read-as-data-u-r-l file))
+    ;;                       (ps:chain file-frame (append-child img))))
+    ;;                    ;; Handle PDFs
+    ;;                    ((eql (ps:chain file type) "application/pdf")
+    ;;                     (let ((iframe (ps:chain document (create-element "iframe")))
+    ;;                           (file-name (ps:chain document (create-element "span"))))
+    ;;                       (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
+    ;;                       (ps:chain file-frame (append-child iframe))
+    ;;                       ;; File name
+    ;;                       (ps:chain file-name class-list (add "file-name"))
+    ;;                       (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+    ;;                       (ps:chain file-frame (append-child file-name))))
+    ;;                    ;; Handle other files
+    ;;                    (t
+    ;;                     (let ((file-name (ps:chain document (create-element "span"))))
+    ;;                       (ps:chain file-name class-list (add "file-name"))
+    ;;                       (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+    ;;                       (ps:chain file-frame (append-child file-name)))))
+
+    ;;                  ;; Add close button and append the file frame to the container
+    ;;                  (ps:chain file-frame (append-child close-button))
+    ;;                  (ps:chain files-container (append-child file-frame))
+    ;;                  (scroll-to-bottom))))))
+
     (defun handle-files (files)
-      "this function will handle addition of files when a user submits or drops them"
+      "This function handles addition of files when a user submits or drops them."
       (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
 	(ps:chain -array (from files)
 		  (for-each
 		   (lambda (file)
-		     ;; first add the file to form-data created above
-		     (ps:chain files-array (push file))
-		     (let ((file-frame (ps:chain document (create-element "div")))
+                     ;; Add the file to the files array
+                     (ps:chain files-array (push file))
+                     (let ((file-frame (ps:chain document (create-element "div")))
 			   (close-button (ps:chain document (create-element "button")))
 			   (frame-id (generate-random-id))
 			   (btn-id (generate-random-id)))
-		       ;; handle frame
-		       (ps:chain file-frame class-list (add "file-frame"))
-		       (ps:chain file-frame (set-attribute "id" frame-id))
-		       (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
+                       ;; Handle file frame
+                       (ps:chain file-frame class-list (add "file-frame"))
+                       (ps:chain file-frame (set-attribute "id" frame-id))
+                       (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
 
-		       ;; handle close button
-		       (ps:chain close-button class-list (add "close-btn"))
-		       (ps:chain close-button (set-attribute "id" btn-id))
-		       (setf (ps:chain close-button inner-h-t-m-l) "&times;")
-		       (ps:chain close-button (add-event-listener "click"
-								  (lambda ()
-								    ;; remove the file from files-array
-								    (let ((index (ps:chain files-array (index-of file))))
-								      (if (> index -1)
-									  (ps:chain files-array (splice index 1))))
-								    (ps:chain file-frame (remove))))))
- 		     (cond
-		       ((ps:chain file type (starts-with "image/"))
+                       ;; Handle close button
+                       (ps:chain close-button class-list (add "close-btn"))
+                       (ps:chain close-button (set-attribute "id" btn-id))
+                       (setf (ps:chain close-button inner-h-t-m-l) "&times;")
+                       (ps:chain close-button
+				 (add-event-listener "click"
+                                                     (lambda ()
+                                                       ;; Remove the file from files-array
+                                                       (let ((index (ps:chain files-array (index-of file))))
+							 (if (> index -1)
+                                                             (ps:chain files-array (splice index 1))))
+                                                       ;; Remove the file frame
+                                                       (ps:chain file-frame (remove))))))
+
+                     ;; Handle file type
+                     (cond
+                       ;; Image files
+                       ((ps:chain file type (starts-with "image/"))
 			(let ((img (ps:chain document (create-element "img")))
-			      (reader (new -file-reader)))
-			  (setf (ps:chain reader onload) (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
-			  (ps:chain reader (read-as-data-u-r-l file))
-			  (ps:chain file-frame (append-child img))))
-		       ((eql (ps:chain file type) "application/pdf")
+                              (reader (new -file-reader)))
+                          (setf (ps:chain reader onload)
+				(lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
+                          (ps:chain reader (read-as-data-u-r-l file))
+                          (ps:chain file-frame (append-child img))
+			  (ps:chain file-frame (append-child close-button))))
+
+                       ;; PDF files
+                       ((eql (ps:chain file type) "application/pdf")
 			(let ((iframe (ps:chain document (create-element "iframe")))
-			      (file-name (ps:chain document (create-element "span"))))
-			  (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
-			  (ps:chain file-frame (append-child iframe))
-			  ;; file name
-			  (ps:chain file-name class-list (add "file-name"))
-			  (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
-			  (ps:chain file-frame (append-child file-name)))))
-		     (ps:chain file-frame (append-child close-button))
-		     (ps:chain files-container (append-child file-frame))
-		     (scroll-to-bottom))))))
+                              (file-name (ps:chain document (create-element "span"))))
+                          (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
+                          (ps:chain file-frame (append-child iframe))
+                          ;; File name
+                          (ps:chain file-name class-list (add "file-name"))
+                          (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+                          (ps:chain file-frame (append-child file-name))
+			  (ps:chain file-frame (append-child close-button))))
+
+                       ;; Other files
+                       (t
+			(let ((file-row (ps:chain document (create-element "div")))
+                              (file-name (ps:chain document (create-element "span"))))
+                          ;; Create a row container
+                          (ps:chain file-row class-list (add "file-row"))
+
+                          ;; Set up file name
+                          (ps:chain file-name class-list (add "file-name"))
+                          (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+
+                          ;; Append file name and close button to the row
+                          (ps:chain file-row (append-child file-name))
+                          (ps:chain file-row (append-child close-button))
+
+                          ;; Append the row to the file frame
+                          (ps:chain file-frame (append-child file-row)))))
+
+                     ;; Append the file frame to the container
+                     (ps:chain files-container (append-child file-frame))
+                     (scroll-to-bottom))))))
+
 
     ;; Enable drag-and-drop file rearranging within files-container
     (setf files-container (ps:chain document (get-element-by-id "files-container")))
@@ -120,7 +257,6 @@
     (ps:chain document (get-element-by-id "upload-btn")
 	      (add-event-listener "click"
 				  (lambda ()
-				    (setf (ps:chain document (get-element-by-id "success-indicator") style display) "none")
 				    (let ((file-input (ps:chain document (get-element-by-id "file-input"))))
 				      (ps:chain file-input (click))
 				      (setf (ps:chain file-input onchange)
@@ -147,20 +283,6 @@
 					      (ps:chain event (prevent-default))
 					      (ps:chain drop-zone class-list (remove "dragging"))
 		 			      (handle-files (ps:chain event data-transfer files)))))
-
-    (defun show-toast (message duration)
-      "show a toast to the user"
-      (let ((toast-container (ps:chain document (get-element-by-id "toast-container")))
-	    (toast (ps:chain document (create-element "div"))))
-	(ps:chain toast class-list (add "toast"))
-	(setf (ps:chain toast text-content) message)
-	(ps:chain toast-container (append-child toast))
-	(set-timeout (lambda () "remove the toast"
-		       (ps:chain toast class-list (add "fade-out"))
-		       (set-timeout (lambda () "wait fo the fade-out to complete"
-				      (ps:chain toast (remove))) 500))
-		     duration)))
-
     
     ;; Upload files to the "/files" endpoint using plain JS
     (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn")))
@@ -169,45 +291,8 @@
 	  (loading-indicator (ps:chain document (get-element-by-id "loading-indicator")))
 	  (error-container (ps:chain document (get-element-by-id "error-container")))
 	  (error-indicator (ps:chain document (get-element-by-id "error-indicator")))
-	  (success-indicator (ps:chain document (get-element-by-id "success-indicator")))
 	  (loading-container (ps:chain document (get-element-by-id "loading-container")))
 	  )
-      (defun base64-to-array (base64data)
-	"This function processes base64data returned from the server and converts it into a Uint8Array."
-	(let* ((binary-string (ps:chain window (atob base64data)))
-               (len (ps:chain binary-string length))
-               (bytes (new (-uint8-array len)))
-               (i 0))
-	  (loop for i from 0 to len do
-	    (setf (aref bytes i) (ps:chain binary-string (char-code-at i))))
-	  bytes))
-
-      (defun download-file (blob name)
-	"This function triggers the download of the file returned by the server. Shows a toast with the filename,
-   hides the progress indicator, and resets forms and file array."
-	(let ((blob-data (new (-blob (array (base64-to-array blob)) 
-				     (create :type "application/vnd.openxmlformats-officedocument.presentationml.presentation"))))
-              (link (ps:chain document (create-element "a")))
-              (filename (+ name ".pptx")))
-	  
-	  (setf (ps:chain link href) (ps:chain window -u-r-l (create-object-u-r-l blob-data)))
-	  (setf (ps:chain link download) filename)
-	  (ps:chain document body (append-child link))
-	  (ps:chain link (click))
-	  (ps:chain document body (remove-child link))
-	  (setf (ps:chain progress-container style display) "none")
-	  (setf (ps:chain loading-indicator style display) "none")
-	  (setf (ps:chain loading-container style display) "none")
-	  (let ((txt (+ "Your deck is saved as " filename " in your downloads folder as " name ".")))
-	    (show-toast txt 500)
-	    (setf (ps:chain success-indicator inner-h-t-m-l) txt))
-	  
-	  (setf (ps:chain success-indicator style display) "block")
-	  (setf files-array (array))
-	  (setf (ps:chain document (get-element-by-id "description") value) "")
-	  (setf (ps:chain document (get-element-by-id "files-container") inner-h-t-m-l) ""))
-	)
-
 
       (defun upload-files ()
 	"upload the files and track progress of the upload"
@@ -234,12 +319,11 @@
 		      (setf (ps:chain progress-container style display) "none")
 		      (setf (ps:chain loading-indicator style display) "block")
 		      (setf (ps:chain loading-container style display) "block")
-		      (setf (ps:chain loading-indicator inner-h-t-m-l) "Generating deck, sit back and wait...")))))
+		      (setf (ps:chain loading-indicator inner-h-t-m-l) "Converting, please wait...")))))
 
 	  (setf (ps:chain xhr onloadstart) (lambda ()
 					     "Show loading indicator when uploading starts"
 					     (setf (ps:chain loading-container style display) "none")
-					     (setf (ps:chain success-indicator style display) "none")
 					     (setf (ps:chain progress-container style display) "block")
 					     (setf (ps:chain loading-indicator style display) "block")
 					     (setf (ps:chain error-container style display) "none")
@@ -258,20 +342,14 @@
 			(if (eql (ps:chain response success) t)
 			    (setf (ps:chain window location href) 
 				  (+ (ps:chain window location pathname) "/" (ps:chain response directory)))
-
-			    ;;		    (setf (ps:chain window location href) (+ "/pdf-to-pptx/" (ps:chain response directory)))
-			    ;; (progn (download-file (ps:chain response data) (ps:chain response title))
-			    ;; 	   (incr-user-doc-count)
-			    ;; 	   (change-user-balance (ps:chain response balance)))
 			    (progn
 			      (ps:chain console (log response))
-			      (show-toast "An error occured during making the deck, please try again" 3000)
 			      (let* ((error-code (ps:chain response error-code))
 				     (error-text (cond
 						   ((eql error-code 429) "Server currently busy, please try again later.")
-						   ((eql error-code 500) "Your documents are too long, they will take forever to process. Decrease the number and/or size of the documents and try again.")
+						   ((eql error-code 500) "An error occured, please try again.")
 						   ((eql error-code 503) "Server currently experiencing some technical problems. Try again later.")
-						   ((eql error-code 504) "The documents are taking very long to process, won't finish in time. Decrease number and/or size of the documents and try again.")
+						   ((eql error-code 504) "The conversion is taking very long, won't finish in time. Decrease number and/or size of the documents and try again.")
 						   (t "An error occurred while processing the request. Please try again.")))))
 			      (setf (ps:chain progress-container style display) "none")
 			      (setf (ps:chain loading-indicator style display) "none")
@@ -280,22 +358,24 @@
 			      (setf (ps:chain error-container style display) "block")
 			      (setf (ps:chain error-indicator style display) "block")
 			      )))
-		      (progn (show-toast "An error occured during making the deck, please try again" 3000)
-			     (setf (ps:chain loading-container style display) "none")
-			     (setf (ps:chain progress-container style display) "none")
-			     (setf (ps:chain loading-indicator style display) "none")
-			     (setf (ps:chain error-container style display) "block")
-			     (setf (ps:chain error-indicator style display) "block")
-			     ))))
+		      (progn 
+			(setf (ps:chain loading-container style display) "none")
+			(setf (ps:chain progress-container style display) "none")
+			(setf (ps:chain loading-indicator style display) "none")
+			(setf (ps:chain error-container style display) "block")
+			(setf (ps:chain error-indicator style display) "block")
+			))))
 
 	  ;; Send the request only if there's a description or files to send
 	  (when (> (length files-array) 0)
-	    (ps:chain xhr (send form-data))
-	    (show-toast "Data is being submitted" 1500))))
+	    (ps:chain xhr (send form-data)))))
 
       (ps:chain submit-btn (add-event-listener "click" (lambda ()
 							 "submit button click listener"
-							 (upload-files)))))))
+							 (upload-files))))
+      ;; hide drop-zone on mobile devices
+      (when (is-mobile-browser)
+	(setf (ps:chain document (get-element-by-id "drop-zone") style display) "none")))))
 
 (defun home-css ()
   "the css for the /home endpoint"
@@ -311,37 +391,29 @@
        (.upload-btn :float left)
        (.add-symbol :margin-right 8px :font-size :16px :font-weight bold)
        ("button:hover" :background-color "#45a049")
-       (.file-frame :display inline-block :margin 10px :padding 10px :border "1px solid #1a1a1a" :position relative :text-align center :max-width "150px")
-       (.file-name :font-size "12px" :color ,fg-color :margin-top "5px" :word-wrap "normal" :max-width "150px" :overflow "hidden" :text-overflow "ellipsis")
-       (.close-btn :position absolute :top 5px :right 5px :background-color red :color white :border none :cursor pointer)
-       ("img, iframe" :max-width 150px :max-height 150px)
+
+       (.file-frame :display "inline-block" :margin "10px" :padding "10px" :position "relative" :text-align "center" :max-width "150px")
+       (.file-row :display "flex" :align-items "center" :justify-content "space-between" :margin-bottom "10px" :padding "10px" :border "1px solid #ccc" :border-radius "4px" :background-color "#f9f9f9" :max-width "150px")
+       (.file-name :font-size "16px" :color ,fg-color :margin-top "5px" :word-wrap "normal" :max-width "150px" :overflow "hidden" :text-overflow "ellipsis" :flex-grow "1")
+       (.close-btn :position "absolute" :top "5px" :right "5px" :background-color "red" :color "white" :border "none" :cursor "pointer" :border-radius "0%" :width "24px" :height "24px" :display "flex" :align-items "center" :justify-content "center" :font-size "14px" :line-height "1")
+       (".close-btn:hover" :background-color "#d32f2f")
+       ("img, iframe" :max-width "150px" :max-height "150px")
        (.drop-zone :width "100%" :height "200px" :border "2px dashed #1a1a1a" :display "flex" :align-items "center" :justify-content "center" :text-align "center" :margin "20px 0" :cursor "pointer")
        (.drop-zone.dragging :border-color "#666")
+
        (h2 :color ,fg-color)
        (p :text-align "justify")
-       (.separator :color ,link-blue)
        (.error-p :color ,red)
        (.top :font-weight bold)
-       (.buy-tokens-large :font-size 21px :font-weight bold)
-       (footer :text-align center :margin-top 10%)
        (a :color ,link-blue :text-decoration none :decoration none :margin-left 10px :margin-right 10px)
        (a.dropdown-item :color ,link-blue :text-decoration none :decoration none :margin-left 10px :margin-right 10px)
        ("a:hover::after" :color ,link-blue)
        ("a:visited" :color ,link-blue :decoration none)
        ("a:hover" :color ,link-blue :decoration underline)
-					;  ("a:not(.logo-link)::after" :content "\"↪\"" :font-weight "bold" :color "inherit" :vertical-align baseline)
        (.logo :display flex :justify-content center :flex-direction :row :align-items :center :gap "10px")
        ("a.logo-link" :text-align center :color ,link-blue :text-decoration none :font-size 30px)
        (.logo-image :width 50px)
-       ("span.balance" :color ,fg-color)
-       ("a.feedback" :font-size 20px :font-weight bold)
        ("a.logo-link:hover" :color ,link-blue)
-       (".copyright" :color ,fg-color :text-align center)
-       (.toast-container :position "fixed" :bottom "20px" :left "50%" :transform "translateX(-50%)" :z-index "9999" :display "flex" :flex-direction "column" :align-items "center")
-       (.toast :background-color "#333" :color "white" :padding "15px" :margin-top "10px" :border-radius "5px" :box-shadow "0px 4px 8px rgba(0, 0, 0, 0.1)" :opacity "0.9" :transition "opacity 0.3s ease" :max-width "80%" :word-wrap "break-word" :text-align "center")
-       (".toast.fade-out" :opacity "0")
-       (textarea :width 99.5% :margin-top 5px :border "1px solid #1a1a1a" :background-color ,bg-color :color ,fg-color :padding 5px)
-
        (.loading-container :width "150px" :height "10px" :background-color "#e0e0e0" :overflow "hidden" :position "relative" :border-radius "5px" :border 0 :margin "0 auto")
        (.bar :width "30px" :height "100%" :background-color "#00b800" :position "absolute" :left "-30px" :animation "move 2s cubic-bezier(0.42, 0, 0.58, 1) infinite")
        (".bar:nth-child(2)" :animation-delay "1s")
@@ -354,13 +426,19 @@
        ("a:visited.download-btn" :color "#e8e8e8" :text-decoration none)
        (.submenu-item :background-color "#e8e8e8")
        (a.active :color black)
-       (footer :position absolute :width 80% :bottom 0 :height 60px :line-height 60px :background-color "#f5f5f5")
+       (footer :position sticky :margin-top 10% :width 100% :bottom 0 :height 60px :line-height 60px :background-color "#f5f5f5")
        ("@media only screen and (max-width: 768px)"
-	(footer :margin-top 50% :text-align left :font-size 15px)
-	("a.feedback" :font-size 16px :font-weight bold)
+	(footer :position sticky :width 100% :bottom 0 :margin-left -0.5% :margin-top 110% :height 90px :line-height 20px :background-color "#f5f5f5")
 	(a :margin-left 2px :margin-right 2px)
-	(.ad :width 95%)
-	(".copyright" :color ,fg-color :text-align left))))))
+	(.file-name :font-size 20px)
+	(.close-btn :font-size 20px)
+	(.ad :width 98%)
+	(button :font-size 22px)
+	(.upload-btn :float none)
+	(a.dropdown-item :font-size 22px)
+	(.nav-link :font-size 22px)
+	(body :font-size 20px :margin 2% :width 97%)
+	(.btns :display flex :flex-direction column))))))
 
 (defparameter *file-types* '(("azw3" . ("docx" "epub" "fb2" "lit" "mobi" "pdf" "pdb" "rtf" "txt"))
 			     ("doc" . ("pdf"))
@@ -370,7 +448,7 @@
 			     ("fb2" . ("azw3" "docx" "epub" "lit" "mobi" "pdf" "pdb" "rtf" "txt"))
 			     ("lit" . ("azw3" "docx" "epub" "fb2" "mobi" "pdf" "pdb" "rtf" "txt"))
 			     ("mobi" . ("azw3" "docx" "epub" "fb2" "lit" "pdf" "pdb" "rtf" "txt"))
-			     ("pdf" . ("azw3" "doc" "docx" "epub" "fb2" "lit" "mobi" "pdb" "powerpoint" "ppt" "pptx" "rtf" "txt" "word"))
+			     ("pdf" . ("azw3" "docx" "epub" "fb2" "lit" "mobi" "pdb" "powerpoint" "ppt" "pptx" "rtf" "txt" "word"))
 			     ("pdb" . ("azw3" "docx" "epub" "fb2" "lit" "mobi" "pdf" "rtf" "txt"))
 			     ("powerpoint" . ("pdf"))
 			     ("ppt" . ("pdf"))
@@ -401,9 +479,9 @@
 	   (:div :class "container-fluid"
 		 (:a :class "navbar-brand" :href "/"
 		     (:img :src "/spotpdf/spotpdf-logo.png" :width "68" :height "60" :class "d-inline-block align-top" :alt ""))
-		 (:button :class "navbar-toggler" :type "button" :data-bs-toggle "collapse" :data-bs-target "navbar-content"
-			  :aria-controls "navbar-content" :aria-expanded "false" :aria-label "Toggle navigation"
-			  (:span :class "navbar-toggler-icon"))
+		 ;; (:button :class "navbar-toggler" :type "button" :data-bs-toggle "collapse" :data-bs-target "navbar-content"
+		 ;; 	  :aria-controls "navbar-content" :aria-expanded "false" :aria-label "Toggle navigation"
+		 ;; 	  (:span :class "navbar-toggler-icon"))
 		 (:ul :class "navbar-nav me-auto mb-2 mb-lg-0"
 		      (:li :class "nav-item dropdown"
 			   (:a :class "nav-link dropdown-toggle" :href "#" :id "convert-menu" :role "button" :data-bs-toggle "dropdown"
@@ -426,7 +504,8 @@
   (with-html-output (*standard-output*)
     (htm (:footer :class "footer"
 		  (:div :class "container"
-			(:b (cl-who:fmt "© Ninx Technology Limited ~a - A one stop conversion site." (ninx:get-current-year))))))))
+			(:b "SpotPDF - A one stop conversion spot.")
+		       	(:b (cl-who:fmt "  © Ninx Technology Limited ~a." (ninx:get-current-year))))))))
 
 (define-easy-handler (home
 		      :uri (define-matching-functions "^/$" *spotpdf-host*)
@@ -476,14 +555,13 @@
 		    (header)
 		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
 		    (:p (cl-who:fmt "Convert your PDFs to ~a" to-capital))
-
-		    (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		    (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Choose PDF button")
 		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf" :multiple t)
 		    (:div :id "files-container")
 		    (:div :class "btns"
 			  (:button :class "upload-btn" :id "upload-btn"
 				   (:span :class "add-symbol" "+")
-				   "Add PDF")
+				   "Choose PDF")
 			  (:button :class "submit-btn" :id "submit-btn" (cl-who:fmt "Convert to ~a" to-capital)))
 		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
 			  (:div :class "bar")
@@ -497,11 +575,6 @@
 			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
 		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
 			  "An error occurred, please try again.")
-		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			  "The deck has been created, downloaded and saved in downloads.")
-		    (:div :id "toast-container" :class "toast-container")
-		    
-		    
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -510,9 +583,11 @@
 (define-easy-handler (convert-pdf-to-pptx-route
 		      :uri (define-matching-functions "^/convert-pdf-to-(ppt|pptx|powerpoint)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (let ((files (post-parameters*))
-	(uuid (to-string (make-v4))))
-    (convert-pdf-to-format "pptx" uuid files)
+  (let*  ((files (post-parameters*))
+	  (uuid (to-string (make-v4)))
+	  (to (ppcre:regex-replace-all "(/convert-pdf-to-)" (script-name*) ""))
+	  (format (if (string= to "ppt") "ppt" "pptx")))
+    (convert-pdf-to-format format uuid files)
     (jzon:stringify (hash-create `(("directory" ,uuid)
 				   ("success" t))))))
 
@@ -590,13 +665,13 @@
 		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
 		    (:p (cl-who:fmt "Convert your PDFs to ~a." to-capital))
 
-		    (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Add PDF button")
+		    (:div :id "drop-zone" :class "drop-zone" " Drag and drop files here or click the Choose PDF button")
 		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf" :multiple t)
 		    (:div :id "files-container")
 		    (:div :class "btns"
 			  (:button :class "upload-btn" :id "upload-btn"
 				   (:span :class "add-symbol" "+")
-				   "Add PDF")
+				   "Choose PDF")
 			  (:button :class "submit-btn" :id "submit-btn" (cl-who:fmt "Convert to ~a" to-capital)))
 		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
 			  (:div :class "bar")
@@ -610,11 +685,6 @@
 			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
 		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
 			  "An error occurred, please try again.")
-		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			  "The deck has been created, downloaded and saved in downloads.")
-		    (:div :id "toast-container" :class "toast-container")
-		    
-		    
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -623,9 +693,12 @@
 (define-easy-handler (convert-pdf-to-word-route
 		      :uri (define-matching-functions "^/convert-pdf-to-(word|doc)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (let ((files (post-parameters*))
-	(uuid (to-string (make-v4))))
-    (convert-pdf-to-format "docx" uuid files)
+  (let* ((files (post-parameters*))
+	 (uuid (to-string (make-v4)))
+	 (to (ppcre:regex-replace-all "(/convert-pdf-to-)" (script-name*) ""))
+	 (format (if (string= to "word") "docx" "doc")))
+    
+    (convert-pdf-to-format format uuid files)
     (jzon:stringify (hash-create `(("directory" ,uuid)
 				   ("success" t))))))
 
@@ -692,13 +765,13 @@
 		    (:h1 (cl-who:fmt "Convert ~a to PDF" to-capital))
 		    (:p (cl-who:fmt "Convert your ~a documents to PDFs." to-capital))
 
-		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Add ~a button" to-capital))
+		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Choose ~a button" to-capital))
 		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".doc, .docx" :multiple t)
 		    (:div :id "files-container")
 		    (:div :class "btns"
 			  (:button :class "upload-btn" :id "upload-btn"
 				   (:span :class "add-symbol" "+")
-				   (cl-who:fmt "Add ~a" to-capital))
+				   (cl-who:fmt "Choose ~a" to-capital))
 			  (:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
 		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
 			  (:div :class "bar")
@@ -712,11 +785,6 @@
 			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
 		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
 			  "An error occurred, please try again.")
-		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			  "The deck has been created, downloaded and saved in downloads.")
-		    (:div :id "toast-container" :class "toast-container")
-		    
-		    
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -792,13 +860,13 @@
 		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
 		    (:p (cl-who:fmt "Convert your ~a documents to PDFs." from-capital))
 
-		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Add ~a button" from-capital))
+		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Choose ~a button" from-capital))
 		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".ppt, .pptx" :multiple t)
 		    (:div :id "files-container")
 		    (:div :class "btns"
 			  (:button :class "upload-btn" :id "upload-btn"
 				   (:span :class "add-symbol" "+")
-				   (cl-who:fmt "Add ~a" from-capital))
+				   (cl-who:fmt "Choose ~a" from-capital))
 			  (:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
 		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
 			  (:div :class "bar")
@@ -812,11 +880,6 @@
 			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
 		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
 			  "An error occurred, please try again.")
-		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			  "The deck has been created, downloaded and saved in downloads.")
-		    (:div :id "toast-container" :class "toast-container")
-		    
-		    
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -892,13 +955,13 @@
 		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
 		    (:p (cl-who:fmt "Convert your ~a sheets to PDF Documents" from-capital))
 
-		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Add ~a button" from-capital))
+		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Choose ~a button" from-capital))
 		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".xlsx, .xls" :multiple t)
 		    (:div :id "files-container")
 		    (:div :class "btns"
 			  (:button :class "upload-btn" :id "upload-btn"
 				   (:span :class "add-symbol" "+")
-				   (cl-who:fmt "Add ~a" from-capital))
+				   (cl-who:fmt "Choose ~a" from-capital))
 			  (:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
 		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
 			  (:div :class "bar")
@@ -912,11 +975,6 @@
 			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
 		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
 			  "An error occurred, please try again.")
-		    (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			  "The deck has been created, downloaded and saved in downloads.")
-		    (:div :id "toast-container" :class "toast-container")
-		    
-		    
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -997,13 +1055,13 @@
 			 (:h1 (cl-who:fmt "Convert ~a to ~a" from-capital to-capital))
 			 (:p (cl-who:fmt "Convert your ~a files to ~a." from-capital to-capital))
 
-			 (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Add ~a button" from-capital))
+			 (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Choose ~a button" from-capital))
 			 (:input :type "file" :id "file-input" :style "display: none;" :accept (format nil ".~a" from) :multiple t)
 			 (:div :id "files-container")
 			 (:div :class "btns"
 			       (:button :class "upload-btn" :id "upload-btn"
 					(:span :class "add-symbol" "+")
-					(cl-who:fmt "Add ~a" from-capital))
+					(cl-who:fmt "Choose ~a" from-capital))
 			       (:button :class "submit-btn" :id "submit-btn" (cl-who:fmt "Convert to ~a" to-capital)))
 			 (:div :id "loading-container" :class "loading-container" :style "display: none;"
 			       (:div :class "bar")
@@ -1017,11 +1075,6 @@
 			       (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
 			 (:div :id "error-indicator" :style "display: none; color: #FF6060"
 			       "An error occurred, please try again.")
-			 (:div :id "success-indicator" :style "display: none; color: #1e90ff"
-			       "The deck has been created, downloaded and saved in downloads.")
-			 (:div :id "toast-container" :class "toast-container")
-			 
-			 
 			 (:script (str (home-js))))
 		   (:div :class "ad")
 		   (footer)
@@ -1076,14 +1129,15 @@
 
 (defun pdf-to-format (dir file-path format &aux (infilter (trivia:match format
 							    ("pptx" "impress_pdf_import")
+							    ("ppt" "impress_pdf_import")
 							    ("docx" "writer_pdf_import")
+							    ("doc" "writer_pdf_import")
 							    )))
   "convert a file pdf to a given format
   dir is the uuid dir name for the request."
   (let ((cmd (format nil "/usr/bin/libreoffice --headless --infilter=~s --convert-to ~a --outdir ~s ~s"
 		     infilter format (namestring (truename dir)) (namestring (truename file-path)))))
-    (uiop:run-program cmd)
-    (delete-file file-path)))
+    (uiop:run-program cmd)))
 
 (defun convert-pdf-to-format (format uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" uuid)))
   "given a list of post parameters, create a directory for them at uuid.
@@ -1092,71 +1146,40 @@
   (ensure-directories-exist dir)
   (dolist (param post-parameters)
     (trivia:match param
-      ((list _ path file-name "application/pdf")
-       (let ((pdf-path (format nil "~a~a" dir file-name)))
-    	 (uiop:copy-file path pdf-path)
-	 (pdf-to-format dir pdf-path format)))
-      (_ nil))))
-
-
-(defun epub-to-pdf (epub-path pdf-path)
-  "convert a file pdf to a given format
-  dir is the uuid dir name for the request."
-  (let* ((cmd (format nil "/usr/bin/pandoc -f epub -t pdf ~a -o ~a" epub-path pdf-path)))
-    (uiop:run-program cmd)
-    (delete-file epub-path)))
-
-(defun convert-epub-to-pdf (uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" uuid)))
-  "given a list of post parameters, create a directory for them at uuid.
-   copy all files to it, then convert them to pptx, remove the pdf files,
-   and return after that."
-  (ensure-directories-exist dir)
-  (dolist (param post-parameters)
-    (trivia:match param
       ((list _ path file-name _)
-       (let ((epub-path (format nil "~a~a" dir file-name))
-	     (pdf-path (format nil "~a~a.pdf" dir (pathname-name file-name))))
-    	 (uiop:copy-file path epub-path)
-	 (epub-to-pdf epub-path pdf-path)))
-      (_ nil))))
+       (let ((pdf-path (version-name dir file-name)))
+	 (uiop:copy-file path pdf-path)
+	 (pdf-to-format dir pdf-path format)))
+      (_ nil)))
+  (delete-dir-files dir format))
 
 (defun ebook-convert-fn (pdf-path epub-path)
   "convert a file pdf to a given format
   dir is the uuid dir name for the request."
-  (format *terminal-io* "~%from-path: ~a~%to-path: ~a~%~%" pdf-path epub-path)
   (let* ((cmd (format nil "/usr/bin/ebook-convert ~a ~a --enable-heuristics" pdf-path epub-path)))
-    (uiop:run-program cmd)
-    (delete-file pdf-path)))
+    (uiop:run-program cmd)))
 
 (defun ebook-convert (to uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" uuid)))
   "given a list of post parameters, create a directory for them at uuid.
    copy all files to it, then convert them to pptx, remove the pdf files,
    and return after that."
   (ensure-directories-exist dir)
-  (format *terminal-io* "~%~%to: ~a~%~%" to)
   (dolist (param post-parameters)
     (trivia:match param
       ((list _ path file-name _)
-       (let ((from-path (format nil "~a~a" dir file-name))
-	     (to-path (format nil "~a~a.~a" dir (pathname-name file-name) to)))
+       (let* ((from-path (version-name dir file-name))
+	      (to-path (format nil "~a~a.~a" dir (pathname-name from-path) to)))
     	 (uiop:copy-file path from-path)
 	 (ebook-convert-fn from-path to-path)))
-      (_ nil))))
+      (_ nil)))
+  (delete-dir-files dir to))
 
-(deftest convert-pdf-to-epub (convert-pdf-to-epub (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/spotpdf/test-files/test.pdf" "test.pdf" "application/pdf"))) nil)
-
-(deftest convert-epub-to-pdf (convert-epub-to-pdf (to-string (make-v4)) '(("test.epub" #p"~/common-lisp/ninx/apps/spotpdf/test-files/test.epub" "test.epub" "application/epub+zip"))) nil)
-
-(deftest convert-pdf-to-pptx (convert-pdf-to-format "pptx" (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/spotpdf/test-files/test.pdf" "test.pdf" "application/pdf"))) nil)
-
-(deftest convert-pdf-to-word (convert-pdf-to-format "docx" (to-string (make-v4)) '(("test.pdf" #p"~/common-lisp/ninx/apps/spotpdf/test-files/test.pdf" "test.pdf" "application/pdf"))) nil)
 
 (defun get-downloadable-data (dir &aux (path (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" dir)))
   "counts the number of files in a given directory, if it is 1, returns it and its content-type.
    if it has more than 1, then the files are compressed into a zip and that is returned to the user."
   (let* ((files (uiop:directory-files path))
 	 (len (length files)))
-    (format t "~%~a~%~%" len)
     (cond
       ((= len 1)
        (list (cl-mime-from-string:mime-type-from-string (namestring (car files)))
@@ -1177,8 +1200,7 @@
   dir is the uuid dir name for the request."
   (let ((cmd (format nil "/usr/bin/libreoffice --headless --convert-to ~a --outdir ~s ~s"
 		     to (namestring (truename dir)) (namestring (truename file-path)))))
-    (uiop:run-program cmd)
-    (delete-file file-path)))
+    (uiop:run-program cmd)))
 
 (defun convert-format-to-format (to uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" uuid)))
   "given a list of post parameters, create a directory for them at uuid.
@@ -1188,11 +1210,54 @@
   (dolist (param post-parameters)
     (trivia:match param
       ((list _ path file-name _)
-       (let ((pdf-path (format nil "~a~a" dir file-name)))
+       (let ((pdf-path (version-name dir file-name)))
     	 (uiop:copy-file path pdf-path)
 	 (format-to-format to dir pdf-path)))
-      (_ nil))))
+      (_ nil)))
+  (delete-dir-files dir to))
 
-(deftest convert-xlsx-to-docx (convert-format-to-format "docx" (to-string (make-v4)) '(("file" #p"~/common-lisp/ninx/apps/spotpdf/test-files/test.xlsx" "test.xlsx" "any"))))
+(defun delete-dir-files (dir type)
+  "delete files not of type from dir"
+  (dolist (file (uiop:directory-files dir))
+    (when (null (ppcre:scan (format nil "(.~a)$" type) (namestring file)))
+      (delete-file file))))
 
-(deftest convert-xlsx-to-pdf (convert-format-to-format "pdf" (to-string (make-v4)) '(("file" #p"~/common-lisp/ninx/apps/spotpdf/test-files/test.xlsx" "test.xlsx" "any"))))
+(defun version-name (dir file-name)
+  "return a file with a version"
+  (let* ((pdf-path-1 (format nil "~a~a" dir file-name))
+	 (pdf-path (let ((version (version-file pdf-path-1)))
+		     (format nil "~a~a" dir (format nil "~a~a"
+						    (pathname-name file-name)
+						    (if (equal 0 version)
+							(format nil ".~a" (pathname-type file-name))
+							(format nil "_~a.~a"
+								version
+								(pathname-type file-name))))))
+		   ))
+    pdf-path))
+
+(defun version-file (pathspec)
+  "this will give a number to a file eg test_1.txt depending on how many files have 'name'_ver.ext"
+  (let* ((type (pathname-type pathspec))
+	 (file (pathname-name pathspec)))
+    (count-if
+     (lambda (spec)
+       (ppcre:scan (format nil "^(.*?/)?(~a(_[0-9]+)?).~a$" file type) (namestring spec)))
+     (uiop:directory-files (truename (ppcre:regex-replace-all (format nil "~a.~a" file type) (namestring pathspec) ""))))))
+
+(defun clean-up-files ()
+  "delete folders having files created atleast 2 hours ago, this will run every two hours deleting files.
+   this is essential to prevent buildup of unneccessary files."
+  (let ((dirs (directory "~/common-lisp/ninx/apps/spotpdf/files/*")))
+    (dolist (dir dirs)
+      (let* ((files (directory dir))
+	     (t-now (get-universal-time)))
+	(when files
+	  (when (< (file-write-date (car files)) (- t-now 7200))
+	    (delete-directory dir :recursive t)))))))
+
+(defun schedule-cleanup ()
+  "run the cleanup every two hours."
+  (let ((timer (sb-ext:make-timer #'spotpdf::clean-up-files :name 'file-cleanup :thread t)))
+    (sb-ext:schedule-timer timer 7200 :repeat-interval 7200)
+    timer))

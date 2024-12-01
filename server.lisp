@@ -6,7 +6,7 @@
 
 (in-package :server)
 
-(defun start-server (&key (log-to-file t) (schedule-payments t))
+(defun start-server (&key (log-to-file t) (schedule-payments t) (schedule-cleanup t))
   "Start the server, when the server is started, we schedule a timer that will fetch paypal transaction data for the last 2 days every minute.
 2 days because we don't know the timezone we will hit and so to avoid any problems, we set a two day gap. we use keys such that we just add 
 application specific options"
@@ -20,7 +20,8 @@ application specific options"
 	(setf (acceptor-message-log-destination ninx:*ninx-wss-acceptor*) *terminal-io*)
 	(setf (acceptor-access-log-destination ninx:*ninx-wss-acceptor*) *terminal-io*)))
   ;; start application specific components
-  (start-decklm :schedule-payments schedule-payments))
+  (start-decklm :schedule-payments schedule-payments)
+  (start-spotpdf :schedule-cleanup schedule-cleanup))
 
 (defun stop-server ()
   "Stop the server"
@@ -30,11 +31,12 @@ application specific options"
     (stop ninx:*ninx-wss-acceptor*))
   ;; stop application specific code
   (stop-decklm)
+  (stop-spotpdf)
   )
 
-(defun restart-server (&key (log-to-file t) (schedule-payments t))
+(defun restart-server (&key (log-to-file t) (schedule-payments t) (schedule-cleanup t))
   (stop-server)
-  (start-server :log-to-file log-to-file :schedule-payments schedule-payments))
+  (start-server :log-to-file log-to-file :schedule-payments schedule-payments :schedule-cleanup schedule-cleanup))
 
 ;; websocket methods to handle communication via websocket
 (defmethod hunchensocket:client-connected ((endpoint ws-endpoint) ws-user))
@@ -45,7 +47,7 @@ application specific options"
     ("/ws/decklm" (decklm::ws-decklm endpoint ws-user message-json))))
 
 (defun start-test-server ()
-  (start-server :log-to-file nil :schedule-payments nil))
+  (start-server :log-to-file nil :schedule-payments nil :schedule-cleanup nil))
 
 (defun restart-test-server ()
   (stop-server)

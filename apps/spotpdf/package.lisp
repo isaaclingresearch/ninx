@@ -3,4 +3,9 @@
   (:shadow hunchentoot:reply parenscript:@ parenscript:stringify parenscript:% cl-who:fmt str:match parenscript:chain sb-ext:create)
   (:documentation "The main package for ilovepdf clone.")
   (:local-nicknames (:jzon :com.inuoe.jzon) (:ppcre :cl-ppcre))
-  (:export :start-goodpdf :stop-goodpdf :handle-ws-message))
+  (:export :start-goodpdf :stop-goodpdf :handle-ws-message *file-types* *spotpdf-host*))
+
+(defpackage :spotpdf-tests
+  (:use :cl :ninx :spotpdf :com.inuoe.jzon :cl-ppcre :sb-rt)
+  (:documentation "Tests for all the conversion types")
+  (:local-nicknames (:jzon :com.inuoe.jzon) (:ppcre :cl-ppcre)))

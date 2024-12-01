@@ -1,5 +1,7 @@
 (in-package :ninx)
 
+(defparameter *ninx-version* #.(asdf:component-version (asdf:find-system :ninx)))
+
 ;; easy-routes is incompatible with hunchentoot's easy-handler for using hosts, so we won't be using it.
 
 ;;; HTTP(S) 
@@ -36,6 +38,14 @@
 
 (pushnew 'find-ws-endpoint hunchensocket:*websocket-dispatch-table*)
 
+;; customise our reply
+(defclass ninx-reply (hunchentoot:reply)
+  ()
+  (:documentation "a subclass to modify some of the reply behaviour of the server"))
+
+(defmethod initialize-instance :after ((reply ninx-reply) &key)
+  (setf (header-out :content-type reply) *default-content-type*)
+  (setf (header-out :server reply) (format nil "Ninx Server ~A" *ninx-version*)))
 
 ;; we need to use easy-routes over websockets, so we will create children of both
 (defclass ws-acceptor (acceptor-websocket easy-acceptor)
@@ -55,11 +65,13 @@
 
 (defvar *ninx-wss-acceptor* (make-instance 'ws-ssl-acceptor :port *ninx-https-port*
 							    :name 'ninx
+							    :reply-class 'ninx-reply
 							    :ssl-certificate-file *ninx-ssl-cert*
 							    :ssl-privatekey-file *ninx-ssl-key*
 							    :document-root (truename "~/common-lisp/ninx/priv/")
 							    :error-template-directory (truename "~/common-lisp/ninx/priv/errors/")
 							    ))
+(setf *acceptor* *ninx-wss-acceptor*)
 
 (defvar *ninx-http-acceptor* (make-instance 'http-to-https-acceptor :port *ninx-http-port*))
 
@@ -190,3 +202,17 @@
         (when *show-lisp-errors-p*
           (error-contents-from-template))  ; try template
         (call-next-method))))
+
+(defmethod acceptor-server-name ((acceptor ws-ssl-acceptor))
+  "return our server name"
+  (format nil "Ninx Server ~A" *ninx-version*))
+
+(defun is-mobile-browser (request &optional agent)
+  "check if a given agent is a mobile browser"
+  (let ((user-agent (if agent agent (cdr (find :user-agent (headers-in*) :key #'car)))))
+    (cond
+      ((ppcre:scan "(?i)android" user-agent) t)
+      ((ppcre:scan "(?i)iPad|iPhone|iPod" user-agent) t)
+      ((ppcre:scan "(?i)windows phone" user-agent) t)
+      ((ppcre:scan "(?i)blackberry|bb10|playbook" user-agent) t)
+      (t nil))))

@@ -24,7 +24,8 @@
 	       (:module "apps/spotpdf"
 			:components ((:file "package")
 				     (:file "spotpdf")
-				     (:file "spotpdf.app")))
+				     (:file "spotpdf.app")
+				     (:file "spotpdf.tests")))
 	       (:module "apps/blog"
 		:components ((:file "ninx")
 			     (:file "blog")))
