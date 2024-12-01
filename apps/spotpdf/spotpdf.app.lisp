@@ -31,113 +31,6 @@
 
     (setf files-array (array)) ;; this will hold the files
     
-    ;; (defun handle-files (files)
-    ;;   "this function will handle addition of files when a user submits or drops them"
-    ;;   (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
-    ;; 	(ps:chain -array (from files)
-    ;; 		  (for-each
-    ;; 		   (lambda (file)
-    ;; 		     ;; first add the file to form-data created above
-    ;; 		     (ps:chain files-array (push file))
-    ;; 		     (let ((file-frame (ps:chain document (create-element "div")))
-    ;; 			   (close-button (ps:chain document (create-element "button")))
-    ;; 			   (frame-id (generate-random-id))
-    ;; 			   (btn-id (generate-random-id)))
-    ;; 		       ;; handle frame
-    ;; 		       (ps:chain file-frame class-list (add "file-frame"))
-    ;; 		       (ps:chain file-frame (set-attribute "id" frame-id))
-    ;; 		       (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
-
-    ;; 		       ;; handle close button
-    ;; 		       (ps:chain close-button class-list (add "close-btn"))
-    ;; 		       (ps:chain close-button (set-attribute "id" btn-id))
-    ;; 		       (setf (ps:chain close-button inner-h-t-m-l) "&times;")
-    ;; 		       (ps:chain close-button (add-event-listener "click"
-    ;; 								  (lambda ()
-    ;; 								    ;; remove the file from files-array
-    ;; 								    (let ((index (ps:chain files-array (index-of file))))
-    ;; 								      (if (> index -1)
-    ;; 									  (ps:chain files-array (splice index 1))))
-    ;; 								    (ps:chain file-frame (remove))))))
-    ;; 		     (cond
-    ;; 		       ((ps:chain file type (starts-with "image/"))
-    ;; 			(let ((img (ps:chain document (create-element "img")))
-    ;; 			      (reader (new -file-reader)))
-    ;; 			  (setf (ps:chain reader onload) (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
-    ;; 			  (ps:chain reader (read-as-data-u-r-l file))
-    ;; 			  (ps:chain file-frame (append-child img))))
-    ;; 		       ((eql (ps:chain file type) "application/pdf")
-    ;; 			(let ((iframe (ps:chain document (create-element "iframe")))
-    ;; 			      (file-name (ps:chain document (create-element "span"))))
-    ;; 			  (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
-    ;; 			  (ps:chain file-frame (append-child iframe))
-    ;; 			  ;; file name
-    ;; 			  (ps:chain file-name class-list (add "file-name"))
-    ;; 			  (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
-    ;; 			  (ps:chain file-frame (append-child file-name)))))
-    ;; 		     (ps:chain file-frame (append-child close-button))
-    ;; 		     (ps:chain files-container (append-child file-frame))
-    ;; 		     (scroll-to-bottom))))))
-
-    ;;   (defun handle-files (files)
-    ;; "This function will handle addition of files when a user submits or drops them."
-    ;; (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
-    ;;   (ps:chain -array (from files)
-    ;;             (for-each
-    ;;              (lambda (file)
-    ;;                ;; First add the file to form-data created above
-    ;;                (ps:chain files-array (push file))
-    ;;                (let ((file-frame (ps:chain document (create-element "div")))
-    ;;                      (close-button (ps:chain document (create-element "button")))
-    ;;                      (frame-id (generate-random-id))
-    ;;                      (btn-id (generate-random-id)))
-    ;;                  ;; Handle frame
-    ;;                  (ps:chain file-frame class-list (add "file-frame"))
-    ;;                  (ps:chain file-frame (set-attribute "id" frame-id))
-    ;;                  (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
-
-    ;;                  ;; Handle close button
-    ;;                  (ps:chain close-button class-list (add "close-btn"))
-    ;;                  (ps:chain close-button (set-attribute "id" btn-id))
-    ;;                  (setf (ps:chain close-button inner-h-t-m-l) "&times;")
-    ;;                  (ps:chain close-button (add-event-listener "click"
-    ;;                                                             (lambda ()
-    ;;                                                               ;; Remove the file from files-array
-    ;;                                                               (let ((index (ps:chain files-array (index-of file))))
-    ;;                                                                 (if (> index -1)
-    ;;                                                                     (ps:chain files-array (splice index 1))))
-    ;;                                                               (ps:chain file-frame (remove))))))
-
-    ;;                  (cond
-    ;;                    ;; Handle images
-    ;;                    ((ps:chain file type (starts-with "image/"))
-    ;;                     (let ((img (ps:chain document (create-element "img")))
-    ;;                           (reader (new -file-reader)))
-    ;;                       (setf (ps:chain reader onload) (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
-    ;;                       (ps:chain reader (read-as-data-u-r-l file))
-    ;;                       (ps:chain file-frame (append-child img))))
-    ;;                    ;; Handle PDFs
-    ;;                    ((eql (ps:chain file type) "application/pdf")
-    ;;                     (let ((iframe (ps:chain document (create-element "iframe")))
-    ;;                           (file-name (ps:chain document (create-element "span"))))
-    ;;                       (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
-    ;;                       (ps:chain file-frame (append-child iframe))
-    ;;                       ;; File name
-    ;;                       (ps:chain file-name class-list (add "file-name"))
-    ;;                       (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
-    ;;                       (ps:chain file-frame (append-child file-name))))
-    ;;                    ;; Handle other files
-    ;;                    (t
-    ;;                     (let ((file-name (ps:chain document (create-element "span"))))
-    ;;                       (ps:chain file-name class-list (add "file-name"))
-    ;;                       (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
-    ;;                       (ps:chain file-frame (append-child file-name)))))
-
-    ;;                  ;; Add close button and append the file frame to the container
-    ;;                  (ps:chain file-frame (append-child close-button))
-    ;;                  (ps:chain files-container (append-child file-frame))
-    ;;                  (scroll-to-bottom))))))
-
     (defun handle-files (files)
       "This function handles addition of files when a user submits or drops them."
       (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
@@ -479,9 +372,6 @@
 	   (:div :class "container-fluid"
 		 (:a :class "navbar-brand" :href "/"
 		     (:img :src "/spotpdf/spotpdf-logo.png" :width "68" :height "60" :class "d-inline-block align-top" :alt ""))
-		 ;; (:button :class "navbar-toggler" :type "button" :data-bs-toggle "collapse" :data-bs-target "navbar-content"
-		 ;; 	  :aria-controls "navbar-content" :aria-expanded "false" :aria-label "Toggle navigation"
-		 ;; 	  (:span :class "navbar-toggler-icon"))
 		 (:ul :class "navbar-nav me-auto mb-2 mb-lg-0"
 		      (:li :class "nav-item dropdown"
 			   (:a :class "nav-link dropdown-toggle" :href "#" :id "convert-menu" :role "button" :data-bs-toggle "dropdown"
