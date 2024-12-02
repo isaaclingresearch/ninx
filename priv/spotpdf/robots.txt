@@ -1,0 +1,9 @@
+User-agent: *  # Applies to all web crawlers
+Disallow: /private/  # Block access to the private folder
+Disallow: /admin/    # Block access to admin pages
+Disallow: /login/    # Block access to the login page
+
+Sitemap: https://spotpdf.com/sitemap.xml
+
+User-agent: Bingbot
+Disallow: /test/  # Block Bingbot from accessing the test folder
