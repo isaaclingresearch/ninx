@@ -13,7 +13,7 @@
   (when schedule-payments
     (setf *payments-timer* (schedule-payments-update)))
   ;; start the python client and load python-pptx
-  (py4cl2:pystart)
+  (py4cl2:pystart (namestring (truename "~/decklm/bin/python3")))
   (py4cl2:pyexec "import importlib.util")
   (py4cl2:pyexec "import sys")
   (setf (pyeval "module_path") (format nil "'~a'" (namestring (truename #p"~/common-lisp/ninx/apps/decklm/src/py/decklm.py"))))

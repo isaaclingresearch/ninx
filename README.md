@@ -86,7 +86,18 @@ Then in SBCL's shell
 (start-server)
 ```
 
-### For GoodPDF.
-install default-jre libreoffice-java texlive-latex-base pandoc texlive-latex-recommended calibre imagemagick img2pdf poppler-utils
+### For SpotPDF.
+install default-jre libreoffice-java-common texlive-latex-base pandoc texlive-latex-recommended calibre imagemagick img2pdf poppler-utils
 
+ebook convert requires liblxml2, which is installed when installing python-pptx as a dep. 
+
+pip uninstall lxml --break-system-packages should fix it.
+
+install libxml2-dev via apt and then html5_parser via sudo pip3
 pandoc is currently not being used by anything.
+
+### setup venv
+sudo apt install pythonx.xx-venv
+python3 -m venv decklm
+
+./decklm/bin/pip3 install python-pptx
