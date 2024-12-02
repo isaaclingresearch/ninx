@@ -23,7 +23,7 @@ we expect that the endpoint from-to-to will send back a conversion id that can t
 (defun download-doc (from to &optional (count 1))
   "convert from from to to, with either one or more documents. download the file and confirm from name whether the file corresponds 
    to to for count 1 or zip for count more than 1"
-  (if (or (string= from "word") (string= from "excel") (string= from "powerpoint")
+  (if (or (string= from "word") (string= from "excel") (string= from "powerpoint") (string= from "image")
 	  (string= to "word") (string= to "excel") (string= to "powerpoint"))
       :success
       (let* ((directory (send-doc from to count)))
@@ -35,7 +35,12 @@ we expect that the endpoint from-to-to will send back a conversion id that can t
 		 (declare (ignore response status-text request-uri flexi-response response-bool))
 		 (if (equal response-code 200)
 		     (let* ((content-disposition (cdr (assoc :content-disposition response-headers)))
-			    (var (ppcre:scan (format nil "\\.(~a)" (if (> count 1) "zip" to)) content-disposition)))
+			    (var (ppcre:scan (format nil "\\.(~a)" (if (> count 1)
+								       (if (and (member from '("jpeg" "jpg" "png" "webp") :test #'string=)
+										(string= to "pdf"))
+									   "pdf" "zip")
+								       to))
+					     content-disposition)))
 		       (if (null var) :error :success))
 		     :error))))))))
 
@@ -56,4 +61,3 @@ we expect that the endpoint from-to-to will send back a conversion id that can t
 	   (eval `(deftest ,multi (eql :success (download-doc ,from ,to 2)) t)))))))
 
 (define-tests)
-

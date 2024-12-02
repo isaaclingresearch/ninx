@@ -274,7 +274,7 @@
   "the css for the /home endpoint"
   (let ((fg-color "#1a1a1a")
 	(red "#FF6060")
-	(blue "#CCCCFF")
+;	(blue "#CCCCFF")
 	(bg-color "#e8e8e8")
 	(link-blue "#1e90ff"))
     (cl-css:css
@@ -320,13 +320,14 @@
        (.submenu-item :background-color "#e8e8e8")
        (a.active :color black)
        (footer :position sticky :margin-top 10% :width 100% :bottom 0 :height 60px :line-height 60px :background-color "#f5f5f5")
-       (.index-footer :margin-top 30%)
+       (.index-footer :margin-top 25%)
        ("@media only screen and (max-width: 768px)"
 	(footer :position sticky :width 100vw :bottom 0 :margin-left -0.5% :margin-top 120% :height 90px :line-height 20px :background-color "#f5f5f5")
 	(a :margin-left 2px :margin-right 2px)
 	(.file-name :font-size 20px)
 	(.close-btn :font-size 20px)
 	(.ad :width 98%)
+	(.instruct :text-align justify)
 	(button :font-size 22px)
 	(.upload-btn :float none)
 	(a.dropdown-item :font-size 22px)
@@ -354,11 +355,12 @@
 			     ("xls" . ("pdf"))
 			     ("xlsx" . ("pdf"))))
 
-(defparameter *image-types* '(("jpeg" . ("png" "tiff" "webp"))
-			      ("jpg" . ("png" "tiff" "webp"))
-			      ("png" . ("jpeg" "jpg" "tiff" "webp"))
+(defparameter *image-types* '(("image" . ("pdf"))
+			      ("jpeg" . ("pdf" "png" "tiff" "webp"))
+			      ("jpg" . ("pdf" "png" "tiff" "webp"))
+			      ("png" . ("jpeg" "jpg" "pdf" "tiff" "webp"))
 			      ("tiff" . ("jpeg" "jpg" "png" "webp"))
-			      ("webp" . ("jpeg" "jpg" "png" "tiff"))))
+			      ("webp" . ("jpeg" "jpg" "pdf" "png" "tiff"))))
 
 (defun make-sitemap (&key (path #p"~/common-lisp/ninx/priv/spotpdf/sitemap.xml") (alist *file-types*))
   "Save a sitemap to the given PATH from the provided ALIST in XML format."
@@ -415,7 +417,7 @@
 
 (defun footer ()
   (with-html-output (*standard-output*)
-    (htm (:footer :class (if (ppcre:scan "^(/|(/(.)/(.)))$" (script-name*))
+    (htm (:footer :class (if (ppcre:scan "(/|/(.)/(.))" (script-name*))
 			      "footer index-footer" "footer")
 		  (:div :class "container"
 			(:b "SpotPDF - A one stop conversion spot.")
@@ -440,7 +442,11 @@
 	    (:style (str (home-css))))
 	   (:body
 	    (:main :role "main" :class "container"
-		   (header))
+		   (header)
+		   :br
+		   (:h5 :class "instruct" "Click on 'Convert Documents' to convert, if you have documents.")
+		   :br
+		   (:h5 :class "instruct" "Click on 'Convert Images' to convert, if you have images."))
 	    (:div :class "ad")
 	    (footer))
 	   (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))
@@ -532,7 +538,7 @@
 		    (header)
 		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
 		    (:p (cl-who:fmt "Your files have been converted to ~a." to-capital))
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
 		    
 		    (:script (str (home-js))))
 	      (:div :class "ad")
@@ -643,7 +649,7 @@
 		    (header)
 		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
 		    (:p (cl-who:fmt "Your files have been converted to ~a." to-capital))
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
 		    
 		    (:script (str (home-js))))
 	      (:div :class "ad")
@@ -716,7 +722,7 @@
 (define-easy-handler (process-word-to-pdf
 		      :uri (define-matching-functions "^/(doc|word)-to-pdf/([^/]+)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
-  (let* ((dir-list (caddr (str:split "/" (script-name*))))
+  (let* ((dir-list (str:split "/" (script-name*)))
 	 (dir (caddr dir-list))
 	 (from (car (str:split "-to-" (cadr dir-list))))
 	 (from-capital (str:upcase from)))
@@ -740,7 +746,7 @@
 		    (header)
 		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
 		    (:p "Your files have been converted to PDF.")
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -835,7 +841,7 @@
 		    (header)
 		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
 		    (:p "Your files have been converted to PDF.")
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -930,7 +936,7 @@
 		    (header)
 		    (:h1 (cl-who:fmt "Convert ~a to PDF." from-capital))
 		    (:p "Your files have been converted to PDF.")
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -1034,7 +1040,7 @@
 		    (header)
 		    (:h1 (cl-who:fmt "Convert ~a to ~a." from-capital to-capital))
 		    (:p (cl-who:fmt "Your files have been converted to ~a." to-capital))
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -1135,7 +1141,105 @@
 		    (header)
 		    (:h1 (cl-who:fmt "Convert ~a to ~a." from-capital to-capital))
 		    (:p (cl-who:fmt "Your files have been converted to ~a." to-capital))
-		    (:button (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) "Download now."))
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
+
+
+;;; PNG/JPEG/JPG TO PDF
+
+(define-easy-handler (image-to-pdf
+		      :uri (define-matching-functions "^/(image|png|jpg|jpeg|webp)-to-pdf$" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (let* ((to (str:replace-all "/" "" (car (str:split "-to-" (script-name*)))))
+	 (to-capital (str:upcase to)))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." to-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a images to PDFs in seconds. FAST. FREE. ONLINE" to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot image convert ~a to pdf,  online, free." to))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert ~a to PDF" to-capital))
+		    (:p (cl-who:fmt "Convert your ~a documents to PDFs." to-capital))
+
+		    (:div :id "drop-zone" :class "drop-zone" (cl-who:fmt "Drag and drop files here or click the Choose ~a button" to-capital))
+		    (:input :type "file" :id "file-input" :style "display: none;" :accept (if (string= "image" to)
+											      ".png, .jpeg, .jpg, .webp"
+											      (format nil ".~a" to))
+		     :multiple t)
+		    (:div :id "files-container")
+		    (:div :class "btns"
+			  (:button :class "upload-btn" :id "upload-btn"
+				   (:span :class "add-symbol" "+")
+				   (cl-who:fmt "Choose ~a" to-capital))
+			  (:button :class "submit-btn" :id "submit-btn" "Convert to PDF"))
+		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			  (:div :class "bar")
+			  (:div :class "bar")
+			  (:div :class "bar"))
+		    (:div :id "progress-container" :style "display: none;"
+			  (:progress :id "upload-progress" :value "0" :max "100"))
+		    (:div :id "loading-indicator" :style "display: none;"
+			  "Submitting... Please wait.")
+		    (:div :id "error-container" :style "display: none;"
+			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			  "An error occurred, please try again.")
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
+
+(define-easy-handler (convert-image-to-pdf-route
+		      :uri (define-matching-functions "^/convert-(image|jpeg|jpg|png|webp)-to-pdf$" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (let ((files (post-parameters*))
+	(uuid (to-string (make-v4))))
+    (convert-image-to-pdf uuid files)
+    (jzon:stringify (hash-create `(("directory" ,uuid)
+				   ("success" t))))))
+
+(define-easy-handler (process-image-to-pdf
+		      :uri (define-matching-functions "^/(image|jpeg|jpg|png|webp)-to-pdf/([^/]+)$" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (let* ((dir-list (str:split "/" (script-name*)))
+	 (dir (caddr dir-list))
+	 (from (car (str:split "-to-" (cadr dir-list))))
+	 (from-capital (str:upcase from)))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
+	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." from-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a images to PDFs in seconds. FAST. FREE. ONLINE" from-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf,  online, free." from))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))     
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert ~a to PDF" from-capital))
+		    (:p "Your files have been converted to PDF.")
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
 		    (:script (str (home-js))))
 	      (:div :class "ad")
 	      (footer)
@@ -1144,11 +1248,11 @@
 ;;;============ CONVERSION FUNCTIONS ===========================
 
 (defun pdf-to-format (dir file-path format &aux (infilter (trivia:match format
-							    ("pptx" "impress_pdf_import")
-							    ("ppt" "impress_pdf_import")
-							    ("docx" "writer_pdf_import")
-							    ("doc" "writer_pdf_import")
-							    )))
+									("pptx" "impress_pdf_import")
+									("ppt" "impress_pdf_import")
+									("docx" "writer_pdf_import")
+									("doc" "writer_pdf_import")
+									)))
   "convert a file pdf to a given format
   dir is the uuid dir name for the request."
   (let ((cmd (format nil "/usr/bin/libreoffice --headless --infilter=~s --convert-to ~a --outdir ~s ~s"
@@ -1189,6 +1293,39 @@
 	 (ebook-convert-fn from-path to-path)))
       (_ nil)))
   (delete-dir-files dir to))
+
+(defun convert-image-to-pdf-fn (string-of-files pdf-path)
+  "convert a file pdf to a given format
+  dir is the uuid dir name for the request."
+  (let* ((cmd (format nil "/usr/bin/img2pdf -o ~a ~a" pdf-path string-of-files)))
+    (uiop:run-program cmd)))
+
+(defun convert-image-to-pdf (uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" uuid)))
+  "given a list of post parameters, create a directory for them at uuid.
+   copy all files to it, then convert them to pptx, remove the pdf files,
+   and return after that.
+   the pdf will be named spotpdf-image-to-pdf-dd-mm-yyyy.pdf or the name of the image if there's only one file"
+  (ensure-directories-exist dir)
+  (format *terminal-io* "~%post: ~a~%" post-parameters)
+  ;; sort the files according to file-name, remember this is sent in an array in order of first file.
+  ;; append each of the files to the list of files to be passed to the fn function
+  (let* ((string-of-files "")
+	 (image-files (remove-if (lambda (l) (string= "number-of-files" (car l))) post-parameters))
+	 (pdf-name (if (> (length post-parameters) 2)
+		       (format nil "spotpdf-image-to-pdf-~a.pdf" (ninx:get-dd-mm-yyyy))
+		       ;; the remove if is to remove number-of-files
+		       (format nil "~a.pdf"  (pathname-name (caddar image-files)))))
+	(pdf-path (format nil "~a~a" dir pdf-name)))
+      (format *terminal-io* "~%post1: ~a~%~%" post-parameters)
+    (dolist (param (sort image-files #'string< :key #'caddr))
+      (trivia:match param
+	((list _ path file-name _)
+	 (let* ((new-image-path (version-name dir file-name)))
+    	   (uiop:copy-file path new-image-path)
+	   (setq string-of-files (format nil "~a ~a" string-of-files (namestring (truename new-image-path))))))
+	(_ nil)))
+    (convert-image-to-pdf-fn string-of-files pdf-path))
+  (delete-dir-files dir "pdf"))
 
 (defun get-downloadable-data (dir &aux (path (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" dir)))
   "counts the number of files in a given directory, if it is 1, returns it and its content-type.
@@ -1257,7 +1394,7 @@
       (delete-file file))))
 
 (defun version-name (dir file-name)
-  "return a file with a version"
+  "return a file with a version; the returned version-name is a pathspec"
   (let* ((pdf-path-1 (format nil "~a~a" dir file-name))
 	 (pdf-path (let ((version (version-file pdf-path-1)))
 		     (format nil "~a~a" dir (format nil "~a~a"

@@ -87,6 +87,6 @@ Then in SBCL's shell
 ```
 
 ### For GoodPDF.
-install default-jre libreoffice-java texlive-latex-base pandoc texlive-latex-recommended calibre imagemagick
+install default-jre libreoffice-java texlive-latex-base pandoc texlive-latex-recommended calibre imagemagick img2pdf
 
 pandoc is currently not being used by anything.

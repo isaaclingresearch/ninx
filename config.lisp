@@ -154,6 +154,11 @@
       (decode-universal-time (get-universal-time))
     year))
 
+(defun get-dd-mm-yyyy ()
+  (multiple-value-bind (second minute hour date month year day-of-week dst-p tz)
+      (decode-universal-time (get-universal-time))
+    (format nil "~a-~a-~a" date month year)))
+
 (defmethod acceptor-status-message ((acceptor ws-ssl-acceptor) http-status-code &rest properties &key &allow-other-keys)
   "Customize the acceptor message to pass some custom errors to the templates."
   (labels
@@ -180,8 +185,8 @@
                                        (lambda (target-string start end match-start match-end reg-starts reg-ends)
                                          (declare (ignore start end match-start match-end))
                                          (let ((variable-name (hunchentoot::string-as-keyword (subseq target-string
-                                                                                         (aref reg-starts 0)
-                                                                                         (aref reg-ends 0)))))
+												      (aref reg-starts 0)
+												      (aref reg-ends 0)))))
                                            (escape-for-html (princ-to-string (getf properties variable-name variable-name))))))))
        (file-contents (file)
          (let ((buf (make-string (file-length file))))
@@ -198,9 +203,9 @@
                  (setf (content-type*) "text/html")
                  (substitute-request-context-variables (file-contents file))))))))
     (or (unless (< 300 http-status-code)
-          (call-next-method))              ; don't ever try template for positive return codes
+          (call-next-method)) ; don't ever try template for positive return codes
         (when *show-lisp-errors-p*
-          (error-contents-from-template))  ; try template
+          (error-contents-from-template)) ; try template
         (call-next-method))))
 
 (defmethod acceptor-server-name ((acceptor ws-ssl-acceptor))

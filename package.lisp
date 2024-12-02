@@ -10,7 +10,7 @@
 	    decklm-ws-type 
 	    ws-endpoint
    :match-path :define-matching-functions
-   :get-current-year
+   :get-current-year :get-dd-mm-yyyy
    :read-binary-file-to-octets
    :write-octets-to-binary-file
    :acceptor-server-name
