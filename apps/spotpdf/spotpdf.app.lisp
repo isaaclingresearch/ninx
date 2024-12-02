@@ -1312,7 +1312,7 @@
   (let* ((string-of-files "")
 	 (image-files (remove-if (lambda (l) (string= "number-of-files" (car l))) post-parameters))
 	 (pdf-name (if (> (length post-parameters) 2)
-		       (format nil "spotpdf-image-to-pdf-~a.pdf" (ninx:get-dd-mm-yyyy))
+		       (format nil "spotpdf-~a.pdf" (ninx:get-dd-mm-yyyy))
 		       ;; the remove if is to remove number-of-files
 		       (format nil "~a.pdf"  (pathname-name (caddar image-files)))))
 	(pdf-path (format nil "~a~a" dir pdf-name)))
@@ -1338,13 +1338,14 @@
 	     (format nil "~a.~a" (pathname-name (car files)) (pathname-type (car files)))
 	     (ninx::read-binary-file-to-octets (car files))))
       ((> len 1)
-       (let* ((zip-name (format nil "~a.zip" dir))
-	      (zip-path (namestring (format nil "~~/common-lisp/ninx/apps/spotpdf/zip/~a" zip-name))))
+       (let* ((zip-dir (namestring (format nil "~~/common-lisp/ninx/apps/spotpdf/zip/~a/" dir)))
+	      (zip-path (format nil "~aspotpdf.zip" zip-dir)))
+	 (ensure-directories-exist zip-dir)
 	 (uiop:run-program (format nil "/usr/bin/zip -r -j ~a ~a"
-				   zip-path
+				   (namestring zip-path)
 				   (namestring path)))
 	 (list "application/zip"
-	       zip-name
+	       "spotpdf.zip"
 	       (ninx::read-binary-file-to-octets zip-path)))))))
 
 (defun format-to-format (to dir file-path)
