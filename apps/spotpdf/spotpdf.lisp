@@ -15,7 +15,7 @@
 
 (defun stop-spotpdf ()
   "stop the timer for cleanup"
-  (sb-ext:unschedule-timer *cleanup-timer*))
+  (when *cleanup-timer* (sb-ext:unschedule-timer *cleanup-timer*)))
 
 (defun restart-spotpdf (&key (schedule-cleanup t))
   (stop-spotpdf)

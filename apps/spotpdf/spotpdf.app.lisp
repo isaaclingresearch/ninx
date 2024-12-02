@@ -345,7 +345,7 @@
 			     ("lit" . ("azw3" "docx" "epub" "fb2" "mobi" "pdf" "pdb" "rtf" "txt"))
 			     ("mobi" . ("azw3" "docx" "epub" "fb2" "lit" "pdf" "pdb" "rtf" "txt"))
 			     ("pdb" . ("azw3" "docx" "epub" "fb2" "lit" "mobi" "pdf" "rtf" "txt"))
-			     ("pdf" . ("azw3" "docx" "epub" "fb2" "lit" "mobi" "pdb" "powerpoint" "ppt" "pptx" "rtf" "txt" "word"))
+			     ("pdf" . ("azw3" "docx" "epub" "fb2" "jpeg" "jpg" "lit" "mobi" "pdb" "png" "powerpoint" "ppt" "pptx" "rtf" "tiff" "txt" "word"))
 			     ("powerpoint" . ("pdf"))
 			     ("ppt" . ("pdf"))
 			     ("pptx" . ("pdf"))
@@ -431,7 +431,7 @@
 	   (:head
 	    (:title "SpotPDF. FAST. FREE. ONLINE.")
 	    (:meta :name "description" :content "Convert documents from one format to another. FAST. FREE. ONLINE.")
-	    (:meta :name "keywords" :content "spotpdf spot pdf convert pdf, word, excel, powerpoint.")
+	    (:meta :name "keywords" :content "spotpdf spot pdf convert pdf, word, excel, powerpoint jpg png .")
 	    (:meta :charset "UTF-8")
 	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
 	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
@@ -1245,14 +1245,113 @@
 	      (footer)
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
 
+
+
+;;; PDF TO PNG/JPEG/JPG/TIFF
+
+(define-easy-handler (pdf-to-image-route
+		      :uri (define-matching-functions "^/pdf-to-(image|jpeg|jpg|png|tiff)$" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (let* ((to (cadr (str:split "-to-" (script-name*))))
+	 (to-capital (str:upcase to)))
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+	      (:title (cl-who:fmt "Convert PDF to ~a images. FAST. FREE. ONLINE." to-capital))
+	      (:meta :name "description" :content (format nil "Convert PDF to ~a images in seconds. FAST. FREE. ONLINE" to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a,  online, free." to))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert PDF to ~a images" to-capital))
+		    (:p (cl-who:fmt "Convert your PDFs to ~a images" to-capital))
+
+		    (:div :id "drop-zone" :class "drop-zone" "Drag and drop files here or click the Choose PDF button")
+		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf"
+		     :multiple t)
+		    (:div :id "files-container")
+		    (:div :class "btns"
+			  (:button :class "upload-btn" :id "upload-btn"
+				   (:span :class "add-symbol" "+")
+				   "Choose PDF")
+			  (:button :class "submit-btn" :id "submit-btn" (cl-who:fmt "Convert to ~a" to-capital)))
+		    (:div :id "loading-container" :class "loading-container" :style "display: none;"
+			  (:div :class "bar")
+			  (:div :class "bar")
+			  (:div :class "bar"))
+		    (:div :id "progress-container" :style "display: none;"
+			  (:progress :id "upload-progress" :value "0" :max "100"))
+		    (:div :id "loading-indicator" :style "display: none;"
+			  "Submitting... Please wait.")
+		    (:div :id "error-container" :style "display: none;"
+			  (:progress :id "error-progress" :value "100" :style "color: #FF6060"))
+		    (:div :id "error-indicator" :style "display: none; color: #FF6060"
+			  "An error occurred, please try again.")
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
+
+(define-easy-handler (convert-pdf-to-image
+		      :uri (define-matching-functions "^/convert-pdf-to-(image|jpeg|jpg|png|tiff)$" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (let ((files (post-parameters*))
+	(uuid (to-string (make-v4)))
+	(to (cadr (str:split "-to-" (script-name*)))))
+    (pdf-to-image-convert to uuid files)
+    (jzon:stringify (hash-create `(("directory" ,uuid)
+				   ("success" t))))))
+
+(define-easy-handler (process-pdf-to-image
+		      :uri (define-matching-functions "^/pdf-to-(image|jpeg|jpg|png|tiff)/([^/]+)$" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (let* ((dir-list (str:split "/" (script-name*)))
+	 (dir (caddr dir-list))
+	 (to (cadr (str:split "-to-" (cadr dir-list))))
+	 (to-capital (str:upcase to))
+	 )
+    (with-html-output-to-string (*standard-output*)
+      (:html :lang "en"
+	     (:head
+	      (:meta :charset "UTF-8")
+	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
+	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
+	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
+
+	      (:title (cl-who:fmt "Convert PDF to ~a. FAST. FREE. ONLINE." to-capital))
+	      (:meta :name "description" :content (format nil "Convert PDFs to ~a images in seconds. FAST. FREE. ONLINE" to-capital))
+	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a,  online, free." to))
+	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:style (str (home-css))))     
+	     (:body
+	      (:div :class "main"
+		    (header)
+		    (:h1 (cl-who:fmt "Convert PDF to ~a" to-capital))
+		    (:p (cl-who:fmt "Your files have been converted to ~a." to-capital))
+		    (:a :class "download-btn" :target "_blank" :href (format nil "/download-file/~a" dir) (:button "Download now."))
+		    (:script (str (home-js))))
+	      (:div :class "ad")
+	      (footer)
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))))
+
 ;;;============ CONVERSION FUNCTIONS ===========================
 
 (defun pdf-to-format (dir file-path format &aux (infilter (trivia:match format
-									("pptx" "impress_pdf_import")
-									("ppt" "impress_pdf_import")
-									("docx" "writer_pdf_import")
-									("doc" "writer_pdf_import")
-									)))
+							    ("pptx" "impress_pdf_import")
+							    ("ppt" "impress_pdf_import")
+							    ("docx" "writer_pdf_import")
+							    ("doc" "writer_pdf_import")
+							    )))
   "convert a file pdf to a given format
   dir is the uuid dir name for the request."
   (let ((cmd (format nil "/usr/bin/libreoffice --headless --infilter=~s --convert-to ~a --outdir ~s ~s"
@@ -1387,6 +1486,30 @@
 		     (image-convert-fn from-path to-path)))
 		  (_ nil)))
   (delete-dir-files dir to))
+;;mkdir -p images && pdftoppm -jpeg -jpegopt quality=100 -r 300 mypdf.pdf images/pg
+
+(defun pdf-to-image-convert-fn (to pdf-path dir)
+  "convert a file pdf to a given format
+  dir is the uuid dir name for the request."
+  (let* ((to-cmd (cond ((or (string= to "jpg") (string= to "jpeg")) "jpeg -jpegopt quality=100")
+		       (t to)))
+	 (cmd (format nil "/usr/bin/pdftoppm -~a -r 300 ~a ~apage" to-cmd pdf-path dir)))
+    (format t "~%cmd: ~a~%" cmd)
+    (uiop:run-program cmd)))
+
+(defun pdf-to-image-convert (to uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" uuid)))
+  "given a list of images, convert them to a given format."
+  (ensure-directories-exist dir)
+  (dolist (param post-parameters)
+    (trivia:match param
+		  ((list _ path file-name _)
+		   (let* ((name (pathname-name file-name))
+			  (pdf-path (format nil "~a~a.pdf" dir name)))
+    		     (uiop:copy-file path pdf-path)
+		     (pdf-to-image-convert-fn to (namestring (truename pdf-path)) (namestring (truename dir)))))
+		  (_ nil)))
+  ;; replace the jpeg because only files with jpg will be exported.
+  (delete-dir-files dir (ppcre:regex-replace-all "jpeg" to "jpg")))
 
 (defun delete-dir-files (dir type)
   "delete files not of type from dir"
