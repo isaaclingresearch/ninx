@@ -41,12 +41,19 @@ we expect that the endpoint from-to-to will send back a conversion id that can t
 
 (defmacro define-tests ()
   "this macro will tests for interconversion of files in ninx:*file-types*"
-  `(loop for (from . tos) in ',*file-types* do
-    (dolist (to tos)
-      (let ((single (format nil "~a-to-~a-single" from to))
-	    (multi (format nil "~a-to-~a-multi" from to)))
-	(eval `(deftest ,single (eql :success (download-doc ,from ,to)) t))
-	(eval `(deftest ,multi (eql :success (download-doc ,from ,to 2)) t))))))
+  `(progn
+     (loop for (from . tos) in ',*file-types* do
+       (dolist (to tos)
+	 (let ((single (format nil "~a-to-~a-single" from to))
+	       (multi (format nil "~a-to-~a-multi" from to)))
+	   (eval `(deftest ,single (eql :success (download-doc ,from ,to)) t))
+	   (eval `(deftest ,multi (eql :success (download-doc ,from ,to 2)) t)))))
+     (loop for (from . tos) in ',*image-types* do
+       (dolist (to tos)
+	 (let ((single (format nil "~a-to-~a-single" from to))
+	       (multi (format nil "~a-to-~a-multi" from to)))
+	   (eval `(deftest ,single (eql :success (download-doc ,from ,to)) t))
+	   (eval `(deftest ,multi (eql :success (download-doc ,from ,to 2)) t)))))))
 
 (define-tests)
 

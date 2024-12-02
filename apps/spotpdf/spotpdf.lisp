@@ -10,12 +10,13 @@
 
 (defun start-spotpdf (&key (schedule-cleanup t))
   "setup the required functions to run the application."
-  (setq *cleanup-timer* (schedule-cleanup)))
+  (when schedule-cleanup
+    (setq *cleanup-timer* (schedule-cleanup))))
 
 (defun stop-spotpdf ()
   "stop the timer for cleanup"
   (sb-ext:unschedule-timer *cleanup-timer*))
 
 (defun restart-spotpdf (&key (schedule-cleanup t))
-  (stop-spotpdf :schedule-cleanup schedule-cleanup)
-  (start-spotpdf))
+  (stop-spotpdf)
+  (start-spotpdf  :schedule-cleanup schedule-cleanup))
