@@ -274,7 +274,7 @@
   "the css for the /home endpoint"
   (let ((fg-color "#1a1a1a")
 	(red "#FF6060")
-;	(blue "#CCCCFF")
+					;	(blue "#CCCCFF")
 	(bg-color "#e8e8e8")
 	(link-blue "#1e90ff"))
     (cl-css:css
@@ -380,7 +380,7 @@
      (:nav :class "navbar navbar-expand-lg"
 	   (:div :class "container-fluid"
 		 (:a :class "navbar-brand" :href "/"
-		     (:img :src "/spotpdf/spotpdf-logo.png" :width "68" :height "60" :class "d-inline-block align-top" :alt ""))
+		     (:img :src "/spotpdf/spotpdf-logo.png" :width "68" :height "60" :class "d-inline-block align-top" :alt "logo"))
 		 (:ul :class "navbar-nav me-auto mb-2 mb-lg-0"
 		      (:li :class "nav-item dropdown"
 			   (:a :class "nav-link dropdown-toggle" :href "#" :id "convert-menu" :role "button" :data-bs-toggle "dropdown"
@@ -418,20 +418,43 @@
 (defun footer ()
   (with-html-output (*standard-output*)
     (htm (:footer :class (if (ppcre:scan "(/|/(.)/(.))" (script-name*))
-			      "footer index-footer" "footer")
+			     "footer index-footer" "footer")
 		  (:div :class "container"
 			(:b "SpotPDF - A one stop conversion spot.")
 		       	(:b (cl-who:fmt "  © Ninx Technology Limited ~a." (ninx:get-current-year))))))))
+
+(define-easy-handler (sitemap
+		      :uri (define-matching-functions "/sitemap.xml" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (setf (content-type*) "text/xml")
+  (setf (header-out "content-disposition") "inline; filename=sitemap.xml")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/sitemap.xml"))
+
+(define-easy-handler (robots
+		      :uri (define-matching-functions "/robots.txt" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (setf (content-type*) "text/plain")
+  (setf (header-out "content-disposition") "inline; filename=robots.txt")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/robots.txt"))
+
+;; (trivia:match (get-downloadable-data dir)
+;;   ((list type file-name data)
+;;    (setf (content-type*) type)
+;;    (setf (header-out "content-disposition") (format nil "attachment; filename=~s" file-name))
+;;    (setf (content-length*) (primitive-object-size data))
+;;    data)
+;;   (else (format *terminal-io* "~a" else)))
 
 (define-easy-handler (home
 		      :uri (define-matching-functions "^/$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (with-html-output-to-string (*standard-output*)
+    "<!DOCTYPE html>"
     (:html :lang "en"
 	   (:head
-	    (:title "SpotPDF. FAST. FREE. ONLINE.")
-	    (:meta :name "description" :content "Convert documents from one format to another. FAST. FREE. ONLINE.")
-	    (:meta :name "keywords" :content "spotpdf spot pdf convert pdf, word, excel, powerpoint jpg png .")
+	    (:title "SpotPDF. Document and Image converter. FAST. FREE. ONLINE.")
+	    (:meta :name "description" :content "Convert between document and image formats to get high quality output. FAST. FREE. ONLINE.")
+	    (:meta :name "keywords" :content "spotpdf, document converter, jpg to pdf, png to pdf, ppt to pdf, pptx to pdf, docx to pdf, epub to pdf, pdf to epub")
 	    (:meta :charset "UTF-8")
 	    (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
 	    (:link :rel "manifest" :href "/spotpdf/manifest.json")
@@ -439,14 +462,17 @@
 	    (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 	    (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	    (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	    (:link :rel "canonical" :href "https://spotpdf.com")
 	    (:style (str (home-css))))
 	   (:body
 	    (:main :role "main" :class "container"
 		   (header)
+		   (:h5 :class "instruct" "SpotPDF makes it easy to convert documents and images between formats.")
 		   :br
-		   (:h5 :class "instruct" "Click on 'Convert Documents' to convert, if you have documents.")
+		   (:h5 :class "instruct" "For document conversion, click 'Convert Documents.'")
 		   :br
-		   (:h5 :class "instruct" "Click on 'Convert Images' to convert, if you have images."))
+		   (:h5 :class "instruct" "For image conversion, click 'Convert Images.'"))
+
 	    (:div :class "ad")
 	    (footer))
 	   (:script :src "/spotpdf/static/bootstrap-5.0.2/js/multilevel-dropdown.js"))))
@@ -457,11 +483,12 @@
   (let* ((to (cadr (str:split "-to-" (script-name*))))
 	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:title (cl-who:fmt "Convert PDF to ~a. FAST. FREE. ONLINE." to-capital))
-	      (:meta :name "description" :content (format nil "Convert PDFs to accurate, editable ~a slideshows/presentations. FAST. FREE. ONLINE." to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
+	      (:meta :name "description" :content (format nil "Convert PDFs to editable ~a presentations. Fast, free, and available online." to-capital))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, Spot PDF, convert PDF to ~a, PDF to ~a converter, online PDF to ~a, free PDF to ~a converter, fast PDF to ~a, accurate PDF to ~a conversion" to to to to to to))
 	      (:meta :charset "UTF-8")
 	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
 	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
@@ -469,6 +496,7 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")    
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -519,11 +547,12 @@
 	 (to (cadr (str:split "-to-" (cadr dir-list))))
 	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:title (cl-who:fmt "Convert PDF to ~a. ONLINE. FREE." to-capital))
 	      (:meta :name "description" :content (format nil "Convert PDFs to accurate, editable ~a slideshows/presentations. FAST. FREE. ONLINE" to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
+	(:meta :name "keywords" :content (format nil "SpotPDF, Spot PDF, convert PDF to ~a, PDF to ~a converter, online PDF to ~a, free PDF to ~a converter, fast PDF to ~a, accurate PDF to ~a conversion" to to to to to to))
 	      (:meta :charset "UTF-8")
 	      (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
 	      (:link :rel "manifest" :href "/spotpdf/manifest.json")
@@ -531,7 +560,7 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")    
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
-	      
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -565,6 +594,7 @@
   (let* ((to (cadr (str:split "-to-" (script-name*))))
 	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -575,9 +605,10 @@
 
 	      (:title (cl-who:fmt "Convert PDF to ~a. FAST. FREE. ONLINE." to-capital))
 	      (:meta :name "description" :content (format nil "Convert PDF to accurate, editable ~a documents. FAST. FREE. ONLINE" to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert pdf to ~a, pdf to ~a converter, online pdf to ~a, free pdf to ~a converter, fast pdf to ~a, accurate pdf to ~a conversion, pdf to word, pdf to doc" to to to to to to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -630,6 +661,7 @@
 	 (to (cadr (str:split "-to-" (cadr dir-list))))
 	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -640,9 +672,10 @@
 
 	      (:title (cl-who:fmt "Convert PDF to ~a. FAST. FREE. ONLINE." to-capital))
 	      (:meta :name "description" :content (format nil "Convert PDF to accurate, editable ~a documents. FAST. FREE. ONLINE" to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert pdf to ~a, pdf to ~a converter, online pdf to ~a, free pdf to ~a converter, fast pdf to ~a, accurate pdf to ~a conversion, pdf to word, pdf to doc" to to to to to to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -665,6 +698,7 @@
   (let* ((to (str:replace-all "/" "" (car (str:split "-to-" (script-name*)))))
 	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -674,10 +708,11 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
 	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." to-capital))
-	      (:meta :name "description" :content (format nil "Convert ~a documents to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" to-capital to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf,  online, free." to))
+	      (:meta :name "description" :content (format nil "Convert ~a documents to PDFs in seconds. FAST. FREE. ONLINE" to-capital))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to pdf, online pdf converter, free pdf converter, fast pdf to ~a conversion, accurate pdf conversion, convert doc to pdf, convert word to pdf" to to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -727,6 +762,7 @@
 	 (from (car (str:split "-to-" (cadr dir-list))))
 	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -736,10 +772,11 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
 	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." from-capital))
-	      (:meta :name "description" :content (format nil "Convert ~a documents to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf,  online, free." from))
+	      (:meta :name "description" :content (format nil "Convert ~a documents to PDFs in seconds. FAST. FREE. ONLINE" from-capital))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to pdf, online pdf converter, free pdf converter, fast pdf to ~a conversion, accurate pdf conversion, convert doc to pdf, convert word to pdf" from from))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -760,6 +797,7 @@
   (let* ((from (str:replace-all "/" "" (car (str:split "-to-" (script-name*)))))
 	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -769,10 +807,11 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
 	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." from-capital))
-	      (:meta :name "description" :content (format nil "Convert ~a slides to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf, online, free." from-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a slides to PDFs in seconds. FAST. FREE. ONLINE" from-capital))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to pdf, online ~a to pdf converter, free ~a to pdf converter, fast ~a to pdf conversion, accurate ~a to pdf" from-capital from-capital from-capital from-capital from-capital))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -822,6 +861,7 @@
 	 (from (car (str:split "-to-" (cadr dir-list))))
 	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -831,10 +871,11 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
 	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." from-capital))
-	      (:meta :name "description" :content (format nil "Convert ~a slides to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf, online, free." from-capital))
+	      (:meta :name "description" :content (format nil "Convert ~a slides to PDFs in seconds. FAST. FREE. ONLINE" from-capital))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to pdf, online ~a to pdf converter, free ~a to pdf converter, fast ~a to pdf conversion, accurate ~a to pdf" from-capital from-capital from-capital from-capital from-capital))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -855,6 +896,7 @@
   (let* ((from (str:replace-all "/" "" (car (str:split "-to-" (script-name*)))))
 	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -865,9 +907,10 @@
 
 	      (:title (cl-who:fmt "Convert ~a sheets to PDF Documents. FAST. FREE. ONLINE." from-capital))
 	      (:meta :name "description" :content (format nil "Convert ~a sheets to PDF Documents in seconds. FAST. FREE. ONLINE" from-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to word, online, free." from))
+	     (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to pdf, online ~a to pdf converter, free ~a to pdf conversion, fast excel to pdf, accurate xlsx to pdf" from from from))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -917,6 +960,7 @@
 	 (from (car (str:split "-to-" (cadr dir-list))))
 	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -927,9 +971,10 @@
 
 	      (:title (cl-who:fmt "Convert ~a sheets to PDF Documents. FAST. FREE. ONLINE. " from-capital))
 	      (:meta :name "description" :content (format nil "Convert ~a sheets to PDF Documents in seconds. ONLINE. FREE. ACCURATE" from-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to word, online, free." from))
+	     (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to pdf, online ~a to pdf converter, free ~a to pdf conversion, fast excel to pdf, accurate xlsx to pdf" from from from))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -955,6 +1000,7 @@
 	   (from-capital (str:upcase from))
 	   (to (cadr from-to))
 	   (to-capital (str:upcase to)))
+      "<!DOCTYPE html>"
       (htm (:html :lang "en"
 		  (:head
 		   (:meta :charset "UTF-8")
@@ -964,10 +1010,11 @@
 		   (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
 		   (:title (cl-who:fmt "Convert ~a to ~a. FAST. FREE. ONLINE." from-capital to-capital))
-		   (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE" from-capital to-capital))
-		   (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to ~a, online, free." from to))
+		   (:meta :name "description" :content (format nil "Convert ~a documents to ~a in seconds documents . FAST. FREE. ONLINE" from-capital to-capital))
+		   (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to ~a, online ~a to ~a converter, free ~a to ~a conversion, fast ~a to ~a conversion, accurate ~a to ~a" from to from to from to from to from to))
 		   (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 		   (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+		   (:link :rel "canonical" :href "https://spotpdf.com")
 	     	   (:style (str (home-css))))
 		  (:body
 		   (:div :class "main"
@@ -1021,6 +1068,7 @@
 	 (from-capital (str:upcase from))
 	 (dir (caddr (str:split "/" (script-name*)))))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -1030,10 +1078,11 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
 	      (:title (cl-who:fmt "Convert ~a to ~a. FAST. FREE. ONLINE." from-capital to-capital))
-	      (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE." from-capital to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot document convert ~a to ~a, online, free." from to))
+	      (:meta :name "description" :content (format nil "Convert ~a documents to ~a documents in seconds. FAST. FREE. ONLINE." from-capital to-capital))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to ~a, online ~a to ~a converter, free ~a to ~a conversion, fast ~a to ~a conversion, accurate ~a to ~a" from to from to from to from to from to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -1052,6 +1101,7 @@
 		      :uri (define-matching-functions "^/(jpeg|jpg|png|tiff|webp)-to-(jpeg|jpg|png|tiff|webp)$" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (with-html-output-to-string (*standard-output*)
+    "<!DOCTYPE html>"
     (let* ((from-to (str:split "-to-" (script-name*)))
 	   (from (str:replace-first "/" "" (car from-to)))
 	   (from-capital (str:upcase from))
@@ -1066,10 +1116,12 @@
 		   (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
 		   (:title (cl-who:fmt "Convert ~a to ~a. FAST. FREE. ONLINE." from-capital to-capital))
-		   (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE" from-capital to-capital))
-		   (:meta :name "keywords" :content (format nil "spotpdf image convert ~a to ~a, online, free." from to))
+		   (:meta :name "description" :content (format nil "Convert ~a images to ~a images in seconds. FAST. FREE. ONLINE"
+							        from-capital to-capital))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to ~a, online ~a to ~a converter, free ~a to ~a conversion, fast ~a to ~a conversion, accurate ~a to ~a" from to from to from to from to from to))
 		   (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 		   (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+		   (:link :rel "canonical" :href "https://spotpdf.com")
 	     	   (:style (str (home-css))))
 		  (:body
 		   (:div :class "main"
@@ -1122,6 +1174,7 @@
 	 (from-capital (str:upcase from))
 	 (dir (caddr (str:split "/" (script-name*)))))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -1131,10 +1184,11 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 
 	      (:title (cl-who:fmt "Convert ~a to ~a. FAST. FREE. ONLINE." from-capital to-capital))
-	      (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE." from-capital to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot image convert ~a to ~a, online, free." from to))
+	      (:meta :name "description" :content (format nil "Convert ~a images to images ~a in seconds. FAST. FREE. ONLINE." from-capital to-capital))
+	      	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to ~a, online ~a to ~a converter, free ~a to ~a conversion, fast ~a to ~a conversion, accurate ~a to ~a" from to from to from to from to from to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -1156,6 +1210,7 @@
   (let* ((to (str:replace-all "/" "" (car (str:split "-to-" (script-name*)))))
 	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -1164,10 +1219,13 @@
 	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." to-capital))
-	      (:meta :name "description" :content (format nil "Convert ~a images to PDFs in seconds. FAST. FREE. ONLINE" to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot image convert ~a to pdf,  online, free." to))
+	      (:meta :name "description" :content (format nil "Convert ~a images to high quality PDFs in seconds. FAST. FREE. ONLINE"
+							  (if (string= "image" to)
+							      "all types of" to-capital)))
+	     (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to pdf, online ~a to pdf converter, free ~a to pdf conversion, fast image to pdf, accurate ~a to pdf" to to to to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -1179,7 +1237,7 @@
 		    (:input :type "file" :id "file-input" :style "display: none;" :accept (if (string= "image" to)
 											      ".png, .jpeg, .jpg, .webp"
 											      (format nil ".~a" to))
-		     :multiple t)
+			    :multiple t)
 		    (:div :id "files-container")
 		    (:div :class "btns"
 			  (:button :class "upload-btn" :id "upload-btn"
@@ -1220,6 +1278,7 @@
 	 (from (car (str:split "-to-" (cadr dir-list))))
 	 (from-capital (str:upcase from)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -1230,9 +1289,10 @@
 
 	      (:title (cl-who:fmt "Convert ~a to PDF. FAST. FREE. ONLINE." from-capital))
 	      (:meta :name "description" :content (format nil "Convert ~a images to PDFs in seconds. FAST. FREE. ONLINE" from-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf,  online, free." from))
+	     (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert ~a to pdf, online ~a to pdf converter, free ~a to pdf conversion, fast image to pdf, accurate ~a to pdf" to to to to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -1255,6 +1315,7 @@
   (let* ((to (cadr (str:split "-to-" (script-name*))))
 	 (to-capital (str:upcase to)))
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -1264,9 +1325,10 @@
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")
 	      (:title (cl-who:fmt "Convert PDF to ~a images. FAST. FREE. ONLINE." to-capital))
 	      (:meta :name "description" :content (format nil "Convert PDF to ~a images in seconds. FAST. FREE. ONLINE" to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a,  online, free." to))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert pdf to ~a, online pdf to ~a converter, free pdf to ~a conversion, fast pdf to ~a, accurate pdf to ~a" to to to to to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -1276,7 +1338,7 @@
 
 		    (:div :id "drop-zone" :class "drop-zone" "Drag and drop files here or click the Choose PDF button")
 		    (:input :type "file" :id "file-input" :style "display: none;" :accept ".pdf"
-		     :multiple t)
+			    :multiple t)
 		    (:div :id "files-container")
 		    (:div :class "btns"
 			  (:button :class "upload-btn" :id "upload-btn"
@@ -1319,6 +1381,7 @@
 	 (to-capital (str:upcase to))
 	 )
     (with-html-output-to-string (*standard-output*)
+      "<!DOCTYPE html>"
       (:html :lang "en"
 	     (:head
 	      (:meta :charset "UTF-8")
@@ -1329,9 +1392,10 @@
 
 	      (:title (cl-who:fmt "Convert PDF to ~a. FAST. FREE. ONLINE." to-capital))
 	      (:meta :name "description" :content (format nil "Convert PDFs to ~a images in seconds. FAST. FREE. ONLINE" to-capital))
-	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a,  online, free." to))
+	      (:meta :name "keywords" :content (format nil "SpotPDF, spot pdf, convert pdf to ~a, online pdf to ~a converter, free pdf to ~a conversion, fast pdf to ~a, accurate pdf to ~a" to to to to to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
 	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:link :rel "canonical" :href "https://spotpdf.com")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -1414,8 +1478,8 @@
 		       (format nil "spotpdf-~a.pdf" (ninx:get-dd-mm-yyyy))
 		       ;; the remove if is to remove number-of-files
 		       (format nil "~a.pdf"  (pathname-name (caddar image-files)))))
-	(pdf-path (format nil "~a~a" dir pdf-name)))
-      (format *terminal-io* "~%post1: ~a~%~%" post-parameters)
+	 (pdf-path (format nil "~a~a" dir pdf-name)))
+    (format *terminal-io* "~%post1: ~a~%~%" post-parameters)
     (dolist (param (sort image-files #'string< :key #'caddr))
       (trivia:match param
 	((list _ path file-name _)
@@ -1479,12 +1543,12 @@
   (ensure-directories-exist dir)
   (dolist (param post-parameters)
     (trivia:match param
-		  ((list _ path file-name _)
-		   (let* ((from-path (version-name dir file-name))
-			  (to-path (format nil "~a~a.~a" dir (pathname-name from-path) to)))
-    		     (uiop:copy-file path from-path)
-		     (image-convert-fn from-path to-path)))
-		  (_ nil)))
+      ((list _ path file-name _)
+       (let* ((from-path (version-name dir file-name))
+	      (to-path (format nil "~a~a.~a" dir (pathname-name from-path) to)))
+    	 (uiop:copy-file path from-path)
+	 (image-convert-fn from-path to-path)))
+      (_ nil)))
   (delete-dir-files dir to))
 ;;mkdir -p images && pdftoppm -jpeg -jpegopt quality=100 -r 300 mypdf.pdf images/pg
 
@@ -1502,12 +1566,12 @@
   (ensure-directories-exist dir)
   (dolist (param post-parameters)
     (trivia:match param
-		  ((list _ path file-name _)
-		   (let* ((name (pathname-name file-name))
-			  (pdf-path (format nil "~a~a.pdf" dir name)))
-    		     (uiop:copy-file path pdf-path)
-		     (pdf-to-image-convert-fn to (namestring (truename pdf-path)) (namestring (truename dir)))))
-		  (_ nil)))
+      ((list _ path file-name _)
+       (let* ((name (pathname-name file-name))
+	      (pdf-path (format nil "~a~a.pdf" dir name)))
+    	 (uiop:copy-file path pdf-path)
+	 (pdf-to-image-convert-fn to (namestring (truename pdf-path)) (namestring (truename dir)))))
+      (_ nil)))
   ;; replace the jpeg because only files with jpg will be exported.
   (delete-dir-files dir (ppcre:regex-replace-all "jpeg" to "jpg")))
 

@@ -55,20 +55,6 @@
   <url><loc>mobi-to-pdf</loc></url>
   <url><loc>mobi-to-rtf</loc></url>
   <url><loc>mobi-to-txt</loc></url>
-  <url><loc>pdf-to-azw3</loc></url>
-  <url><loc>pdf-to-doc</loc></url>
-  <url><loc>pdf-to-docx</loc></url>
-  <url><loc>pdf-to-epub</loc></url>
-  <url><loc>pdf-to-fb2</loc></url>
-  <url><loc>pdf-to-lit</loc></url>
-  <url><loc>pdf-to-mobi</loc></url>
-  <url><loc>pdf-to-pdb</loc></url>
-  <url><loc>pdf-to-powerpoint</loc></url>
-  <url><loc>pdf-to-ppt</loc></url>
-  <url><loc>pdf-to-pptx</loc></url>
-  <url><loc>pdf-to-rtf</loc></url>
-  <url><loc>pdf-to-txt</loc></url>
-  <url><loc>pdf-to-word</loc></url>
   <url><loc>pdb-to-azw3</loc></url>
   <url><loc>pdb-to-docx</loc></url>
   <url><loc>pdb-to-epub</loc></url>
@@ -78,6 +64,23 @@
   <url><loc>pdb-to-pdf</loc></url>
   <url><loc>pdb-to-rtf</loc></url>
   <url><loc>pdb-to-txt</loc></url>
+  <url><loc>pdf-to-azw3</loc></url>
+  <url><loc>pdf-to-docx</loc></url>
+  <url><loc>pdf-to-epub</loc></url>
+  <url><loc>pdf-to-fb2</loc></url>
+  <url><loc>pdf-to-jpeg</loc></url>
+  <url><loc>pdf-to-jpg</loc></url>
+  <url><loc>pdf-to-lit</loc></url>
+  <url><loc>pdf-to-mobi</loc></url>
+  <url><loc>pdf-to-pdb</loc></url>
+  <url><loc>pdf-to-png</loc></url>
+  <url><loc>pdf-to-powerpoint</loc></url>
+  <url><loc>pdf-to-ppt</loc></url>
+  <url><loc>pdf-to-pptx</loc></url>
+  <url><loc>pdf-to-rtf</loc></url>
+  <url><loc>pdf-to-tiff</loc></url>
+  <url><loc>pdf-to-txt</loc></url>
+  <url><loc>pdf-to-word</loc></url>
   <url><loc>powerpoint-to-pdf</loc></url>
   <url><loc>ppt-to-pdf</loc></url>
   <url><loc>pptx-to-pdf</loc></url>
