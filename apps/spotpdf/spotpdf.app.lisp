@@ -415,8 +415,8 @@
 
 (defun footer ()
   (with-html-output (*standard-output*)
-    (htm (:footer :class (if (string= "/" (script-name*))
-			     "footer index-footer" "footer")
+    (htm (:footer :class (if (ppcre:scan "^(/|(/(.)/(.)))$" (script-name*))
+			      "footer index-footer" "footer")
 		  (:div :class "container"
 			(:b "SpotPDF - A one stop conversion spot.")
 		       	(:b (cl-who:fmt "  © Ninx Technology Limited ~a." (ninx:get-current-year))))))))
@@ -462,7 +462,7 @@
 	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")    
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -524,7 +524,7 @@
 	      (:link :rel "icon" :href "/spotpdf/static/icons/web/favicon.ico" :sizes "any")
 	      (:link :rel "apple-touch-icon" :href "/spotpdf/static/icons/web/apple-touch-icon.png")    
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      
 	      (:style (str (home-css))))
 	     (:body
@@ -571,7 +571,7 @@
 	      (:meta :name "description" :content (format nil "Convert PDF to accurate, editable ~a documents. FAST. FREE. ONLINE" to-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -636,7 +636,7 @@
 	      (:meta :name "description" :content (format nil "Convert PDF to accurate, editable ~a documents. FAST. FREE. ONLINE" to-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert pdf to ~a, online, most accurate, free, fast" to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -671,7 +671,7 @@
 	      (:meta :name "description" :content (format nil "Convert ~a documents to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" to-capital to-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf,  online, free." to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -733,7 +733,7 @@
 	      (:meta :name "description" :content (format nil "Convert ~a documents to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf,  online, free." from))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -766,7 +766,7 @@
 	      (:meta :name "description" :content (format nil "Convert ~a slides to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf, online, free." from-capital))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -828,7 +828,7 @@
 	      (:meta :name "description" :content (format nil "Convert ~a slides to PDFs. Convert ~a to PDFs in seconds. FAST. FREE. ONLINE" from-capital from-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to pdf, online, free." from-capital))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -861,7 +861,7 @@
 	      (:meta :name "description" :content (format nil "Convert ~a sheets to PDF Documents in seconds. FAST. FREE. ONLINE" from-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to word, online, free." from))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))
 	     (:body
 	      (:div :class "main"
@@ -923,7 +923,7 @@
 	      (:meta :name "description" :content (format nil "Convert ~a sheets to PDF Documents in seconds. ONLINE. FREE. ACCURATE" from-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to word, online, free." from))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -961,7 +961,7 @@
 		   (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE" from-capital to-capital))
 		   (:meta :name "keywords" :content (format nil "spotpdf spot pdf convert ~a to ~a, online, free." from to))
 		   (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-		   (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+		   (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	     	   (:style (str (home-css))))
 		  (:body
 		   (:div :class "main"
@@ -1027,7 +1027,7 @@
 	      (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE." from-capital to-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot document convert ~a to ~a, online, free." from to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
@@ -1063,7 +1063,7 @@
 		   (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE" from-capital to-capital))
 		   (:meta :name "keywords" :content (format nil "spotpdf image convert ~a to ~a, online, free." from to))
 		   (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-		   (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+		   (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	     	   (:style (str (home-css))))
 		  (:body
 		   (:div :class "main"
@@ -1128,7 +1128,7 @@
 	      (:meta :name "description" :content (format nil "Convert ~a to ~a in seconds. FAST. FREE. ONLINE." from-capital to-capital))
 	      (:meta :name "keywords" :content (format nil "spotpdf spot image convert ~a to ~a, online, free." from to))
 	      (:link :rel "stylesheet" :href "/spotpdf/static/bootstrap-5.0.2/css/bootstrap.min.css")
-	      (:script :src "spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
+	      (:script :src "/spotpdf/static/bootstrap-5.0.2/js/bootstrap.min.js")
 	      (:style (str (home-css))))     
 	     (:body
 	      (:div :class "main"
