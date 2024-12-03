@@ -1492,21 +1492,23 @@
 
 (defun get-downloadable-data (dir &aux (path (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" dir)))
   "counts the number of files in a given directory, if it is 1, returns it and its content-type.
-   if it has more than 1, then the files are compressed into a zip and that is returned to the user."
+   if it has more than 1, then the files are compressed into a zip and that is returned to the user.
+   sometimes we encouter a nested directories such as for pdf to image when multiple are supplied.
+   take those into account, when there is a single file and no directory, return the file, otherwise return a zip."
   (let* ((files (uiop:directory-files path))
-	 (len (length files)))
+	 (len (length files))
+	 (dirs (directory (format nil "~a*" path)))
+	 (len-dirs (length dirs)))
     (cond
-      ((= len 1)
+      ((and (= len 1) (= len-dirs 0))
        (list (cl-mime-from-string:mime-type-from-string (namestring (car files)))
 	     (format nil "~a.~a" (pathname-name (car files)) (pathname-type (car files)))
 	     (ninx::read-binary-file-to-octets (car files))))
-      ((> len 1)
+      (t
        (let* ((zip-dir (namestring (format nil "~~/common-lisp/ninx/apps/spotpdf/zip/~a/" dir)))
 	      (zip-path (format nil "~aspotpdf.zip" zip-dir)))
 	 (ensure-directories-exist zip-dir)
-	 (uiop:run-program (format nil "/usr/bin/zip -r -j ~a ~a"
-				   (namestring zip-path)
-				   (namestring path)))
+	 (zippy:compress-zip path zip-path :if-exists :supersede :strip-root t)
 	 (list "application/zip"
 	       "spotpdf.zip"
 	       (ninx::read-binary-file-to-octets zip-path)))))))
@@ -1554,7 +1556,8 @@
 
 (defun pdf-to-image-convert-fn (to pdf-path dir)
   "convert a file pdf to a given format
-  dir is the uuid dir name for the request."
+  dir is the uuid dir name for the request.
+  name is a work around for zip when working with files with multiple folders. such that the pages are unique."
   (let* ((to-cmd (cond ((or (string= to "jpg") (string= to "jpeg")) "jpeg -jpegopt quality=100")
 		       (t to)))
 	 (cmd (format nil "/usr/bin/pdftoppm -~a -r 300 ~a ~apage" to-cmd pdf-path dir)))
@@ -1562,24 +1565,53 @@
     (uiop:run-program cmd)))
 
 (defun pdf-to-image-convert (to uuid post-parameters &aux (dir (format nil "~~/common-lisp/ninx/apps/spotpdf/files/~a/" uuid)))
-  "given a list of images, convert them to a given format."
+  "given a list of images, convert them to a given format.
+    when given multiple pdfs, extract each into its own directory which will then have to be sent a zip of folders on download."
   (ensure-directories-exist dir)
-  (dolist (param post-parameters)
-    (trivia:match param
-      ((list _ path file-name _)
-       (let* ((name (pathname-name file-name))
-	      (pdf-path (format nil "~a~a.pdf" dir name)))
-    	 (uiop:copy-file path pdf-path)
-	 (pdf-to-image-convert-fn to (namestring (truename pdf-path)) (namestring (truename dir)))))
-      (_ nil)))
+  (let* ((files (remove-if (lambda (param) (string= "number-of-files" (car param))) post-parameters))
+	(len (length files));; we use this because we sometimes send from the test with out number of files
+	 )
+    (dolist (param post-parameters)
+      (trivia:match param
+	((list post-name path file-name _)
+	 (let* ((name (pathname-name file-name))
+		(file-number (cl-ppcre:regex-replace "file_" post-name ""))
+		(multi-dir-name (format nil "~a-~a" name file-number))
+		(multi-dir (format nil "~a~a/" dir multi-dir-name))
+		(single-pdf-path (format nil "~a~a.pdf" dir name))
+		(multi-pdf-path (format nil "~a~a.pdf" multi-dir name))
+		(pdf-path (if (= len 1)
+			      single-pdf-path
+			      multi-pdf-path
+			      ;; at all times, we send files with a number eg file1, file2, so in this case, we need to rule out name collisions,
+			      ;; we use that number in addition to the title to create distinciton.
+			      ;; /dir/name-number/name.pdf
+			      )))
+	   (when (> len 1)
+	     (ensure-directories-exist multi-dir))
+    	   (uiop:copy-file path pdf-path)
+	   (pdf-to-image-convert-fn to (namestring (truename pdf-path))
+				    (namestring (truename (if (= len 1) ;; same here, apply name/ if len > 1
+							      dir
+							      multi-dir))))))
+	(_ nil))))
   ;; replace the jpeg because only files with jpg will be exported.
   (delete-dir-files dir (ppcre:regex-replace-all "jpeg" to "jpg")))
 
 (defun delete-dir-files (dir type)
-  "delete files not of type from dir"
+  "delete files not of type from dir, but sometimes there are directories in the dir, if so, delete all directories that dont have type in them"
   (dolist (file (uiop:directory-files dir))
     (when (null (ppcre:scan (format nil "(.~a)$" type) (namestring file)))
-      (delete-file file))))
+      (delete-file file)))
+  ;; get all the directories in dir
+  (dolist (d (directory (format nil "~a*" dir)))
+    ;; then delete all files not of to
+    (dolist (f (uiop:directory-files d))
+      (when (null (ppcre:scan (format nil "(.~a)$" type) (namestring f)))
+	(delete-file f)))
+    ;; then if dir is emtpy delete it
+    (when (null (uiop:directory-files d))
+      (delete-directory d))))
 
 (defun version-name (dir file-name)
   "return a file with a version; the returned version-name is a pathspec"

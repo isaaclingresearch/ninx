@@ -91,8 +91,6 @@ install default-jre libreoffice-java-common texlive-latex-base pandoc texlive-la
 
 ebook convert requires liblxml2, which is installed when installing python-pptx as a dep. 
 
-pip uninstall lxml --break-system-packages should fix it.
-
 install libxml2-dev via apt and then html5_parser via sudo pip3
 pandoc is currently not being used by anything.
 
@@ -101,3 +99,30 @@ sudo apt install pythonx.xx-venv
 python3 -m venv decklm
 
 ./decklm/bin/pip3 install python-pptx
+
+### Using sudo is a bad idea because very many things break when we do.
+Let's instead redirect 80 to 8000 and 443 to 8443 via iptables. this is easier to handle as the application will be deployed once, the same is dev as in prod.
+
+
+to do so, allow traffic on ports 8000 and 443
+sudo ufw allow 8000/tcp
+sudo ufw allow 8443/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+add the following to /etc/ufw/before.rules
+```
+
+*nat
+:PREROUTING ACCEPT [0:0]
+
+# Redirect external HTTP traffic to port 8000
+-A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8000
+
+# Redirect external HTTPS traffic to port 8443
+-A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 8443
+
+COMMIT
+
+```
+Local redirects cause alot of problems. hunchentoot keeps getting a yet to be identified signal. that swamps the resources.
