@@ -451,6 +451,13 @@
   (setf (header-out "content-disposition") "inline; filename=robots.txt")
   (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/robots.txt"))
 
+(define-easy-handler (ads
+		      :uri (define-matching-functions "/ads.txt" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (setf (content-type*) "text/plain")
+  (setf (header-out "content-disposition") "inline; filename=ads.txt")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/ads.txt"))
+
 ;; (trivia:match (get-downloadable-data dir)
 ;;   ((list type file-name data)
 ;;    (setf (content-type*) type)
