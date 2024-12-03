@@ -87,7 +87,9 @@ Then in SBCL's shell
 ```
 
 ### For SpotPDF.
-install default-jre libreoffice-java-common texlive-latex-base pandoc texlive-latex-recommended calibre imagemagick img2pdf poppler-utils
+install default-jre libreoffice-java-common  calibre imagemagick img2pdf poppler-utils pkg-config
+=> these below aren't required for now.
+texlive-latex-base pandoc texlive-latex-recommended
 
 ebook convert requires liblxml2, which is installed when installing python-pptx as a dep. 
 
@@ -99,6 +101,8 @@ sudo apt install pythonx.xx-venv
 python3 -m venv decklm
 
 ./decklm/bin/pip3 install python-pptx
+
+setup the env with py4cl2:initialize
 
 ### Using sudo is a bad idea because very many things break when we do.
 Let's instead redirect 80 to 8000 and 443 to 8443 via iptables. this is easier to handle as the application will be deployed once, the same is dev as in prod.
@@ -125,4 +129,15 @@ add the following to /etc/ufw/before.rules
 COMMIT
 
 ```
+run `sudo systemctl restart ufw`
 Local redirects cause alot of problems. hunchentoot keeps getting a yet to be identified signal. that swamps the resources.
+REMEMBER TO OPEN UP PORTS 80/8000 AND 443/8443
+### Setting up ssl
+when you renew;
+do the following;
+copy the files to ssl
+then adjust ownership and permisions
+sudo chown -R lam ssl/
+sudo chmod -R 750 ssl
+certbot renew --deploy-hook "cp -r /etc/letsencrypt/live/spotpdf.com /home/lam/ssl && chown -R lam /home/lam/ssl && chmod -R 700 /home/lam/ssl"
+

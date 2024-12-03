@@ -1,274 +1,287 @@
 (in-package :spotpdf)
 
+(defun gtag-js ()
+  (with-html-output (*standard-output*)
+    (:script :src "https://www.googletagmanager.com/gtag/js?id=G-WSJQ4G8R5P" :async t)
+    (:script
+     "
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-WSJQ4G8R5P');")
+    ))
+
+
 (defun home-js ()
   "the js for the home page"
   (ps:ps
     
-    (defun scroll-to-bottom ()
-      (ps:chain window (scroll-to (ps:create
-				   top (ps:chain document body scroll-height)
-				   behavior "smooth"))))
+   (defun scroll-to-bottom ()
+     (ps:chain window (scroll-to (ps:create
+				  top (ps:chain document body scroll-height)
+				  behavior "smooth"))))
     
-    (defun is-mobile-browser ()
-      "check if the browser is mobile"
-      (let ((user-agent (or (ps:chain navigator user-agent) (ps:chain navigator vendor) (ps:chain window opera))))
-	(cond
-	  ((ps:chain (regex "/android/i") (test user-agent)) t)
-	  ((ps:chain (regex "/iPad|iPhone|iPod/") (test user-agent)) t)
-	  ((ps:chain (regex "/windows phone/i") (test user-agent)) t)
-	  ((ps:chain (regex "/blackberry|bb10|playbook/i") (test user-agent)) t)
-	  (t false))))
+   (defun is-mobile-browser ()
+     "check if the browser is mobile"
+     (let ((user-agent (or (ps:chain navigator user-agent) (ps:chain navigator vendor) (ps:chain window opera))))
+       (cond
+	 ((ps:chain (regex "/android/i") (test user-agent)) t)
+	 ((ps:chain (regex "/iPad|iPhone|iPod/") (test user-agent)) t)
+	 ((ps:chain (regex "/windows phone/i") (test user-agent)) t)
+	 ((ps:chain (regex "/blackberry|bb10|playbook/i") (test user-agent)) t)
+	 (t false))))
     
-    ;; Only show the drop zone if it's not a mobile browser.
-    (ps:chain document (add-event-listener "DOMContentLoaded" (lambda ()
-								(let ((drop-zone (ps:chain document (get-element-by-id "drop-zone")))
-								      (style (if (is-mobile-browser) "none" "block")))
-								  (setf (ps:chain drop-zone style display) style)))))
+   ;; Only show the drop zone if it's not a mobile browser.
+   (ps:chain document (add-event-listener "DOMContentLoaded" (lambda ()
+							       (let ((drop-zone (ps:chain document (get-element-by-id "drop-zone")))
+								     (style (if (is-mobile-browser) "none" "block")))
+								 (setf (ps:chain drop-zone style display) style)))))
 
-    (defun generate-random-id ()
-      "generate a random id from date"
-      (+ "id" (ps:chain -date (now)) "-" (ps:chain -math (random) (to-string 36) (substr 2 9))))
+   (defun generate-random-id ()
+     "generate a random id from date"
+     (+ "id" (ps:chain -date (now)) "-" (ps:chain -math (random) (to-string 36) (substr 2 9))))
 
-    (setf files-array (array)) ;; this will hold the files
+   (setf files-array (array)) ;; this will hold the files
     
-    (defun handle-files (files)
-      "This function handles addition of files when a user submits or drops them."
-      (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
-	(ps:chain -array (from files)
-		  (for-each
-		   (lambda (file)
-                     ;; Add the file to the files array
-                     (ps:chain files-array (push file))
-                     (let ((file-frame (ps:chain document (create-element "div")))
-			   (close-button (ps:chain document (create-element "button")))
-			   (frame-id (generate-random-id))
-			   (btn-id (generate-random-id)))
-                       ;; Handle file frame
-                       (ps:chain file-frame class-list (add "file-frame"))
-                       (ps:chain file-frame (set-attribute "id" frame-id))
-                       (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
+   (defun handle-files (files)
+     "This function handles addition of files when a user submits or drops them."
+     (let ((files-container (ps:chain document (get-element-by-id "files-container"))))
+       (ps:chain -array (from files)
+		 (for-each
+		  (lambda (file)
+                    ;; Add the file to the files array
+                    (ps:chain files-array (push file))
+                    (let ((file-frame (ps:chain document (create-element "div")))
+			  (close-button (ps:chain document (create-element "button")))
+			  (frame-id (generate-random-id))
+			  (btn-id (generate-random-id)))
+                      ;; Handle file frame
+                      (ps:chain file-frame class-list (add "file-frame"))
+                      (ps:chain file-frame (set-attribute "id" frame-id))
+                      (ps:chain file-frame (set-attribute "draggable" "true")) ;; Allow frames to be draggable
 
-                       ;; Handle close button
-                       (ps:chain close-button class-list (add "close-btn"))
-                       (ps:chain close-button (set-attribute "id" btn-id))
-                       (setf (ps:chain close-button inner-h-t-m-l) "&times;")
-                       (ps:chain close-button
-				 (add-event-listener "click"
-                                                     (lambda ()
-                                                       ;; Remove the file from files-array
-                                                       (let ((index (ps:chain files-array (index-of file))))
-							 (if (> index -1)
-                                                             (ps:chain files-array (splice index 1))))
-                                                       ;; Remove the file frame
-                                                       (ps:chain file-frame (remove))))))
+                      ;; Handle close button
+                      (ps:chain close-button class-list (add "close-btn"))
+                      (ps:chain close-button (set-attribute "id" btn-id))
+                      (setf (ps:chain close-button inner-h-t-m-l) "&times;")
+                      (ps:chain close-button
+				(add-event-listener "click"
+                                                    (lambda ()
+                                                      ;; Remove the file from files-array
+                                                      (let ((index (ps:chain files-array (index-of file))))
+							(if (> index -1)
+                                                            (ps:chain files-array (splice index 1))))
+                                                      ;; Remove the file frame
+                                                      (ps:chain file-frame (remove))))))
 
-                     ;; Handle file type
-                     (cond
-                       ;; Image files
-                       ((ps:chain file type (starts-with "image/"))
-			(let ((img (ps:chain document (create-element "img")))
-                              (reader (new -file-reader)))
-                          (setf (ps:chain reader onload)
-				(lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
-                          (ps:chain reader (read-as-data-u-r-l file))
-                          (ps:chain file-frame (append-child img))
-			  (ps:chain file-frame (append-child close-button))))
+                    ;; Handle file type
+                    (cond
+                      ;; Image files
+                      ((ps:chain file type (starts-with "image/"))
+		       (let ((img (ps:chain document (create-element "img")))
+                             (reader (new -file-reader)))
+                         (setf (ps:chain reader onload)
+			       (lambda (e) (setf (ps:chain img src) (ps:chain e target result))))
+                         (ps:chain reader (read-as-data-u-r-l file))
+                         (ps:chain file-frame (append-child img))
+			 (ps:chain file-frame (append-child close-button))))
 
-                       ;; PDF files
-                       ((eql (ps:chain file type) "application/pdf")
-			(let ((iframe (ps:chain document (create-element "iframe")))
-                              (file-name (ps:chain document (create-element "span"))))
-                          (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
-                          (ps:chain file-frame (append-child iframe))
-                          ;; File name
-                          (ps:chain file-name class-list (add "file-name"))
-                          (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
-                          (ps:chain file-frame (append-child file-name))
-			  (ps:chain file-frame (append-child close-button))))
+                      ;; PDF files
+                      ((eql (ps:chain file type) "application/pdf")
+		       (let ((iframe (ps:chain document (create-element "iframe")))
+                             (file-name (ps:chain document (create-element "span"))))
+                         (setf (ps:chain iframe src) (ps:chain -u-r-l (create-object-u-r-l file)))
+                         (ps:chain file-frame (append-child iframe))
+                         ;; File name
+                         (ps:chain file-name class-list (add "file-name"))
+                         (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+                         (ps:chain file-frame (append-child file-name))
+			 (ps:chain file-frame (append-child close-button))))
 
-                       ;; Other files
-                       (t
-			(let ((file-row (ps:chain document (create-element "div")))
-                              (file-name (ps:chain document (create-element "span"))))
-                          ;; Create a row container
-                          (ps:chain file-row class-list (add "file-row"))
+                      ;; Other files
+                      (t
+		       (let ((file-row (ps:chain document (create-element "div")))
+                             (file-name (ps:chain document (create-element "span"))))
+                         ;; Create a row container
+                         (ps:chain file-row class-list (add "file-row"))
 
-                          ;; Set up file name
-                          (ps:chain file-name class-list (add "file-name"))
-                          (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
+                         ;; Set up file name
+                         (ps:chain file-name class-list (add "file-name"))
+                         (setf (ps:chain file-name text-content) (ps:chain file name (to-lower-case)))
 
-                          ;; Append file name and close button to the row
-                          (ps:chain file-row (append-child file-name))
-                          (ps:chain file-row (append-child close-button))
+                         ;; Append file name and close button to the row
+                         (ps:chain file-row (append-child file-name))
+                         (ps:chain file-row (append-child close-button))
 
-                          ;; Append the row to the file frame
-                          (ps:chain file-frame (append-child file-row)))))
+                         ;; Append the row to the file frame
+                         (ps:chain file-frame (append-child file-row)))))
 
-                     ;; Append the file frame to the container
-                     (ps:chain files-container (append-child file-frame))
-                     (scroll-to-bottom))))))
+                    ;; Append the file frame to the container
+                    (ps:chain files-container (append-child file-frame))
+                    (scroll-to-bottom))))))
 
 
-    ;; Enable drag-and-drop file rearranging within files-container
-    (setf files-container (ps:chain document (get-element-by-id "files-container")))
-    (setf dragged-item nil)
+   ;; Enable drag-and-drop file rearranging within files-container
+   (setf files-container (ps:chain document (get-element-by-id "files-container")))
+   (setf dragged-item nil)
 
-    (ps:chain files-container (add-event-listener "dragstart"
-						  (lambda (event)
-						    (setf dragged-item (ps:chain event target))
-						    ;; Add visual feedback when dragging starts
-						    (set-timeout (lambda () (setf (ps:chain dragged-item style opacity) "0.5")) 0))))
+   (ps:chain files-container (add-event-listener "dragstart"
+						 (lambda (event)
+						   (setf dragged-item (ps:chain event target))
+						   ;; Add visual feedback when dragging starts
+						   (set-timeout (lambda () (setf (ps:chain dragged-item style opacity) "0.5")) 0))))
 
-    (ps:chain files-container (add-event-listener "dragend"
-						  (lambda ()
-						    ;; Reset opacity and clear dragged item after dropping
-						    (set-timeout (lambda ()
-								   (setf (ps:chain dragged-item style opacity) "1")
-								   (setf dragged-item nil)) 0))))
+   (ps:chain files-container (add-event-listener "dragend"
+						 (lambda ()
+						   ;; Reset opacity and clear dragged item after dropping
+						   (set-timeout (lambda ()
+								  (setf (ps:chain dragged-item style opacity) "1")
+								  (setf dragged-item nil)) 0))))
 
-    (ps:chain files-container (add-event-listener "dragover"
-						  (lambda (event)
-						    ;; Allow dropping by preventing the default behavior
-						    (ps:chain event (prevent-default)))))
+   (ps:chain files-container (add-event-listener "dragover"
+						 (lambda (event)
+						   ;; Allow dropping by preventing the default behavior
+						   (ps:chain event (prevent-default)))))
 
-    (ps:chain files-container (add-event-listener "drop"
-						  (lambda (event)
-						    (ps:chain event (prevent-default)) ;; Prevent default drop behavior
-						    (let ((target (ps:chain event target)))
-						      (when (and dragged-item (ps:chain target class-list (contains "file-frame")))
-							(let ((rect (ps:chain target get-bounding-client-rect))
-							      (offset (ps:chain event client-y)))
-							  ;; Determine whether to insert before or after the target based on the Y position
-							  (if (< offset (+ (ps:chain rect top) (/ (ps:chain rect height) 2)))
-							      (ps:chain files-container (insert-before dragged-item target))
-							      (let ((next-sibling (ps:chain target next-sibling)))
-								(if next-sibling
-								    (ps:chain files-container (insert-before dragged-item next-sibling))
-								    (ps:chain files-container (append-child dragged-item)))))))))))
+   (ps:chain files-container (add-event-listener "drop"
+						 (lambda (event)
+						   (ps:chain event (prevent-default)) ;; Prevent default drop behavior
+						   (let ((target (ps:chain event target)))
+						     (when (and dragged-item (ps:chain target class-list (contains "file-frame")))
+						       (let ((rect (ps:chain target get-bounding-client-rect))
+							     (offset (ps:chain event client-y)))
+							 ;; Determine whether to insert before or after the target based on the Y position
+							 (if (< offset (+ (ps:chain rect top) (/ (ps:chain rect height) 2)))
+							     (ps:chain files-container (insert-before dragged-item target))
+							     (let ((next-sibling (ps:chain target next-sibling)))
+							       (if next-sibling
+								   (ps:chain files-container (insert-before dragged-item next-sibling))
+								   (ps:chain files-container (append-child dragged-item)))))))))))
 
-    ;; Add files via "Add a file" button click
-    (ps:chain document (get-element-by-id "upload-btn")
-	      (add-event-listener "click"
-				  (lambda ()
-				    (let ((file-input (ps:chain document (get-element-by-id "file-input"))))
-				      (ps:chain file-input (click))
-				      (setf (ps:chain file-input onchange)
-					    (lambda ()
-					      (handle-files (ps:chain file-input files))
-					      (setf (ps:chain file-input value) "")))))))
+   ;; Add files via "Add a file" button click
+   (ps:chain document (get-element-by-id "upload-btn")
+	     (add-event-listener "click"
+				 (lambda ()
+				   (let ((file-input (ps:chain document (get-element-by-id "file-input"))))
+				     (ps:chain file-input (click))
+				     (setf (ps:chain file-input onchange)
+					   (lambda ()
+					     (handle-files (ps:chain file-input files))
+					     (setf (ps:chain file-input value) "")))))))
 
-    ;; Enable file drag-and-drop in the drop zone
-    (setf drop-zone (ps:chain document (get-element-by-id "drop-zone")))
+   ;; Enable file drag-and-drop in the drop zone
+   (setf drop-zone (ps:chain document (get-element-by-id "drop-zone")))
 
-    (ps:chain drop-zone (add-event-listener "dragenter" (lambda (event)
-							  (ps:chain event (prevent-default))
-							  (ps:chain drop-zone class-list (add "dragging")))))
+   (ps:chain drop-zone (add-event-listener "dragenter" (lambda (event)
+							 (ps:chain event (prevent-default))
+							 (ps:chain drop-zone class-list (add "dragging")))))
 
-    (ps:chain drop-zone (add-event-listener "dragover" (lambda (event)
-							 (ps:chain event (prevent-default)))))
+   (ps:chain drop-zone (add-event-listener "dragover" (lambda (event)
+							(ps:chain event (prevent-default)))))
 
-    (ps:chain drop-zone (add-event-listener "dragleave" (lambda (event)
-							  (ps:chain event (prevent-default))
-							  (ps:chain drop-zone class-list (remove "dragging")))))
+   (ps:chain drop-zone (add-event-listener "dragleave" (lambda (event)
+							 (ps:chain event (prevent-default))
+							 (ps:chain drop-zone class-list (remove "dragging")))))
 
-    (ps:chain drop-zone (add-event-listener "drop"
-					    (lambda (event)
-					      (ps:chain event (prevent-default))
-					      (ps:chain drop-zone class-list (remove "dragging"))
-		 			      (handle-files (ps:chain event data-transfer files)))))
+   (ps:chain drop-zone (add-event-listener "drop"
+					   (lambda (event)
+					     (ps:chain event (prevent-default))
+					     (ps:chain drop-zone class-list (remove "dragging"))
+		 			     (handle-files (ps:chain event data-transfer files)))))
     
-    ;; Upload files to the "/files" endpoint using plain JS
-    (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn")))
-	  (progress-container (ps:chain document (get-element-by-id "progress-container")))
-	  (progress-bar (ps:chain document (get-element-by-id "upload-progress")))
-	  (loading-indicator (ps:chain document (get-element-by-id "loading-indicator")))
-	  (error-container (ps:chain document (get-element-by-id "error-container")))
-	  (error-indicator (ps:chain document (get-element-by-id "error-indicator")))
-	  (loading-container (ps:chain document (get-element-by-id "loading-container")))
-	  )
+   ;; Upload files to the "/files" endpoint using plain JS
+   (let ((submit-btn (ps:chain document (get-element-by-id "submit-btn")))
+	 (progress-container (ps:chain document (get-element-by-id "progress-container")))
+	 (progress-bar (ps:chain document (get-element-by-id "upload-progress")))
+	 (loading-indicator (ps:chain document (get-element-by-id "loading-indicator")))
+	 (error-container (ps:chain document (get-element-by-id "error-container")))
+	 (error-indicator (ps:chain document (get-element-by-id "error-indicator")))
+	 (loading-container (ps:chain document (get-element-by-id "loading-container")))
+	 )
 
-      (defun upload-files ()
-	"upload the files and track progress of the upload"
-	(ps:chain console (log files-array))
-	(let ((form-data (new -form-data))
-	      (xhr (new -x-m-l-http-request))
-	      )
-	  ;; Add files to FormData
-	  (when (> (ps:chain files-array length) 0)
-	    (ps:chain form-data (set "number-of-files" (ps:chain files-array length)))
-	    (loop for i from 0 below (ps:chain files-array length) do
-	      (ps:chain form-data (append (+ "file_" i) (aref files-array i)))))
+     (defun upload-files ()
+       "upload the files and track progress of the upload"
+       (ps:chain console (log files-array))
+       (let ((form-data (new -form-data))
+	     (xhr (new -x-m-l-http-request))
+	     )
+	 ;; Add files to FormData
+	 (when (> (ps:chain files-array length) 0)
+	   (ps:chain form-data (set "number-of-files" (ps:chain files-array length)))
+	   (loop for i from 0 below (ps:chain files-array length) do
+	     (ps:chain form-data (append (+ "file_" i) (aref files-array i)))))
 	  
-	  ;; Open the request
-	  (let* ((action (ps:chain window location pathname)))
-	    (ps:chain xhr (open "POST" (+ "/convert-" (ps:chain action (substr 1))) t)))
-	  ;; Track progress
-	  (setf (ps:chain xhr upload onprogress)
-		(lambda (event)
-		  (when (ps:chain event length-computable)
-		    (setf (ps:chain progress-bar value)
-			  (/ (* 100 (ps:chain event loaded)) (ps:chain event total)))
-		    (when (eql (ps:chain event loaded) (ps:chain event total))
-		      (setf (ps:chain progress-container style display) "none")
-		      (setf (ps:chain loading-indicator style display) "block")
-		      (setf (ps:chain loading-container style display) "block")
-		      (setf (ps:chain loading-indicator inner-h-t-m-l) "Converting, please wait...")))))
+	 ;; Open the request
+	 (let* ((action (ps:chain window location pathname)))
+	   (ps:chain xhr (open "POST" (+ "/convert-" (ps:chain action (substr 1))) t)))
+	 ;; Track progress
+	 (setf (ps:chain xhr upload onprogress)
+	       (lambda (event)
+		 (when (ps:chain event length-computable)
+		   (setf (ps:chain progress-bar value)
+			 (/ (* 100 (ps:chain event loaded)) (ps:chain event total)))
+		   (when (eql (ps:chain event loaded) (ps:chain event total))
+		     (setf (ps:chain progress-container style display) "none")
+		     (setf (ps:chain loading-indicator style display) "block")
+		     (setf (ps:chain loading-container style display) "block")
+		     (setf (ps:chain loading-indicator inner-h-t-m-l) "Converting, please wait...")))))
 
-	  (setf (ps:chain xhr onloadstart) (lambda ()
-					     "Show loading indicator when uploading starts"
-					     (setf (ps:chain loading-container style display) "none")
-					     (setf (ps:chain progress-container style display) "block")
-					     (setf (ps:chain loading-indicator style display) "block")
-					     (setf (ps:chain error-container style display) "none")
-					     (setf (ps:chain error-indicator style display) "none")
-					     ))
+	 (setf (ps:chain xhr onloadstart) (lambda ()
+					    "Show loading indicator when uploading starts"
+					    (setf (ps:chain loading-container style display) "none")
+					    (setf (ps:chain progress-container style display) "block")
+					    (setf (ps:chain loading-indicator style display) "block")
+					    (setf (ps:chain error-container style display) "none")
+					    (setf (ps:chain error-indicator style display) "none")
+					    ))
 
-	  (setf (ps:chain xhr onload)
-		(lambda ()
-		  "handle upload completion and process response"
-		  (if (and (eql (ps:chain xhr ready-state) 4) (eql (ps:chain xhr status) 200))
-		      (let* ((response-json (ps:chain xhr response-text))
-			     (response (ps:chain -j-s-o-n (parse response-json))))
-			(ps:chain console (log response))
-			(setf (ps:chain progress-container style display) "none")
-			(setf (ps:chain loading-indicator style display) "none")
-			(if (eql (ps:chain response success) t)
-			    (setf (ps:chain window location href) 
-				  (+ (ps:chain window location pathname) "/" (ps:chain response directory)))
-			    (progn
-			      (ps:chain console (log response))
-			      (let* ((error-code (ps:chain response error-code))
-				     (error-text (cond
-						   ((eql error-code 429) "Server currently busy, please try again later.")
-						   ((eql error-code 500) "An error occured, please try again.")
-						   ((eql error-code 503) "Server currently experiencing some technical problems. Try again later.")
-						   ((eql error-code 504) "The conversion is taking very long, won't finish in time. Decrease number and/or size of the documents and try again.")
-						   (t "An error occurred while processing the request. Please try again.")))))
-			      (setf (ps:chain progress-container style display) "none")
-			      (setf (ps:chain loading-indicator style display) "none")
-			      (setf (ps:chain loading-container style display) "none")
-			      (setf (ps:chain error-indicator inner-h-t-m-l) error-text)
-			      (setf (ps:chain error-container style display) "block")
-			      (setf (ps:chain error-indicator style display) "block")
-			      )))
-		      (progn 
-			(setf (ps:chain loading-container style display) "none")
-			(setf (ps:chain progress-container style display) "none")
-			(setf (ps:chain loading-indicator style display) "none")
-			(setf (ps:chain error-container style display) "block")
-			(setf (ps:chain error-indicator style display) "block")
-			))))
+	 (setf (ps:chain xhr onload)
+	       (lambda ()
+		 "handle upload completion and process response"
+		 (if (and (eql (ps:chain xhr ready-state) 4) (eql (ps:chain xhr status) 200))
+		     (let* ((response-json (ps:chain xhr response-text))
+			    (response (ps:chain -j-s-o-n (parse response-json))))
+		       (ps:chain console (log response))
+		       (setf (ps:chain progress-container style display) "none")
+		       (setf (ps:chain loading-indicator style display) "none")
+		       (if (eql (ps:chain response success) t)
+			   (setf (ps:chain window location href) 
+				 (+ (ps:chain window location pathname) "/" (ps:chain response directory)))
+			   (progn
+			     (ps:chain console (log response))
+			     (let* ((error-code (ps:chain response error-code))
+				    (error-text (cond
+						  ((eql error-code 429) "Server currently busy, please try again later.")
+						  ((eql error-code 500) "An error occured, please try again.")
+						  ((eql error-code 503) "Server currently experiencing some technical problems. Try again later.")
+						  ((eql error-code 504) "The conversion is taking very long, won't finish in time. Decrease number and/or size of the documents and try again.")
+						  (t "An error occurred while processing the request. Please try again.")))))
+			     (setf (ps:chain progress-container style display) "none")
+			     (setf (ps:chain loading-indicator style display) "none")
+			     (setf (ps:chain loading-container style display) "none")
+			     (setf (ps:chain error-indicator inner-h-t-m-l) error-text)
+			     (setf (ps:chain error-container style display) "block")
+			     (setf (ps:chain error-indicator style display) "block")
+			     )))
+		     (progn 
+		       (setf (ps:chain loading-container style display) "none")
+		       (setf (ps:chain progress-container style display) "none")
+		       (setf (ps:chain loading-indicator style display) "none")
+		       (setf (ps:chain error-container style display) "block")
+		       (setf (ps:chain error-indicator style display) "block")
+		       ))))
 
-	  ;; Send the request only if there's a description or files to send
-	  (when (> (length files-array) 0)
-	    (ps:chain xhr (send form-data)))))
+	 ;; Send the request only if there's a description or files to send
+	 (when (> (length files-array) 0)
+	   (ps:chain xhr (send form-data)))))
 
-      (ps:chain submit-btn (add-event-listener "click" (lambda ()
-							 "submit button click listener"
-							 (upload-files))))
-      ;; hide drop-zone on mobile devices
-      (when (is-mobile-browser)
-	(setf (ps:chain document (get-element-by-id "drop-zone") style display) "none")))))
+     (ps:chain submit-btn (add-event-listener "click" (lambda ()
+							"submit button click listener"
+							(upload-files))))
+     ;; hide drop-zone on mobile devices
+     (when (is-mobile-browser)
+       (setf (ps:chain document (get-element-by-id "drop-zone") style display) "none")))))
 
 (defun home-css ()
   "the css for the /home endpoint"
@@ -421,7 +434,8 @@
 			     "footer index-footer" "footer")
 		  (:div :class "container"
 			(:b "SpotPDF - A one stop conversion spot.")
-		       	(:b (cl-who:fmt "  © Ninx Technology Limited ~a." (ninx:get-current-year))))))))
+		       	(:b (cl-who:fmt "  © Ninx Technology Limited ~a." (ninx:get-current-year)))))
+	 (gtag-js))))
 
 (define-easy-handler (sitemap
 		      :uri (define-matching-functions "/sitemap.xml" *spotpdf-host*)
