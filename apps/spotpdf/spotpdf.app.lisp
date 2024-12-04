@@ -375,7 +375,7 @@
 			      ("tiff" . ("jpeg" "jpg" "png" "webp"))
 			      ("webp" . ("jpeg" "jpg" "pdf" "png" "tiff"))))
 
-(defun make-sitemap (&key (path #p"~/common-lisp/ninx/priv/spotpdf/sitemap.xml") (alist *file-types*))
+(defun make-sitemap (&key (path #p"~/common-lisp/ninx/priv/spotpdf/sitemap.xml") (alist `(,@*file-types* ,@*image-types*)))
   "Save a sitemap to the given PATH from the provided ALIST in XML format."
   (with-open-file (stream (truename path) :direction :output :if-exists :supersede :if-does-not-exist :create)
     (format stream "<?xml version=\"1.0\" encoding=\"UTF-8\"?>~%")
