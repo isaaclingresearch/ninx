@@ -467,11 +467,11 @@
 
 ;; this sends the index now file
 (define-easy-handler (index-now
-		      :uri (define-matching-functions "/94b5eaed6c084ba9a52bdae3fad2e459.txt" *spotpdf-host*)
+		      :uri (define-matching-functions "/ea5df80cd98e4dd9a1abad4b7ef2b8ec.txt" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (setf (content-type*) "text/plain")
-  (setf (header-out "content-disposition") "inline; filename=94b5eaed6c084ba9a52bdae3fad2e459.txt")
-  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/94b5eaed6c084ba9a52bdae3fad2e459.txt"))
+  (setf (header-out "content-disposition") "inline; filename=ea5df80cd98e4dd9a1abad4b7ef2b8ec.txt")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/ea5df80cd98e4dd9a1abad4b7ef2b8ec.txt"))
 
 (defun make-index-now-urls ()
   "make a list of urls fromm image and file types"
@@ -489,8 +489,8 @@
 ;;			   :real-host "https//spotpdf.com"
 			   :content-type "application/json; charset=utf-8"
 			   :content (jzon:stringify (hash-create `(("host" "spotpdf.com")
-								   ("key" "94b5eaed6c084ba9a52bdae3fad2e459")
-								   ("keyLocation" "https://spotpdf/94b5eaed6c084ba9a52bdae3fad2e459.txt")
+								   ("key" "ea5df80cd98e4dd9a1abad4b7ef2b8ec")
+								   ("keyLocation" "https://spotpdf/ea5df80cd98e4dd9a1abad4b7ef2b8ec.txt")
 								   ("urlList" ,(make-index-now-urls))))))
     (declare (ignore status-text request-uri flexi-response response-bool))
     (if (equal response-code 200)
