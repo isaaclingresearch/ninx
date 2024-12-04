@@ -473,6 +473,28 @@
   (setf (header-out "content-disposition") "inline; filename=94b5eaed6c084ba9a52bdae3fad2e459.txt")
   (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/94b5eaed6c084ba9a52bdae3fad2e459.txt"))
 
+(defun make-index-now-urls ()
+  "make a list of urls fromm image and file types"
+  (loop for (from . tos) in `(,@*file-types* ,@*image-types*)
+	append
+	(loop for to in tos
+	      collect
+	      (format nil "https://spotgpt.com/~a-to-~a" from to))))
+
+(defun submit-index-now ()
+  "this will send index now data"
+  (multiple-value-bind (response response-code response-headers request-uri flexi-response response-bool status-text)
+      (drakma:http-request "https://api.indexnow.org"
+			   :method :post
+			   :content-type "application/json; charset=utf-8"
+			   :content (jzon:stringify (hash-create `(("host" "spotpdf.com")
+								   ("key" "94b5eaed6c084ba9a52bdae3fad2e459")
+								   ("keyLocation" "https://spotpdf/94b5eaed6c084ba9a52bdae3fad2e459.txt")
+								   ("urlList" ,(make-index-now-urls))))))
+    (declare (ignore status-text request-uri flexi-response response-bool))
+    (if (equal response-code 200)
+	:success
+	(list :error response-code response-headers response))))
 ;; (trivia:match (get-downloadable-data dir)
 ;;   ((list type file-name data)
 ;;    (setf (content-type*) type)
