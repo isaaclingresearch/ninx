@@ -484,8 +484,9 @@
 (defun submit-index-now ()
   "this will send index now data"
   (multiple-value-bind (response response-code response-headers request-uri flexi-response response-bool status-text)
-      (drakma:http-request "https://api.indexnow.org"
+      (drakma:http-request "https://api.indexnow.org/IndexNow"
 			   :method :post
+;;			   :real-host "https//spotpdf.com"
 			   :content-type "application/json; charset=utf-8"
 			   :content (jzon:stringify (hash-create `(("host" "spotpdf.com")
 								   ("key" "94b5eaed6c084ba9a52bdae3fad2e459")
