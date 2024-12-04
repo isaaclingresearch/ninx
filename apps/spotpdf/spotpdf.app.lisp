@@ -470,7 +470,7 @@
 		      :uri (define-matching-functions "/94b5eaed6c084ba9a52bdae3fad2e459.txt" *spotpdf-host*)
 		      :host *spotpdf-host*) ()
   (setf (content-type*) "text/plain")
-  (setf (header-out "content-disposition" "inline; filename=94b5eaed6c084ba9a52bdae3fad2e459.txt"))
+  (setf (header-out "content-disposition") "inline; filename=94b5eaed6c084ba9a52bdae3fad2e459.txt")
   (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/94b5eaed6c084ba9a52bdae3fad2e459.txt"))
 
 ;; (trivia:match (get-downloadable-data dir)
