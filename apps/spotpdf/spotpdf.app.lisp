@@ -458,6 +458,13 @@
   (setf (header-out "content-disposition") "inline; filename=ads.txt")
   (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/ads.txt"))
 
+(define-easy-handler (favicon
+		      :uri (define-matching-functions "/favicon.ico" *spotpdf-host*)
+		      :host *spotpdf-host*) ()
+  (setf (content-type*) "image/vnd.microsoft.icon")
+  (setf (header-out "content-disposition") "inline; filename=favicon.ico")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/spotpdf/static/icons/web/favicon.ico"))
+
 ;; (trivia:match (get-downloadable-data dir)
 ;;   ((list type file-name data)
 ;;    (setf (content-type*) type)
