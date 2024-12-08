@@ -1,4 +1,4 @@
-(defpackage :frontpage
+(defpackage :pageone
   (:use :cl :ninx :hunchentoot :hunchensocket :trivia :postmodern :cl-hash-util :sb-rt :com.inuoe.jzon :str :cl-ppcre :frugal-uuid :cl-base64 :local-time)
   (:import-from :drakma :http-request)
   (:import-from :chronicity :parse)

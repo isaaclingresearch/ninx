@@ -1,4 +1,4 @@
-(in-package :frontpage)
+(in-package :pageone)
 
 ;; nation media papers
 
