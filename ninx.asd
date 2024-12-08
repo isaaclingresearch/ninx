@@ -6,7 +6,7 @@
   :author "Ninx technology limited"
   :description "This is a system for the company site, blog and all young applications that are not yet mature enough to have their own servers."
   :version "0.1.0"
-  :depends-on (:cl-pdf :cl-pdf-parser :postmodern :str :com.inuoe.jzon :hunchentoot :hunchensocket :drakma :cl-who :cl-css :cl-base64 :frugal-uuid :trivia :flexi-streams :parenscript :paren-async :paren6 :local-time :cl-hash-util :trivial-mimes :cl-typesetting :zstd :cl-ppcre :cl-smtp :sb-rt :py4cl2 :cl-maxminddb :sqlite :cl-html-parse :cl-pass :cl-mime-from-string :zippy)
+  :depends-on (:cl-pdf :cl-pdf-parser :postmodern :str :com.inuoe.jzon :hunchentoot :hunchensocket :drakma :cl-who :cl-css :cl-base64 :frugal-uuid :trivia :flexi-streams :parenscript :paren-async :paren6 :local-time :cl-hash-util :trivial-mimes :cl-typesetting :zstd :cl-ppcre :cl-smtp :sb-rt :py4cl2 :cl-maxminddb :sqlite :cl-html-parse :cl-pass :cl-mime-from-string :zippy :chronicity)
   :components ((:file "package")
 	       (:file "config")
 	       (:module "apps/decklm/src"
@@ -21,11 +21,14 @@
 			     (:file "decklm.postgres")
 			     (:file "decklm")
 			     ))
-	       (:module "apps/spotpdf"
+	       (:module "apps/frontpage"
 			:components ((:file "package")
-				     (:file "spotpdf")
-				     (:file "spotpdf.app")
-				     (:file "spotpdf.tests")))
+				     (:file "frontpage")))
+	       (:module "apps/spotpdf"
+		:components ((:file "package")
+			     (:file "spotpdf")
+			     (:file "spotpdf.app")
+			     (:file "spotpdf.tests")))
 	       (:module "apps/blog"
 		:components ((:file "ninx")
 			     (:file "blog")))
