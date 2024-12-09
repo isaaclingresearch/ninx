@@ -6,6 +6,12 @@
 			     host
 			     (format nil "~a:~a" host ninx:*ninx-https-port*))))
 
+(defparameter *hourly-scrap-p* nil)
+(defparameter *actors* (make-actor-system))
+
+(with-context (*actors*)
+  (when *hourly-scrap-p*
+    (task-start #'daily-scrap)))
 
 (def-suite pageone)
 ;; nation media papers
@@ -27,7 +33,8 @@
 			   :additional-headers '(("referer" . "https://epaper.nation.africa/ug")))
     (declare (ignore status-text request-uri flexi-response response-bool))
     (if (equal response-code 200)
-	(format t "~%~a: success~%" yyyy-mm-dd)
+	(progn (save-image "Daily Monitor" response "image/jpg" yyyy-mm-dd)
+	       :success)
 	(format t "~a" (list :error response-code response-headers response)))))
 
 (defun scrap-monitor (&key (days 0) (all nil))
@@ -48,7 +55,8 @@
 			   :additional-headers '(("referer" . "https://epaper.nation.africa/ug")))
     (declare (ignore status-text request-uri flexi-response response-bool))
     (if (equal response-code 200)
-	(format t "~%~a: success~%" yyyy-mm-dd)
+	(progn (save-image "Ennyanda" response "image/jpg" yyyy-mm-dd)
+	       :success)
 	(format t "~a" (list :error response-code response-headers response)))))
 
 (defun scrap-ennyanda (&key (days 0) (all nil))
@@ -69,7 +77,8 @@
 			   :additional-headers '(("referer" . "https://epaper.nation.africa/ug")))
     (declare (ignore status-text request-uri flexi-response response-bool))
     (if (equal response-code 200)
-	(format t "~%~a: success~%" yyyy-mm-dd)
+	(progn (save-image "Seeds of Gold" response "image.jpg" yyyy-mm-dd)
+	       :success)
 	(format t "~a" (list :error response-code response-headers response)))))
 
 (defun scrap-seeds-of-gold (&key (days 0) (all nil))
@@ -90,7 +99,8 @@
 			   :additional-headers '(("referer" . "https://epaper.nation.africa/ug")))
     (declare (ignore status-text request-uri flexi-response response-bool))
     (if (equal response-code 200)
-	(format t "~%~a: success~%" yyyy-mm-dd)
+	(progn (save-image "The East African" response "image/jpg" yyyy-mm-dd)
+	       :success)
 	(format t "~a" (list :error response-code response-headers response)))))
 
 (defun scrap-the-east-african (&key (days 0) (all nil))
@@ -121,7 +131,8 @@
 			      :additional-headers '(("referer" . "https://epaper.visiongroup.co.ug")))
        (declare (ignore status-text request-uri flexi-response response-bool))
        (if (equal response-code 200)
-	   (format t "~%~a: success~%" (list year month d1 d2))
+	   (progn (save-image "Vision Group paper" response "image/git" (get-yyyy-mm-dd))
+		  :success)
 	   (format t "~a" (list :error response-code response-headers response)))))))
 
 (defun scrap-new-vision (&key (months 0) (d1 1) (d2 1))
@@ -143,22 +154,6 @@
 
 
 ;; OBSERVER
-
-;; to be implemented later.
-(defun get-observer (&optional (weeks 0))
-  "observer is published weekly, on a wednesday and runs upto tuesday. 
-   format is The-Observer-Month-Date-of-Wed-Date-of-Next-Tue-Year.jpg
-   we don't know how the transition between months occurs. but i guess that's something we will learn upon months end.
-   to implement this; we need to know where are in the week. if >= wednesday we use this wednesday and next tuesday. if not we use the
-   wednesday of last week and the tuesday of last week. 
-   for the previous weeks, we use the wednesday in a week and the tuesday in a week after."
-  (let* ((current-timestamp (now))
-	 (this-wednesday (chronicity:parse "this wednesday"))
-	 (wednesday (if (timestamp> current-timestamp this-wednesday)
-			(chronicity:parse "last wednesday")
-			this-wednesday))
-	 (this-tuesday (chronicity:parse "this tuesday"))
-	 (tuesday (if timestamp> current-timestamp this-tuesd)))))
 
 (defun month-abbr (month)
   (trivia:match month
@@ -204,7 +199,8 @@
 			     )
       (declare (ignore status-text request-uri flexi-response response-bool))
       (if (equal response-code 200)
-	  (format t "~%~a: success~%" url)
+	  (progn (save-image "The Observer" response "image/jpg" (get-yyyy-mm-dd))
+		 :success)
 	  (format t "~a" (list :error response-code response-headers response))))))
 
 (defun scrap-observer (&optional (weeks 0))
@@ -212,6 +208,26 @@
   (when (>= weeks 0)
     (get-observer (- weeks))
     (scrap-observer (1- weeks))))
+
+(defun initial-scrap ()
+  "this scraps 1000 days worth of images"
+  (scrap-observer 162)
+  (scrap-new-vision 36)
+  (scrap-monitor 1000 t)
+  (scrap-ennyanda 1000 t)
+  (scrap-seeds-of-gold 1000 t)
+  (scrap-the-east-african 1000 t))
+
+(defun daily-scrap ()
+  "this scraps only a single day; we run 24 times a day"
+  (scrap-observer)
+  (scrap-new-vision)
+  (scrap-monitor)
+  (scrap-ennyanda)
+  (scrap-seeds-of-gold)
+  (scrap-the-east-african)
+  (sleep 3600)
+  (daily-scrap))
 
 ;;; db access functions.
 
@@ -239,16 +255,17 @@
 				(setf *db-string* "pageone_testdb")))))
 
 (defun create-tables ()
-  "this function will create tables for storing the data, the user-uuid is the main identifier of the user."
+  "this function will create tables for storing the data, the user-uuid is the main identifier of the user. the digest is what must be unique 
+    considering we have vision group fiasco."
   (conn (*db-string*) (query
 		       (:Create-table (:if-not-exists 'images)
 				      ((id :type uuid :primary-key t :default (:raw "gen_random_uuid()"))
 				       (data :type bytea)
 				       (mimetype :type text)
-				       (digest :type bytea :unique t)
+				       (digest :type bytea)
 				       (date :type timestamp-without-time-zone)
 				       (paper-name :type text))
-				      (:constraint images-unique :unique paper-name date)))
+				      (:constraint images-unique :unique paper-name date digest)))
     
     (query
      (:create-table (:if-not-exists 'user-ids)

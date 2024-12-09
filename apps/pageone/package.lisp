@@ -4,6 +4,8 @@
   (:shadowing-import-from :chronicity :parse)
   (:import-from :ironclad :digest-file)
   (:import-from :flexi-streams :octets-to-string)
+  (:import-from :sento.actor-system :make-actor-system)
+  (:import-from :sento.tasks :task-start :with-context)
   (:shadow hunchentoot:reply str:match str:split cl)
   (:documentation "This is the main backend package for the Frontpage application.")
   (:local-nicknames (:jzon :com.inuoe.jzon) (:ppcre :cl-ppcre))
