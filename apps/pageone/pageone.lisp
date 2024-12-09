@@ -248,19 +248,20 @@
 				       (digest :type bytea :unique t)
 				       (date :type timestamp-without-time-zone)
 				       (paper-name :type text))
-				      (:constraint images-unique :unique paper-name date))))
-  (query
-   (:create-table (:if-not-exists 'user-ids)
-		  ((id :type uuid :primary-key t :default (:raw "gen_random_uuid()"))
-		   (creation-date :type timestamp-without-time-zone :default (:raw "CURRENT_TIMESTAMP")))))
-  (query (:create-table (:if-not-exists 'image-requests)
-			((id :type serial :primary-key t)
-			 (date :type timestamp-without-time-zone :unique t)
-			 (count :type integer :default 1))))
-  (query (:create-table (:if-not-exists 'image-downloads)
-			((id :type serial :primary-key t)
-			 (date :type timestamp-without-time-zone :unique t)
-			 (count :type integer :default 1)))))
+				      (:constraint images-unique :unique paper-name date)))
+    
+    (query
+     (:create-table (:if-not-exists 'user-ids)
+		    ((id :type uuid :primary-key t :default (:raw "gen_random_uuid()"))
+		     (creation-date :type timestamp-without-time-zone :default (:raw "CURRENT_TIMESTAMP")))))
+    (query (:create-table (:if-not-exists 'image-requests)
+			  ((id :type serial :primary-key t)
+			   (date :type timestamp-without-time-zone :unique t)
+			   (count :type integer :default 1))))
+    (query (:create-table (:if-not-exists 'image-downloads)
+			  ((id :type serial :primary-key t)
+			   (date :type timestamp-without-time-zone :unique t)
+			   (count :type integer :default 1))))))
 (test create-tables (is (null (create-tables))))
 
 (defun delete-tables ()
@@ -345,6 +346,7 @@
 				:where (:> 'image-requests.date (:raw (format nil "(DATE '~a' - INTERVAL '~a day')" (get-yyyy-mm-dd) duration)))
 				:group-by 'image-requests.date))))
     (:null 0)
+    (nil 0)
     (else else)))
 (test get-image-requests (is (eql 1 (get-image-requests))))
 
@@ -366,6 +368,7 @@
 				:where (:> 'image-downloads.date (:raw (format nil "(DATE '~a' - INTERVAL '~a day')" (get-yyyy-mm-dd) duration)))
 				:group-by 'image-downloads.date))))
     (:null 0)
+    (nil 0)
     (else else)))
 (test get-image-downloads (is (eql 1 (get-image-downloads))))
 
@@ -433,6 +436,7 @@
 		      :uri (define-matching-functions "^/get-images$" *pageone-host*)
 		      :host *pageone-host*)
     (count)
+  (incr-image-requests)
   (let ((papers (get-images count)))
     (setf (content-type*) "application/json")
     (jzon:stringify (loop for paper in papers collect
@@ -444,6 +448,50 @@
 		      :uri (define-matching-functions "^/get-image$" *pageone-host*)
 		      :host *pageone-host*)
     (id)
+  (incr-image-downloads)
   (let ((image-data (get-image-data id)))
     (setf (content-type*) (car image-data))
     (cadr image-data)))
+
+(define-easy-handler (realtime-analytics :uri (define-matching-functions "^/realtime-analytics$" *pageone-host*)
+					 :acceptor-names '(ninx::ninx)
+					 :host *pageone-host*) ()
+  (with-html-output-to-string (*standard-output*)
+    (htm
+     (:html
+      (:head
+       (:title "Realtime Analytics")
+       (:style (str (cl-css:css
+		     `((.ana-div :width 50vh)
+		       (.left-div :float left)
+		       (.right-div :float right))))))
+      (:body
+       (:div :class "ana-div left-div"
+	     (:table
+		 (:tr (:th "Requests in Time") (:th "Number") (:th "Growth"))
+	       (:tr (:td "Day") (:td (str (get-image-requests :duration 1))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-image-requests :duration 2)
+										      (get-image-requests :duration 1))))))
+	       (:tr (:td "Week") (:td (str (get-image-requests :duration 7))) (:td (str (format nil "~,7f"
+												(compute-growth
+												 (get-image-requests :duration 14)
+												 (get-image-requests :duration 7))))))
+	       (:tr (:td "Month") (:td (str (get-image-requests :duration 28))) (:td (str (format nil "~,7f"
+												  (compute-growth
+												   (get-image-requests :duration 56)
+												   (get-image-requests :duration 28))))))
+	       (:table
+		   (:tr (:th "Downloads in Time") (:th "Number") (:th "Growth"))
+		 (:tr (:td "Day") (:td (str (get-image-downloads :duration 1))) (:td (str (format nil "~,7f"
+											(compute-growth
+											 (get-image-downloads :duration 2)
+											 (get-image-downloads :duration 1))))))
+		 (:tr (:td "Week") (:td (str (get-image-downloads :duration 7))) (:td (str (format nil "~,7f"
+											 (compute-growth
+											  (get-image-downloads :duration 14)
+											  (get-image-downloads :duration 7))))))
+		 (:tr (:td "Month") (:td (str (get-image-downloads :duration 28))) (:td (str (format nil "~,7f"
+											   (compute-growth
+											    (get-image-downloads :duration 56)
+											    (get-image-requests :duration 28))))))))))))))

@@ -14,4 +14,5 @@
    :read-binary-file-to-octets
    :write-octets-to-binary-file
    :acceptor-server-name
-   :is-mobile-browser))
+   :is-mobile-browser
+   :compute-growth))

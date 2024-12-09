@@ -221,3 +221,18 @@
       ((ppcre:scan "(?i)windows phone" user-agent) t)
       ((ppcre:scan "(?i)blackberry|bb10|playbook" user-agent) t)
       (t nil))))
+
+
+(defun compute-growth (old-value new-value)
+  "Compute the percentage growth from old-value to new-value.
+   Returns the percentage change as a float, or nil if growth cannot be computed.
+   - If old-value is zero and new-value is also zero, returns 0 (no growth).
+   - If old-value is zero and new-value is positive, returns 100 (100% growth).
+   - If old-value is zero and new-value is negative, returns -100 (-100% growth)."
+  (cond
+    ((= old-value 0)
+     (cond ((= new-value 0) 0)	   ; No growth if both are zero
+           ((> new-value 0) 100)   ; 100% growth from zero to positive
+           ((< new-value 0) -100))) ; -100% growth from zero to negative
+    (t
+     (* 100 (/ (- new-value old-value) old-value)))))
