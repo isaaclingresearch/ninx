@@ -1,5 +1,13 @@
 (in-package :pageone)
 
+(defvar *pageone-url* (uiop:getenv "PAGEONE_HOST"))
+(defvar *pageone-host* (let ((host (uiop:getenv "PAGEONE_HOST")))
+			 (if (equal "443" ninx:*ninx-https-port*)
+			     host
+			     (format nil "~a:~a" host ninx:*ninx-https-port*))))
+
+
+(def-suite pageone)
 ;; nation media papers
 
 (defun get-yyyy-mm-dd (&optional yyyy mm dd)
@@ -191,7 +199,7 @@
     (multiple-value-bind (response response-code response-headers request-uri flexi-response response-bool status-text)
 	(drakma:http-request url
 			     :method :get
-			    ;; :user-agent :firefox ;; this causes an error for now, don't know, will return to it later.
+			     ;; :user-agent :firefox ;; this causes an error for now, don't know, will return to it later.
 			     :additional-headers '(("referer" . "https://observer.ug"))
 			     )
       (declare (ignore status-text request-uri flexi-response response-bool))
@@ -204,3 +212,238 @@
   (when (>= weeks 0)
     (get-observer (- weeks))
     (scrap-observer (1- weeks))))
+
+;;; db access functions.
+
+(defmacro conn ((database) &body data)
+  `(with-connection (list ,database ,database ,(uiop:getenv "POSTGRES_PASSWORD") "localhost")
+     ,@data))
+
+(test start-tests
+  (is (equalp "postgres" (change-toplevel-database "postgres" "postgres" (uiop:getenv "POSTGRES_PASSWORD") "localhost"))))
+(test delete-db (is (null (query (:drop-database "pageone-testdb")))))
+(test drop-role (is (null (query (:drop-role "pageone-testdb")))))
+
+(defun initialise-db (role &optional (database "pageone") create-tables)
+  "this function will create the database and the appropriate tables."
+  (let ((password (uiop:getenv "POSTGRES_PASSWORD")))
+    (change-toplevel-database "postgres" "postgres" password "localhost")
+    (create-role role password :base-role :admin)
+    (create-database database :owner role)
+    (when create-tables
+      (change-toplevel-database role database password "localhost")
+      (create-tables))))
+
+(defparameter *db-string* "pageone" "This is the database name currently in use, we need this to reduce code and make tests work.")
+(test initialise-db (is (null (prog1 (initialise-db "pageone_testdb" "pageone_testdb" t)
+				(setf *db-string* "pageone_testdb")))))
+
+(defun create-tables ()
+  "this function will create tables for storing the data, the user-uuid is the main identifier of the user."
+  (conn (*db-string*) (query
+		       (:Create-table (:if-not-exists 'images)
+				      ((id :type uuid :primary-key t :default (:raw "gen_random_uuid()"))
+				       (data :type bytea)
+				       (mimetype :type text)
+				       (digest :type bytea :unique t)
+				       (date :type timestamp-without-time-zone)
+				       (paper-name :type text))
+				      (:constraint images-unique :unique paper-name date))))
+  (query
+   (:create-table (:if-not-exists 'user-ids)
+		  ((id :type uuid :primary-key t :default (:raw "gen_random_uuid()"))
+		   (creation-date :type timestamp-without-time-zone :default (:raw "CURRENT_TIMESTAMP")))))
+  (query (:create-table (:if-not-exists 'image-requests)
+			((id :type serial :primary-key t)
+			 (date :type timestamp-without-time-zone :unique t)
+			 (count :type integer :default 1))))
+  (query (:create-table (:if-not-exists 'image-downloads)
+			((id :type serial :primary-key t)
+			 (date :type timestamp-without-time-zone :unique t)
+			 (count :type integer :default 1)))))
+(test create-tables (is (null (create-tables))))
+
+(defun delete-tables ()
+  "delete all tables"
+  (dolist (table '(images))
+    (conn (*db-string*) (query (:drop-table table)))))
+(test delete-tables (is (null (delete-tables))))
+
+(defun reset-tables ()
+  (handler-case (delete-tables) (error (err) (declare (ignore err))))
+  (create-tables))
+(test reset-tables (is (null (reset-tables))))
+
+;; user ids
+(defun create-user-id ()
+  "function creates, saves and returns a user id"
+  (let ((uuid (to-string (make-v4))))
+    (conn (*db-string*)
+      (query (:insert-into 'user-ids :set 'id uuid)))
+    uuid))
+(test create-user-id (is (not (null (create-user-id)))))
+
+(defun confirm-user-id (id)
+  "when a user sends in a request, it is accompanied with this: so we confirm it or reject it.
+   this is a basic level of security. i currently have no way of testing this."
+  (not (null (caar (conn (*db-string*)
+		     (query (:select 'id :from 'user-ids :where (:= 'id id))))))))
+
+;; DATA FUNCTIONS
+(defun save-image (paper-name data mimetype date)
+  (let ((digest (ironclad:digest-sequence 'ironclad:md5 data)))
+    (conn (*db-string*)
+      (query
+       (:insert-into 'images :set
+		     'paper-name paper-name
+		     'date date
+		     'data data
+		     'digest digest
+		     'mimetype mimetype
+		     :on-conflict-do-nothing)))))
+(test save-image (is (null (save-image "test-paper" (read-binary-file-to-octets "~/common-lisp/ninx/apps/pageone/test/test.png") "image/png" (get-yyyy-mm-dd)))))
+;; this test tests what happens when there's collision of uniques.
+(test save-image-fails (is  (null (save-image "test-paper" (read-binary-file-to-octets "~/common-lisp/ninx/apps/pageone/test/test.png") "image/png" (get-yyyy-mm-dd)))))
+
+(defun get-images (&optional (count 1))
+  "each page has 10 images so we request in multiples of 10"
+  (conn (*db-string*)
+    (query
+     (:limit
+      (:order-by (:select 'id 'paper-name 'date :from 'images)
+		 (:desc 'date))
+      (* count 10)))))
+(test get-images (is (not (null (get-images)))))
+
+(defun get-image-data (image-id)
+  (conn (*db-string*)
+    (query (:select 'mimetype 'data :from 'images
+				    :where (:= 'id image-id)))))
+(test get-image-data (is (equalp `(("image/png" ,(read-binary-file-to-octets "~/common-lisp/ninx/apps/pageone/test/test.png")))
+				 (get-image-data (caar (get-images))))))
+
+
+;; analytics
+
+(defun incr-image-requests ()
+  "this is called up every time a request for image meta data is sent. we incr 10 between we send 10 such images. 
+   we expect to send 10 images from the requests."
+  (let ((date (get-yyyy-mm-dd)))
+    (conn (*db-string*)
+      (query (:insert-into 'image-requests
+	      :set 'date date
+		   :on-conflict 'date
+		   :update-set 'count (:+ 10 'image-requests.count)
+	      :where (:= 'image-requests.date date)
+	      )))))
+(test incr-image-requests (is (null (incr-image-requests))))
+
+(defun get-image-requests (&key (duration 1))
+  "get the top count number of countries witht the highest unique visitors in duration"
+  (trivia:match (caar (conn (*db-string*)
+			(query (:select (:sum 'count) :from 'image-requests
+				:where (:> 'image-requests.date (:raw (format nil "(DATE '~a' - INTERVAL '~a day')" (get-yyyy-mm-dd) duration)))
+				:group-by 'image-requests.date))))
+    (:null 0)
+    (else else)))
+(test get-image-requests (is (eql 1 (get-image-requests))))
+
+(defun incr-image-downloads ()
+  "this is called up every time a download for image meta data is sent. we incr 1"
+  (let ((date (get-yyyy-mm-dd)))
+    (conn (*db-string*)
+      (query (:insert-into 'image-downloads :set 'date date
+	      :on-conflict 'date
+	      :update-set 'count (:+ 1 'image-downloads.count)
+	      :where (:= 'image-downloads.date date)
+	      )))))
+(test incr-image-downloads (is (null (incr-image-downloads))))
+
+(defun get-image-downloads (&key (duration 1))
+  "get the top count number of countries witht the highest unique visitors in duration"
+  (trivia:match (caar (conn (*db-string*)
+			(query (:select (:sum 'count) :from 'image-downloads
+				:where (:> 'image-downloads.date (:raw (format nil "(DATE '~a' - INTERVAL '~a day')" (get-yyyy-mm-dd) duration)))
+				:group-by 'image-downloads.date))))
+    (:null 0)
+    (else else)))
+(test get-image-downloads (is (eql 1 (get-image-downloads))))
+
+
+;; last test returns to pageone db
+(test return-to-pageone-db (is (equal "pageone"
+				      (prog1
+					  (change-toplevel-database "pageone" "pageone" (uiop:getenv "POSTGRES_PASSWORD") "localhost")
+					(setf *db-string* "pageone")))))
+
+
+;;; server
+;;; define the routes.
+
+(defun home-css ()
+  (cl-css:css
+   `((body :line-height 1.4 :font-size 16px :padding "0 10px" :margin "50px auto" :max-width 650px :text-align left :text-wrap pretty)
+     ("a:visited" :color blue)
+     )))
+
+(define-easy-handler (pageone-index :uri (define-matching-functions "^/$" *pageone-host*)
+				    :host *pageone-host*
+				    :acceptor-names '(ninx::ninx)) ()
+  (with-html-output-to-string (*standard-output*)
+    "<!DOCTYPE html>"
+    (htm (:html :lang "en"
+		(:head
+		 (:title "PageOne")
+		 (:meta :charset "UTF-8")
+		 (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+		 (:meta :name "description" :content "The accounts page for DeckLM")
+		 (:link :rel "icon" :href "/ninx/static/icons/web/favicon.ico" :sizes "any")
+		 (:link :rel "apple-touch-icon" :href "/ninx/static/icons/web/apple-touch-icon.png")
+		 (:link :rel "manifest" :href "/ninx/manifest.json")
+	         (:style (cl-who:str (home-css)))
+		 (:link :href "https://fonts.googleapis.com/css?family=Roboto&display=swap" :rel "stylesheet"))
+		(:body
+		 (:h1 (:a :href "/" "PageOne."))
+		 (:p "PageOne is a mobile application that brings you daily Ugandan newspaper front pages.")
+		 (:h2 "Team")
+		 (:p (:a :target "_blank" :href "https://ninx.xyz" "Ninx Technology Limited: Mobile applications division."))
+		 (:h2 "Useful Links")
+		 (:a :target "_blank" :href "https://pageone.ninx.xyz/privacy.txt" "Privacy Policy.")
+		 (:b (:p "Mail us at " (:a :href "mailto:info@ninx.xyz" "info@ninx.xyz")))
+		 (:h2 "Our Other Products")
+		 (:p (:a :target "_blank" :href "https://decklm.com" "DeckLM") " - Generate slides from your learning resources in minutes.")
+		 (:p (:a :target "_blank" :href "https://spotpdf.com" "SpotPDF") " - Convert between all image and document formats.")
+		 :hr
+		 (:b "Ninx Technology Limited,")
+		 :br
+		 (:b "Lugoba North, Kazo Lugoba, Nansana Division.")
+		 :br
+		 (:b "P.O.Box 112999, Wakiso,")
+		 :br
+		 (:b "Wakiso, Uganda."))))))
+
+(define-easy-handler (privicy.txt
+		      :uri (define-matching-functions "^/privacy.txt$" *pageone-host*)
+		      :host *pageone-host*) ()
+  (setf (content-type*) "text/plain")
+  (setf (header-out "content-disposition") "inline; filename=privacy.txt")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/privacy.txt"))
+
+(define-easy-handler (get-images-route
+		      :uri (define-matching-functions "^/get-images$" *pageone-host*)
+		      :host *pageone-host*)
+    (count)
+  (let ((papers (get-images count)))
+    (setf (content-type*) "application/json")
+    (jzon:stringify (loop for paper in papers collect
+					      (hash-create (list (list "name" (second paper))
+								 (list "id" (first name))
+								 (list "date" (third name))))))))
+
+(define-easy-handler (get-image-route
+		      :uri (define-matching-functions "^/get-image$" *pageone-host*)
+		      :host *pageone-host*)
+    (id)
+  (let ((image-data (get-image-data id)))
+    (setf (content-type*) (car image-data))
+    (cadr image-data)))

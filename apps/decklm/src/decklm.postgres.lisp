@@ -653,8 +653,6 @@
 				    (prog1
 					(change-toplevel-database "decklm" "decklm" (uiop:getenv "POSTGRES_PASSWORD") "localhost")
 				      (setf *db-string* "decklm"))) t)
-?
-
 
 ;; dev functions
 (defun clear-test-email ()

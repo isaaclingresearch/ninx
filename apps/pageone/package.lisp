@@ -1,8 +1,11 @@
 (defpackage :pageone
-  (:use :cl :ninx :hunchentoot :hunchensocket :trivia :postmodern :cl-hash-util :sb-rt :com.inuoe.jzon :str :cl-ppcre :frugal-uuid :cl-base64 :local-time)
+  (:use :cl :ninx :hunchentoot :hunchensocket :trivia :cl-hash-util :com.inuoe.jzon :str :cl-ppcre :frugal-uuid :cl-base64 :local-time :sento-user :postmodern :fiveam :cl-who :cl-css :cl-mime-from-string)
   (:import-from :drakma :http-request)
-  (:import-from :chronicity :parse)
-  (:shadow hunchentoot:reply str:match str:split)
+  (:shadowing-import-from :chronicity :parse)
+  (:import-from :ironclad :digest-file)
+  (:import-from :flexi-streams :octets-to-string)
+  (:shadow hunchentoot:reply str:match str:split cl)
   (:documentation "This is the main backend package for the Frontpage application.")
   (:local-nicknames (:jzon :com.inuoe.jzon) (:ppcre :cl-ppcre))
   (:export :start-frontpage :stop-front-page :restart-frontpage))
+

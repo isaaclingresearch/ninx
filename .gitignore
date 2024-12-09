@@ -13,3 +13,5 @@ apps/decklm/p.pptx
 apps/decklm/test.pdf
 apps/spotpdf/files/*
 apps/spotpdf/zip/*
+
+apps/pageone/db/*
