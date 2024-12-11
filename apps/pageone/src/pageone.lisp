@@ -418,8 +418,8 @@
 		 (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
 		 (:meta :name "description" :content "The accounts page for DeckLM")
 		 (:link :rel "icon" :href "/ninx/static/icons/web/favicon.ico" :sizes "any")
-		 (:link :rel "apple-touch-icon" :href "/ninx/static/icons/web/apple-touch-icon.png")
-		 (:link :rel "manifest" :href "/ninx/manifest.json")
+		 (:link :rel "apple-touch-icon" :href  "/pageone.ninx/static/icons/web/apple-touch-icon.png")
+		 (:link :rel "manifest" :href "/manifest.json")
 	         (:style (cl-who:str (home-css)))
 		 (:link :href "https://fonts.googleapis.com/css?family=Roboto&display=swap" :rel "stylesheet"))
 		(:body
@@ -449,6 +449,21 @@
   (setf (header-out "content-disposition") "inline; filename=privacy.txt")
   (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/privacy.txt"))
 
+
+(define-easy-handler (manifest.json
+		      :uri (define-matching-functions "^/manifest.json$" *pageone-host*)
+		      :host *pageone-host*) ()
+  (setf (content-type*) "text/plain")
+  (setf (header-out "content-disposition") "inline; filename=manifest.json")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/manifest.json"))
+
+(define-easy-handler (favicon
+		      :uri (define-matching-functions "/favicon.ico" *pageone-host*)
+		      :host *pageone-host*) ()
+  (setf (content-type*) "image/vnd.microsoft.icon")
+  (setf (header-out "content-disposition") "inline; filename=favicon.ico")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/static/icons/web/favicon.ico"))
+
 (define-easy-handler (get-images-route
 		      :uri (define-matching-functions "^/get-images$" *pageone-host*)
 		      :host *pageone-host*)
@@ -457,9 +472,9 @@
   (let ((papers (get-images count)))
     (setf (content-type*) "application/json")
     (jzon:stringify (loop for paper in papers collect
-					      (hash-create (list (list "name" (second paper))
-								 (list "id" (first name))
-								 (list "date" (third name))))))))
+			  (hash-create (list (list "name" (second paper))
+					     (list "id" (first name))
+					     (list "date" (third name))))))))
 
 (define-easy-handler (get-image-route
 		      :uri (define-matching-functions "^/get-image$" *pageone-host*)

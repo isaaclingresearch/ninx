@@ -21,7 +21,7 @@
 			     (:file "decklm.postgres")
 			     (:file "decklm")
 			     ))
-	       (:module "apps/pageone"
+	       (:module "apps/pageone/src"
 			:components ((:file "package")
 				     (:file "pageone")))
 	       (:module "apps/spotpdf"
