@@ -7,6 +7,7 @@
 			     (format nil "~a:~a" host ninx:*ninx-https-port*))))
 
 (defparameter *hourly-scrap-p* nil)
+
 (defparameter *actors* (make-actor-system))
 
 (with-context (*actors*)
@@ -35,7 +36,7 @@
     (if (equal response-code 200)
 	(progn (save-image "Daily Monitor" response "image/jpg" yyyy-mm-dd)
 	       :success)
-	(format t "~a" (list :error response-code response-headers response)))))
+	(format t "Error: ~a. Daily Monitor failed. ~%" response-code))))
 
 (defun scrap-monitor (&key (days 0) (all nil))
   "gets the days monitor, or if days is given, the monitor for given days ago.
@@ -57,7 +58,7 @@
     (if (equal response-code 200)
 	(progn (save-image "Ennyanda" response "image/jpg" yyyy-mm-dd)
 	       :success)
-	(format t "~a" (list :error response-code response-headers response)))))
+	(format t "Error: ~a. Ennyanda failed. ~%" response-code))))
 
 (defun scrap-ennyanda (&key (days 0) (all nil))
   "gets the days monitor, or if days is given, the monitor for given days ago.
@@ -79,7 +80,7 @@
     (if (equal response-code 200)
 	(progn (save-image "Seeds of Gold" response "image.jpg" yyyy-mm-dd)
 	       :success)
-	(format t "~a" (list :error response-code response-headers response)))))
+	(format t "Error: ~a. Seeds of Gold.~%" response-code))))
 
 (defun scrap-seeds-of-gold (&key (days 0) (all nil))
   "gets the days monitor, or if days is given, the monitor for given days ago.
@@ -101,7 +102,7 @@
     (if (equal response-code 200)
 	(progn (save-image "The East African" response "image/jpg" yyyy-mm-dd)
 	       :success)
-	(format t "~a" (list :error response-code response-headers response)))))
+	(format t "Error: ~a. The East African failed.~%" response-code))))
 
 (defun scrap-the-east-african (&key (days 0) (all nil))
   "gets the days monitor, or if days is given, the monitor for given days ago.
@@ -133,7 +134,7 @@
        (if (equal response-code 200)
 	   (progn (save-image "Vision Group paper" response "image/git" (get-yyyy-mm-dd))
 		  :success)
-	   (format t "~a" (list :error response-code response-headers response)))))))
+	  (format t "Error: ~a. Vision Group failed.~%" response-code))))))
 
 (defun scrap-new-vision (&key (months 0) (d1 1) (d2 1))
   "Recursively scrape data by incrementing d2 to 30, then incrementing d1 to 3,
@@ -201,7 +202,7 @@
       (if (equal response-code 200)
 	  (progn (save-image "The Observer" response "image/jpg" (get-yyyy-mm-dd))
 		 :success)
-	  (format t "~a" (list :error response-code response-headers response))))))
+	  (format t "Error: ~a. Observer failed.~%" response-code)))))
 
 (defun scrap-observer (&optional (weeks 0))
   "go back the given number of weeks"
@@ -211,12 +212,20 @@
 
 (defun initial-scrap ()
   "this scraps 1000 days worth of images"
-  (scrap-observer 162)
-  (scrap-new-vision 36)
-  (scrap-monitor 1000 t)
-  (scrap-ennyanda 1000 t)
-  (scrap-seeds-of-gold 1000 t)
-  (scrap-the-east-african 1000 t))
+ ;; (scrap-observer 162)
+ ;; (scrap-new-vision :months 36)
+ ;; (scrap-monitor :days 1000 :all t)
+ ;; (scrap-ennyanda :days 1000 :all t)
+ ;; (scrap-seeds-of-gold :days 1000 :all t)
+ ;; (scrap-the-east-african :days 1000 :all t)
+
+   (scrap-observer 10)
+ (scrap-new-vision :months 1)
+ (scrap-monitor :days 10 :all t)
+ (scrap-ennyanda :days 10 :all t)
+ (scrap-seeds-of-gold :days 10 :all t)
+ (scrap-the-east-african :days 10 :all t)
+)
 
 (defun daily-scrap ()
   "this scraps only a single day; we run 24 times a day"
@@ -264,7 +273,9 @@
 				       (mimetype :type text)
 				       (digest :type bytea)
 				       (date :type timestamp-without-time-zone)
-				       (paper-name :type text))
+				       (paper-name :type text)
+			;	       (created-at :type timestamp-without-time-zone :default (:raw "CURRENT_TIMESTAMP"))
+				       )
 				      (:constraint images-unique :unique paper-name date digest)))
     
     (query
@@ -340,7 +351,6 @@
 (test get-image-data (is (equalp `(("image/png" ,(read-binary-file-to-octets "~/common-lisp/ninx/apps/pageone/test/test.png")))
 				 (get-image-data (caar (get-images))))))
 
-
 ;; analytics
 
 (defun incr-image-requests ()
@@ -348,12 +358,12 @@
    we expect to send 10 images from the requests."
   (let ((date (get-yyyy-mm-dd)))
     (conn (*db-string*)
-      (query (:insert-into 'image-requests
-	      :set 'date date
-		   :on-conflict 'date
-		   :update-set 'count (:+ 10 'image-requests.count)
-	      :where (:= 'image-requests.date date)
-	      )))))
+	  (query (:insert-into 'image-requests
+			       :set 'date date
+			       :on-conflict 'date
+			       :update-set 'count (:+ 10 'image-requests.count)
+			       :where (:= 'image-requests.date date)
+			       )))))
 (test incr-image-requests (is (null (incr-image-requests))))
 
 (defun get-image-requests (&key (duration 1))
@@ -464,26 +474,34 @@
   (setf (header-out "content-disposition") "inline; filename=favicon.ico")
   (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/static/icons/web/favicon.ico"))
 
+;; this returns image data, 10 images are read onto a page, starting with page=1
 (define-easy-handler (get-images-route
 		      :uri (define-matching-functions "^/get-images$" *pageone-host*)
 		      :host *pageone-host*)
-    (count)
+    (page)
   (incr-image-requests)
-  (let ((papers (get-images count)))
+  (setf (header-out "access-control-allow-origin") "*")
+  (let ((papers (get-images (cond ((stringp page) (parse-integer page)) (t page)))))
     (setf (content-type*) "application/json")
-    (jzon:stringify (loop for paper in papers collect
-			  (hash-create (list (list "name" (second paper))
-					     (list "id" (first name))
-					     (list "date" (third name))))))))
+    ;; when we have < 10 papers, we have reached the end, don't send a timestamp, other send the timestamp of the 10th.
+    (jzon:stringify
+     (if papers
+	 (loop for paper in papers
+	       collect
+	       (hash-create (list (list "name" (second paper))
+				  (list "url" (format nil "https://~a/get-image?id=~a" *pageone-host* (first paper)))
+				  (list "date" (third paper)))))
+	 (hash-create (list (list "data" nil)))))))
 
 (define-easy-handler (get-image-route
 		      :uri (define-matching-functions "^/get-image$" *pageone-host*)
 		      :host *pageone-host*)
     (id)
   (incr-image-downloads)
+  (setf (header-out "access-control-allow-origin") "*")
   (let ((image-data (get-image-data id)))
-    (setf (content-type*) (car image-data))
-    (cadr image-data)))
+    (setf (content-type*) (caar image-data))
+    (cadar image-data)))
 
 (define-easy-handler (realtime-analytics :uri (define-matching-functions "^/realtime-analytics$" *pageone-host*)
 					 :acceptor-names '(ninx::ninx)

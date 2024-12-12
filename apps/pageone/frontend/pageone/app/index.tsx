@@ -1,4 +1,10 @@
 import {Text, View, StyleSheet} from 'react-native';
+import {FlatList} from 'react-native-bidirectional-infinite-scroll';
+
+const PaperImage = () => {
+  return (
+  );
+}
 
 export default Index = () => {
   return (
