@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 
-import 'dart:convert';
-
+final dio = Dio();
 void main() {
   runApp(const PageOne());
 }
@@ -277,16 +276,9 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  int _counter = 0;
 
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
     });
   }
 
@@ -328,15 +320,15 @@ class _PaperListViewState extends State<PaperListView> {
 
   Future<void> _fetchPaper(pageKey) async {
     try {
-      final response = await http.get(Uri.parse('https://pageone.ninx:8443/get-images').replace(queryParameters: {'page': pageKey}));
+      final response = await dio.get('https://pageone.ninx:8443/get-images', queryParameters: {'page': pageKey});
       if (response.statusCode == 200){
-        final body = json.decode(response.body);
-        if (body['data'] == false){
+        final data = response.data;
+        if (data == false){
           _pagingController.appendPage([], 1);
-        }else if (body['data'].length < _pageSize){
-          _pagingController.appendLastPage(body['data'].map<Paper>((datum) => Paper(data: datum)).toList());
+        }else if (data.length < _pageSize){
+          _pagingController.appendLastPage(data.map<Paper>((datum) => Paper(data: datum)).toList());
         }else{
-          _pagingController.appendPage(body['data'].map<Paper>((datum) => Paper(data: datum,)).toList(), pageKey+1);
+          _pagingController.appendPage(data.map<Paper>((datum) => Paper(data: datum,)).toList(), pageKey+1);
         }
       } else {
         throw Exception('Failed to load papers.');
