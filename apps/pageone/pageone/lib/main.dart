@@ -4,14 +4,30 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
+import 'dart:io';
 
 final dio = Dio();
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
+
   runApp(const PageOne());
 }
 
-class PageOne extends StatelessWidget {
+class PageOne extends StatefulWidget {
   const PageOne({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _PageOneState();
+}
+
+class _PageOneState extends State<PageOne> {
+  @override
+  void initState() {
+    super.initState();
+  }
 
   // This widget is the root of your application.
   @override
@@ -26,21 +42,6 @@ class PageOne extends StatelessWidget {
         '/contacts': (context) => const Contacts()
       },
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E90FF)),
         useMaterial3: true,
       ),
@@ -276,10 +277,8 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-
   void _incrementCounter() {
-    setState(() {
-    });
+    setState(() {});
   }
 
   @override
@@ -296,7 +295,8 @@ class _HomeState extends State<Home> {
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-    ),);
+      ),
+    );
   }
 }
 
@@ -310,7 +310,8 @@ class PaperListView extends StatefulWidget {
 class _PaperListViewState extends State<PaperListView> {
   static const _pageSize = 10;
 
-  final PagingController<int, Paper> _pagingController = PagingController(firstPageKey: 1);
+  final PagingController<int, Paper> _pagingController =
+      PagingController(firstPageKey: 1);
 
   @override
   void initState() {
@@ -320,15 +321,23 @@ class _PaperListViewState extends State<PaperListView> {
 
   Future<void> _fetchPaper(pageKey) async {
     try {
-      final response = await dio.get('https://pageone.ninx:8443/get-images', queryParameters: {'page': pageKey});
-      if (response.statusCode == 200){
+      final response = await dio.get('https://pageone.ninx:8443/get-images',
+          queryParameters: {'page': pageKey});
+      if (response.statusCode == 200) {
         final data = response.data;
-        if (data == false){
+        if (data == false) {
           _pagingController.appendPage([], 1);
-        }else if (data.length < _pageSize){
-          _pagingController.appendLastPage(data.map<Paper>((datum) => Paper(data: datum)).toList());
-        }else{
-          _pagingController.appendPage(data.map<Paper>((datum) => Paper(data: datum,)).toList(), pageKey+1);
+        } else if (data.length < _pageSize) {
+          _pagingController.appendLastPage(
+              data.map<Paper>((datum) => Paper(data: datum)).toList());
+        } else {
+          _pagingController.appendPage(
+              data
+                  .map<Paper>((datum) => Paper(
+                        data: datum,
+                      ))
+                  .toList(),
+              pageKey + 1);
         }
       } else {
         throw Exception('Failed to load papers.');
@@ -339,16 +348,15 @@ class _PaperListViewState extends State<PaperListView> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-  PagedListView<int, Paper>(
-    pagingController: _pagingController,
-    builderDelegate: PagedChildBuilderDelegate<Paper>(
-      itemBuilder: (context, paper, index) => PaperListItem(paper: paper)
-    ),
-  );
+  Widget build(BuildContext context) => PagedListView<int, Paper>(
+        pagingController: _pagingController,
+        builderDelegate: PagedChildBuilderDelegate<Paper>(
+            itemBuilder: (context, paper, index) =>
+                PaperListItem(paper: paper)),
+      );
 
   @override
-  void dispose(){
+  void dispose() {
     _pagingController.dispose();
     super.dispose();
   }
@@ -361,12 +369,21 @@ class Paper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CachedNetworkImage(
-       imageUrl: data['url'],
-       progressIndicatorBuilder: (context, url, downloadProgress) =>
-               Center(child: SizedBox(width: 50.0, height: 50.0, child: CircularProgressIndicator(value: downloadProgress.progress, ))),
-       errorWidget: (context, url, error) => const Icon(Icons.error),
-    );
+    return Column(children: [
+      const PageOneAd(),
+      CachedNetworkImage(
+        imageUrl: data['url'],
+        progressIndicatorBuilder: (context, url, downloadProgress) => Center(
+            child: SizedBox(
+                width: 50.0,
+                height: 50.0,
+                child: CircularProgressIndicator(
+                  value: downloadProgress.progress,
+                ))),
+        errorWidget: (context, url, error) => const Icon(Icons.error),
+      ),
+      const PageOneAd()
+    ]);
   }
 }
 
@@ -377,5 +394,60 @@ class PaperListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return paper;
+  }
+}
+
+class PageOneAd extends StatefulWidget {
+  const PageOneAd({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _PageOneAdState();
+}
+
+class _PageOneAdState extends State<PageOneAd> {
+  NativeAd? _nativeAd;
+  bool _nativeAdIsLoaded = false;
+
+  // TODO: replace this test ad unit with your own ad unit.
+  final String _adUnitId = Platform.isAndroid
+      ? 'ca-app-pub-7268351901770105/8913107809'
+      : 'ca-app-pub-7268351901770105/8913107809';
+
+  /// Loads a native ad.
+  void loadAd() {
+    _nativeAd = NativeAd(
+      adUnitId: _adUnitId,
+      // Factory ID registered by your native ad factory implementation.
+      factoryId: 'adFactoryExample',
+      listener: NativeAdListener(
+        onAdLoaded: (ad) {
+          print('$NativeAd loaded.');
+          setState(() {
+            _nativeAdIsLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          // Dispose the ad here to free resources.
+          print('$NativeAd failedToLoad: $error');
+          ad.dispose();
+        },
+      ),
+      request: const AdRequest(),
+      // Optional: Pass custom options to your native ad factory implementation.
+      //     customOptions: {'custom-option-1', 'custom-value-1'}
+    );
+    _nativeAd?.load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_nativeAdIsLoaded && _nativeAd != null) {
+      return SizedBox(
+          height: 50,
+          width: MediaQuery.of(context).size.width,
+          child: AdWidget(ad: _nativeAd!));
+    } else {
+      return const SizedBox.shrink();
+    }
   }
 }

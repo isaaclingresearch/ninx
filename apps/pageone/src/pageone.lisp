@@ -545,3 +545,140 @@
 											   (compute-growth
 											    (get-image-downloads :duration 56)
 											    (get-image-requests :duration 28))))))))))))))
+
+
+
+;;;;;; AVB ROUTES.
+
+
+(define-easy-handler (pageone-index-avb :uri (define-matching-functions "^/$" "10.0.2.2:8443")
+				    :host "10.0.2.2:8443"
+				    :acceptor-names '(ninx::ninx)) ()
+  (with-html-output-to-string (*standard-output*)
+    "<!DOCTYPE html>"
+    (htm (:html :lang "en"
+		(:head
+		 (:title "PageOne")
+		 (:meta :charset "UTF-8")
+		 (:meta :name "viewport" :content "width=device-width, initial-scale=1.0")
+		 (:meta :name "description" :content "The accounts page for DeckLM")
+		 (:link :rel "icon" :href "/ninx/static/icons/web/favicon.ico" :sizes "any")
+		 (:link :rel "apple-touch-icon" :href  "/pageone.ninx/static/icons/web/apple-touch-icon.png")
+		 (:link :rel "manifest" :href "/manifest.json")
+	         (:style (cl-who:str (home-css)))
+		 (:link :href "https://fonts.googleapis.com/css?family=Roboto&display=swap" :rel "stylesheet"))
+		(:body
+		 (:h1 (:a :href "/" "PageOne."))
+		 (:p "PageOne is a mobile application that brings you daily Ugandan newspaper front pages.")
+		 (:h2 "Team")
+		 (:p (:a :target "_blank" :href "https://ninx.xyz" "Ninx Technology Limited: Mobile applications division."))
+		 (:h2 "Useful Links")
+		 (:a :target "_blank" :href "https://pageone.ninx.xyz/privacy.txt" "Privacy Policy.")
+		 (:b (:p "Mail us at " (:a :href "mailto:info@ninx.xyz" "info@ninx.xyz")))
+		 (:h2 "Our Other Products")
+		 (:p (:a :target "_blank" :href "https://decklm.com" "DeckLM") " - Generate slides from your learning resources in minutes.")
+		 (:p (:a :target "_blank" :href "https://spotpdf.com" "SpotPDF") " - Convert between all image and document formats.")
+		 :hr
+		 (:b "Ninx Technology Limited,")
+		 :br
+		 (:b "Lugoba North, Kazo Lugoba, Nansana Division.")
+		 :br
+		 (:b "P.O.Box 112999, Wakiso,")
+		 :br
+		 (:b "Wakiso, Uganda."))))))
+
+(define-easy-handler (privicy.txt-avb
+		      :uri (define-matching-functions "^/privacy.txt$" "10.0.2.2:8443")
+		      :host "10.0.2.2:8443") ()
+  (setf (content-type*) "text/plain")
+  (setf (header-out "content-disposition") "inline; filename=privacy.txt")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/privacy.txt"))
+
+
+(define-easy-handler (manifest.json-avb
+		      :uri (define-matching-functions "^/manifest.json$" "10.0.2.2:8443")
+		      :host "10.0.2.2:8443") ()
+  (setf (content-type*) "text/plain")
+  (setf (header-out "content-disposition") "inline; filename=manifest.json")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/manifest.json"))
+
+(define-easy-handler (favicon-avb
+		      :uri (define-matching-functions "/favicon.ico" "10.0.2.2:8443")
+		      :host "10.0.2.2:8443") ()
+  (setf (content-type*) "image/vnd.microsoft.icon")
+  (setf (header-out "content-disposition") "inline; filename=favicon.ico")
+  (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/static/icons/web/favicon.ico"))
+
+;; this returns image data, 10 images are read onto a page, starting with page=1
+(define-easy-handler (get-images-route
+		      :uri (define-matching-functions "^/get-images$" "10.0.2.2:8443")
+		      :host "10.0.2.2:8443")
+    (page)
+  (incr-image-requests)
+  (setf (header-out "access-control-allow-origin") "*")
+  (let ((papers (get-images (cond ((stringp page) (parse-integer page)) (t page)))))
+    (setf (content-type*) "application/json")
+    ;; when we have < 10 papers, we have reached the end, don't send a timestamp, other send the timestamp of the 10th.
+    (jzon:stringify
+     (if papers
+	 (loop for paper in papers
+	       collect
+	       (hash-create (list (list "name" (second paper))
+				  (list "url" (format nil "https://~a/get-image?id=~a" "10.0.2.2:8443" (first paper)))
+				  (list "date" (third paper)))))
+	 (hash-create (list (list "data" nil)))))))
+
+(define-easy-handler (get-image-route-avb
+		      :uri (define-matching-functions "^/get-image$" "10.0.2.2:8443")
+		      :host "10.0.2.2:8443")
+    (id)
+  (incr-image-downloads)
+  (setf (header-out "access-control-allow-origin") "*")
+  (let ((image-data (get-image-data id)))
+    (setf (content-type*) (caar image-data))
+    (cadar image-data)))
+
+(define-easy-handler (realtime-analytics-avb :uri (define-matching-functions "^/realtime-analytics$" "10.0.2.2:8443")
+					 :acceptor-names '(ninx::ninx)
+					 :host "10.0.2.2:8443") ()
+  (with-html-output-to-string (*standard-output*)
+    (htm
+     (:html
+      (:head
+       (:title "Realtime Analytics")
+       (:style (str (cl-css:css
+		     `((.ana-div :width 50vh)
+		       (.left-div :float left)
+		       (.right-div :float right))))))
+      (:body
+       (:div :class "ana-div left-div"
+	     (:table
+		 (:tr (:th "Requests in Time") (:th "Number") (:th "Growth"))
+	       (:tr (:td "Day") (:td (str (get-image-requests :duration 1))) (:td (str (format nil "~,7f"
+										     (compute-growth
+										      (get-image-requests :duration 2)
+										      (get-image-requests :duration 1))))))
+	       (:tr (:td "Week") (:td (str (get-image-requests :duration 7))) (:td (str (format nil "~,7f"
+												(compute-growth
+												 (get-image-requests :duration 14)
+												 (get-image-requests :duration 7))))))
+	       (:tr (:td "Month") (:td (str (get-image-requests :duration 28))) (:td (str (format nil "~,7f"
+												  (compute-growth
+												   (get-image-requests :duration 56)
+												   (get-image-requests :duration 28))))))
+	       (:table
+		   (:tr (:th "Downloads in Time") (:th "Number") (:th "Growth"))
+		 (:tr (:td "Day") (:td (str (get-image-downloads :duration 1))) (:td (str (format nil "~,7f"
+											(compute-growth
+											 (get-image-downloads :duration 2)
+											 (get-image-downloads :duration 1))))))
+		 (:tr (:td "Week") (:td (str (get-image-downloads :duration 7))) (:td (str (format nil "~,7f"
+											 (compute-growth
+											  (get-image-downloads :duration 14)
+											  (get-image-downloads :duration 7))))))
+		 (:tr (:td "Month") (:td (str (get-image-downloads :duration 28))) (:td (str (format nil "~,7f"
+											   (compute-growth
+											    (get-image-downloads :duration 56)
+											    (get-image-requests :duration 28))))))))))))))
+
+

@@ -118,6 +118,8 @@
                       (stripped-host (car (split-sequence:split-sequence #\: ,,host-name))))
 		 (and
 		  (not (null (cl-ppcre:scan ,,scanner (hunchentoot:script-name request))))
+		  ;; Sometimes i need to pass more than one host, it will be good if we can pass a scanner as host
+		  ;; think about that. for now, we use the hard means
 		  (or (string= request-host ,,host-name)
                       (string= request-host stripped-host))))))
 
