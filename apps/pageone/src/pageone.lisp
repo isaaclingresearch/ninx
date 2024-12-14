@@ -489,7 +489,7 @@
 	 (loop for paper in papers
 	       collect
 	       (hash-create (list (list "name" (second paper))
-				  (list "url" (format nil "https://~a/get-image?id=~a" *pageone-host* (first paper)))
+				  (list "id" (first paper))
 				  (list "date" (third paper)))))
 	 (hash-create (list (list "data" nil)))))))
 
@@ -610,7 +610,7 @@
   (ninx:read-binary-file-to-octets #p"~/common-lisp/ninx/priv/pageone.ninx/static/icons/web/favicon.ico"))
 
 ;; this returns image data, 10 images are read onto a page, starting with page=1
-(define-easy-handler (get-images-route
+(define-easy-handler (get-images-route-avb
 		      :uri (define-matching-functions "^/get-images$" "10.0.2.2:8443")
 		      :host "10.0.2.2:8443")
     (page)
@@ -624,7 +624,7 @@
 	 (loop for paper in papers
 	       collect
 	       (hash-create (list (list "name" (second paper))
-				  (list "url" (format nil "https://~a/get-image?id=~a" "10.0.2.2:8443" (first paper)))
+				  (list "id" (first paper))
 				  (list "date" (third paper)))))
 	 (hash-create (list (list "data" nil)))))))
 
