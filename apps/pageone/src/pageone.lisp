@@ -230,7 +230,7 @@
   (scrap-ennyanda)
   (scrap-seeds-of-gold)
   (scrap-the-east-african)
-  (sleep 60)
+  (sleep 3600)
   (daily-scrap))
 
 ;;; db access functions.
