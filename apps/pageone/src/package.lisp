@@ -1,5 +1,5 @@
 (defpackage :pageone
-  (:use :cl :ninx :hunchentoot :hunchensocket :trivia :cl-hash-util :com.inuoe.jzon :str :cl-ppcre :frugal-uuid :cl-base64 :local-time :sento-user :postmodern :fiveam :cl-who :cl-css :cl-mime-from-string)
+  (:use :cl :ninx :hunchentoot :hunchensocket :trivia :cl-hash-util :com.inuoe.jzon :str :cl-ppcre :frugal-uuid :cl-base64 :local-time :sento-user :fiveam :cl-who :cl-css :cl-mime-from-string :sqlite)
   (:import-from :drakma :http-request)
   (:shadowing-import-from :chronicity :parse)
   (:import-from :ironclad :digest-file)

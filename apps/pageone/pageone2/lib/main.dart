@@ -4,49 +4,19 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:flutter/services.dart';
-
-Dio createDio({required String baseUrl, bool trustSelfSigned = false}) {
-  // initialize dio
-  final dio = Dio()
-    ..options.baseUrl = baseUrl;
-
-  // allow self-signed certificate
-  (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
-    final client = HttpClient();
-    client.badCertificateCallback = (cert, host, port) => trustSelfSigned;
-    return client;
-  };
-  
-  return dio;
-}
 
 // set a variable for two things: a variable for whether we are testing to allow use of self signed certificates
 final dev = true;
-final baseUrl = dev ? "https://10.0.2.2:8433" : "https://pageone.ninx.xyz";
+final baseUrl = dev ? 'https://10.0.2.2:8433' : 'https://pageone.ninx.xyz';
 
-final dio = dev ? createDio(baseUrl: baseUrl, trustSelfSigned: true) : Dio();
+final dio = Dio();
 
 void main() async {
-  // accept self signed certificate.; this is dev code.
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
-
-   if (dev) {
-    ByteData data = await rootBundle.load('ssl/cert.pem');
-    SecurityContext.defaultContext.setTrustedCertificatesBytes(data.buffer.asUint8List());
-  }
-
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.dumpErrorToConsole(details); // Prints the error stack trace
-    // Optionally log or report the error (e.g., to a monitoring service)
-  };
-  
+  MobileAds.instance.initialize();  
   runApp(const PageOne());
 }
 
@@ -355,10 +325,11 @@ class _PaperListViewState extends State<PaperListView> {
 
   Future<void> _fetchPaper(pageKey) async {
     try {
-      final response = await dio.get('$baseUrl/get-images',
+      final response = await dio.get("https://127.0.0.1:8433/get-images",
           queryParameters: {'page': pageKey});
+        print(response);
       if (response.statusCode == 200) {
-        final data = response.data;
+        final data = response.data['data'];
         if (data == false) {
           _pagingController.appendPage([], 1);
         } else if (data.length < _pageSize) {
