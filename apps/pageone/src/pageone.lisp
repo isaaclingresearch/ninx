@@ -10,10 +10,6 @@
 
 (defparameter *actors* (make-actor-system))
 
-(with-context (*actors*)
-  (when *hourly-scrap-p*
-    (task-start #'daily-scrap)))
-
 (def-suite pageone)
 ;; nation media papers
 
@@ -227,13 +223,14 @@
 
 (defun daily-scrap ()
   "this scraps only a single day; we run 24 times a day"
+  (format *terminal-io* "~%scrapping~%")
   (scrap-observer)
   (scrap-new-vision)
   (scrap-monitor)
   (scrap-ennyanda)
   (scrap-seeds-of-gold)
   (scrap-the-east-african)
-  (sleep 3600)
+  (sleep 60)
   (daily-scrap))
 
 ;;; db access functions.
@@ -617,3 +614,8 @@
 											    (get-image-requests :duration 28))))))))))))))
 
 
+;; start the scrap job
+
+(with-context (*actors*)
+  (when *hourly-scrap-p*
+    (task-start #'daily-scrap)))
