@@ -6,7 +6,7 @@
 			     host
 			     (format nil "~a:~a" host ninx:*ninx-https-port*))))
 
-(defparameter *hourly-scrap-p* nil)
+(defparameter *hourly-scrap-p* t)
 
 (defparameter *actors* (make-actor-system))
 
