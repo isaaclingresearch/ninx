@@ -217,19 +217,12 @@
 
 (defun initial-scrap ()
   "this scraps 1000 days worth of images"
- ;; (scrap-observer 162)
- ;; (scrap-new-vision :months 36)
- ;; (scrap-monitor :days 1000 :all t)
- ;; (scrap-ennyanda :days 1000 :all t)
- ;; (scrap-seeds-of-gold :days 1000 :all t)
- ;; (scrap-the-east-african :days 1000 :all t)
-
-   (scrap-observer 10)
- (scrap-new-vision :months 1)
- (scrap-monitor :days 10 :all t)
- (scrap-ennyanda :days 10 :all t)
- (scrap-seeds-of-gold :days 10 :all t)
- (scrap-the-east-african :days 10 :all t)
+ (scrap-observer 162)
+ (scrap-new-vision :months 36)
+ (scrap-monitor :days 1000 :all t)
+ (scrap-ennyanda :days 1000 :all t)
+ (scrap-seeds-of-gold :days 1000 :all t)
+ (scrap-the-east-african :days 1000 :all t)
 )
 
 (defun daily-scrap ()
@@ -244,7 +237,6 @@
   (daily-scrap))
 
 ;;; db access functions.
-
 
 (defparameter *db* (connect  (format nil  "~a/common-lisp/ninx/apps/pageone/db/pageone.db" (uiop:getenv "HOME"))))
 
