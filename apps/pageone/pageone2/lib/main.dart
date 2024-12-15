@@ -8,10 +8,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'dart:io';
 
-// set a variable for two things: a variable for whether we are testing to allow use of self signed certificates
-final dev = true;
-final baseUrl = dev ? 'https://10.0.2.2:8433' : 'https://pageone.ninx.xyz';
-
 final dio = Dio();
 
 void main() async {
@@ -325,7 +321,7 @@ class _PaperListViewState extends State<PaperListView> {
 
   Future<void> _fetchPaper(pageKey) async {
     try {
-      final response = await dio.get("https://127.0.0.1:8433/get-images",
+      final response = await dio.get("https://pageone.ninx.xyz/get-images",
           queryParameters: {'page': pageKey});
         print(response);
       if (response.statusCode == 200) {
@@ -379,7 +375,7 @@ class Paper extends StatelessWidget {
       const PageOneAd(),
       const Text('Ads does here'),
       CachedNetworkImage(
-        imageUrl: "$baseUrl/get-image?id=${data['url']}",
+        imageUrl: "https://pageone.ninx.xyz/get-image?id=${data['url']}",
         progressIndicatorBuilder: (context, url, downloadProgress) => Center(
             child: SizedBox(
                 width: 50.0,
