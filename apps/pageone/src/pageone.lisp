@@ -290,8 +290,8 @@
 (test save-image-fails (is  (null (save-image "test-paper" (read-binary-file-to-octets "~/common-lisp/ninx/apps/pageone/test/test.png") "image/png" (get-yyyy-mm-dd "test-image")))))
 
 (defun get-images (&optional (count 1))
-  "each page has 10 images so we request in multiples of 10"
-  (execute-to-list *db* "select id, paper_name, date from images order by date desc limit ?" (* count 10)))
+  "each page has 10 images; we use count to offset so for 2 we start at 10 etc "
+  (execute-to-list *db* "select id, paper_name, date from images order by date desc limit ? offset ?" (* count 10) (* 10 (1- count))))
 (test get-images (is (not (null (get-images)))))
 
 (defun get-image-data (image-id)
