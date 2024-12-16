@@ -20,8 +20,9 @@ application specific options"
 	(setf (acceptor-message-log-destination ninx:*ninx-wss-acceptor*) *terminal-io*)
 	(setf (acceptor-access-log-destination ninx:*ninx-wss-acceptor*) *terminal-io*)))
   ;; start application specific components
-  (start-decklm :schedule-payments schedule-payments)
-  (spotpdf:start-spotpdf :schedule-cleanup schedule-cleanup))
+;;  (start-decklm :schedule-payments schedule-payments)
+ ;; (spotpdf:start-spotpdf :schedule-cleanup schedule-cleanup)
+  )
 
 (defun stop-server ()
   "Stop the server"
@@ -30,8 +31,8 @@ application specific options"
   (when (started-p ninx:*ninx-wss-acceptor*)
     (stop ninx:*ninx-wss-acceptor*))
   ;; stop application specific code
-  (stop-decklm)
-  (spotpdf:stop-spotpdf)
+;;  (stop-decklm)
+;;  (spotpdf:stop-spotpdf)
   )
 
 (defun restart-server (&key (log-to-file t) (schedule-payments t) (schedule-cleanup t))

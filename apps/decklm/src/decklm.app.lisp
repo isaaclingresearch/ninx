@@ -6,7 +6,7 @@
 			  *decklm-url*
 			  (format nil "~a:~a" *decklm-url* ninx:*ninx-https-port*)))
 (defparameter *payments-timer* nil)
-(defparameter *city-db* (make-mmdb (namestring (truename "~/common-lisp/ninx/apps/decklm/geoip/GeoLite2-City.mmdb"))))
+;;(defparameter *city-db* (make-mmdb (namestring (truename "~/common-lisp/ninx/apps/decklm/geoip/GeoLite2-City.mmdb"))))
 
 (defun start-decklm (&key (schedule-payments t))
   "this will start decklm specific components"
