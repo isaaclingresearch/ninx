@@ -133,7 +133,9 @@
 			      :additional-headers '(("referer" . "https://epaper.visiongroup.co.ug")))
        (declare (ignore status-text request-uri flexi-response response-bool))
        (if (equal response-code 200)
-	   (progn (save-image "Vision Group paper" response "image/git" (get-yyyy-mm-dd year month date))
+	   (progn (save-image "Vision Group paper" response "image/git" (get-yyyy-mm-dd year month d2))
+		  ;; use d2 because it will most likely be increasing. this will make the app a little disorganised.
+		  ;; but it a shortcut for now.
 		  :success)
 	  (format t "Error: ~a. Vision Group failed.~%" response-code))))))
 
@@ -247,7 +249,6 @@
 (defun initialise-db ()
   "create the tables"
   (create-tables))
-
 (test initialise-db (is (null (initialise-db))))
 
 
@@ -258,6 +259,7 @@
   (execute-non-query *db* "create table if not exists image_downloads (id integer primary key autoincrement, date text unique, count integer)")
   (execute-non-query *db* "create table if not exists user_ids (id text primary key, creation_date default current_timestamp)"))
 (test create-tables (is (null (create-tables))))
+(create-tables)
 
 (defun delete-tables ()
   "delete all tables"

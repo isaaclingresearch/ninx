@@ -7,14 +7,13 @@ import 'package:dio/dio.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 
 final dio = Dio();
 final dev = true;
 
 final baseURL = dev ? '127.0.0.1:8443' : 'pageone.ninx.xyz';
-
+String? currentDate;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
@@ -338,7 +337,6 @@ class _PaperListViewState extends State<PaperListView> {
 //        print(response.data);
       if (response.statusCode == 200) {
         final data = response.data['data'];
-        print(data);
         if (data == false) {
           _pagingController.appendPage([], 1);
         } else if (data.length < _pageSize) {
@@ -356,7 +354,6 @@ class _PaperListViewState extends State<PaperListView> {
         throw Exception('Failed to load papers.');
       }
     } catch (error) {
-      print(error);
       _pagingController.error = error;
     }
   }
@@ -383,9 +380,10 @@ class Paper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      Widget showDate = (currentDate == data['date']) ? SizedBox.shrink() : Text(data['date']);
     return Column(children: [
       const PageOneAd(),
-      const Text('Ads does here'),
+      showDate,
       CachedNetworkImage(
         imageUrl: "https://$baseURL/get-image?id=${data['id']}",
         progressIndicatorBuilder: (context, url, downloadProgress) => Center(
@@ -436,14 +434,12 @@ class _PageOneAdState extends State<PageOneAd> {
       factoryId: 'adFactoryExample',
       listener: NativeAdListener(
         onAdLoaded: (ad) {
-          print('$NativeAd loaded.');
           setState(() {
             _nativeAdIsLoaded = true;
           });
         },
         onAdFailedToLoad: (ad, error) {
           // Dispose the ad here to free resources.
-          print('$NativeAd failedToLoad: $error');
           ad.dispose();
         },
       ),
@@ -457,13 +453,11 @@ class _PageOneAdState extends State<PageOneAd> {
   @override
   Widget build(BuildContext context) {
     if (_nativeAdIsLoaded && _nativeAd != null) {
-      print('Yes ad');
       return SizedBox(
           height: 50,
           width: MediaQuery.of(context).size.width,
           child: AdWidget(ad: _nativeAd!));
     } else {
-      print('No ad');
       return const SizedBox.shrink();
     }
   }
