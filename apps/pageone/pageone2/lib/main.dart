@@ -382,7 +382,7 @@ class Paper extends StatelessWidget {
   Widget build(BuildContext context) {
       Widget showDate = (currentDate == data['date']) ? SizedBox.shrink() : Text(data['date']);
     return Column(children: [
-      const PageOneAd(),
+  //    const PageOneAd(),
       showDate,
       CachedNetworkImage(
         imageUrl: "https://$baseURL/get-image?id=${data['id']}",
@@ -426,7 +426,7 @@ class _PageOneAdState extends State<PageOneAd> {
       ? 'ca-app-pub-7268351901770105/8913107809'
       : 'ca-app-pub-7268351901770105/8913107809';
 
-  /// Loads a native ad.
+///  Loads a native ad.
   void loadAd() {
     _nativeAd = NativeAd(
       adUnitId: _adUnitId,
@@ -440,7 +440,8 @@ class _PageOneAdState extends State<PageOneAd> {
         },
         onAdFailedToLoad: (ad, error) {
           // Dispose the ad here to free resources.
-          ad.dispose();
+               debugPrint('$NativeAd failed to load: $error');
+        ad.dispose();
         },
       ),
       request: const AdRequest(),
@@ -450,15 +451,67 @@ class _PageOneAdState extends State<PageOneAd> {
     _nativeAd?.load();
   }
 
+
+   /// Loads a native ad.
+  // void loadAd() {
+  //   _nativeAd = NativeAd(
+  //       adUnitId: _adUnitId,
+  //         factoryId: 'adFactoryExample',
+  //       listener: NativeAdListener(
+  //         onAdLoaded: (ad) {
+  //           debugPrint('$NativeAd loaded.');
+  //           setState(() {
+  //             _nativeAdIsLoaded = true;
+  //           });
+  //         },
+  //         onAdFailedToLoad: (ad, error) {
+  //           // Dispose the ad here to free resources.
+  //           debugPrint('$NativeAd failed to load: $error');
+  //           ad.dispose();
+  //         },
+  //       ),
+  //       request: const AdRequest(),
+  //       // Styling
+  //       nativeTemplateStyle: NativeTemplateStyle(
+  //           // Required: Choose a template.
+  //           templateType: TemplateType.medium,
+  //           // Optional: Customize the ad's style.
+  //           mainBackgroundColor: Colors.purple,
+  //           cornerRadius: 10.0,
+  //           callToActionTextStyle: NativeTemplateTextStyle(
+  //               textColor: Colors.cyan,
+  //               backgroundColor: Colors.red,
+  //               style: NativeTemplateFontStyle.monospace,
+  //               size: 16.0),
+  //           primaryTextStyle: NativeTemplateTextStyle(
+  //               textColor: Colors.red,
+  //               backgroundColor: Colors.cyan,
+  //               style: NativeTemplateFontStyle.italic,
+  //               size: 16.0),
+  //           secondaryTextStyle: NativeTemplateTextStyle(
+  //               textColor: Colors.green,
+  //               backgroundColor: Colors.black,
+  //               style: NativeTemplateFontStyle.bold,
+  //               size: 16.0),
+  //           tertiaryTextStyle: NativeTemplateTextStyle(
+  //               textColor: Colors.brown,
+  //               backgroundColor: Colors.amber,
+  //               style: NativeTemplateFontStyle.normal,
+  //               size: 16.0)))
+  //     ..load();
+  // }
+  
   @override
   Widget build(BuildContext context) {
+    loadAd();
+    Widget errorWidget = dev ? Text('No money for you') : SizedBox.shrink(); 
     if (_nativeAdIsLoaded && _nativeAd != null) {
       return SizedBox(
-          height: 50,
+          height: 320,
           width: MediaQuery.of(context).size.width,
           child: AdWidget(ad: _nativeAd!));
     } else {
-      return const SizedBox.shrink();
+      return errorWidget;
     }
   }
 }
