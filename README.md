@@ -132,12 +132,3 @@ COMMIT
 run `sudo systemctl restart ufw`
 Local redirects cause alot of problems. hunchentoot keeps getting a yet to be identified signal. that swamps the resources.
 REMEMBER TO OPEN UP PORTS 80/8000 AND 443/8443
-### Setting up ssl
-when you renew;
-do the following;
-copy the files to ssl
-then adjust ownership and permisions
-sudo chown -R lam ssl/
-sudo chmod -R 750 ssl
-certbot renew --deploy-hook "cp -r /etc/letsencrypt/live/spotpdf.com /home/lam/ssl && chown -R lam /home/lam/ssl && chmod -R 700 /home/lam/ssl"
-

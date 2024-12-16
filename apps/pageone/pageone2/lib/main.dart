@@ -7,12 +7,24 @@ import 'package:dio/dio.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/services.dart';
 
 final dio = Dio();
+final dev = true;
+
+final baseURL = dev ? '127.0.0.1:8443' : 'pageone.ninx.xyz';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();  
+  MobileAds.instance.initialize();
+
+  if (dev) {
+    //use self signed cert.
+    ByteData data = await rootBundle.load('ssl/cert.pem');
+    SecurityContext.defaultContext
+        .setTrustedCertificatesBytes(data.buffer.asUint8List());
+  }
   runApp(const PageOne());
 }
 
@@ -321,11 +333,12 @@ class _PaperListViewState extends State<PaperListView> {
 
   Future<void> _fetchPaper(pageKey) async {
     try {
-      final response = await dio.get("https://pageone.ninx.xyz/get-images",
+      final response = await dio.get("https://$baseURL/get-images",
           queryParameters: {'page': pageKey});
-        print(response);
+//        print(response.data);
       if (response.statusCode == 200) {
         final data = response.data['data'];
+        print(data);
         if (data == false) {
           _pagingController.appendPage([], 1);
         } else if (data.length < _pageSize) {
@@ -333,8 +346,7 @@ class _PaperListViewState extends State<PaperListView> {
               data.map<Paper>((datum) => Paper(data: datum)).toList());
         } else {
           _pagingController.appendPage(
-              data
-                  .map<Paper>((datum) => Paper(
+              data.map<Paper>((datum) => Paper(
                         data: datum,
                       ))
                   .toList(),
@@ -375,7 +387,7 @@ class Paper extends StatelessWidget {
       const PageOneAd(),
       const Text('Ads does here'),
       CachedNetworkImage(
-        imageUrl: "https://pageone.ninx.xyz/get-image?id=${data['url']}",
+        imageUrl: "https://$baseURL/get-image?id=${data['id']}",
         progressIndicatorBuilder: (context, url, downloadProgress) => Center(
             child: SizedBox(
                 width: 50.0,
@@ -385,7 +397,6 @@ class Paper extends StatelessWidget {
                 ))),
         errorWidget: (context, url, error) => const Icon(Icons.error),
       ),
-      Image.network(data['url']),
       const PageOneAd()
     ]);
   }

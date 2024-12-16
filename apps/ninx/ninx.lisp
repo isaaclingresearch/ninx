@@ -38,7 +38,8 @@
 
 	    (:b (:p "Mail us at " (:a :href "mailto:info@ninx.xyz" "info@ninx.xyz")))
 	    (:h2 "Products")
-	    (:p (:a :target "_blank" :href "https://decklm.com" "DeckLM") " - Generate slides from your learning resources in minutes.")
+	   ;; (:p (:a :target "_blank" :href "https://decklm.com" "DeckLM") " - Generate slides from your learning resources in minutes.")
+	    (:p (:a :target "_blank" :href "https://pageone.ninx.xyz" "PageOne") " - Never miss the headlines again.")
 	    :hr
 	    (:b "Ninx Technology Limited,")
 	    :br

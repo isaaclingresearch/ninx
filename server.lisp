@@ -1,5 +1,5 @@
 (defpackage :server
-  (:use :cl :ninx hunchentoot :hunchensocket :ninx-app :ninx-blog :decklm :spotpdf :pageone)
+  (:use :cl :ninx hunchentoot :hunchensocket :ninx-app :ninx-blog :pageone) ;; :decklm :spotpdf
   (:documentation "The container for all the applications")
   (:local-nicknames (:jzon :com.inuoe.jzon) (:ppcre :cl-ppcre))
   (:export :start-server :restart-server :stop-server))
@@ -45,7 +45,9 @@ application specific options"
 ;; the messages will be handled by the methods in respective applications.
 (defmethod hunchensocket:text-message-received ((endpoint ws-endpoint) ws-user message-json)
   (trivia:match (ninx::name endpoint)
-    ("/ws/decklm" (decklm::ws-decklm endpoint ws-user message-json))))
+		(_ t)
+;;    ("/ws/decklm" (decklm::ws-decklm endpoint ws-user message-json))
+		))
 
 (defun start-test-server ()
   (start-server :log-to-file nil :schedule-payments nil :schedule-cleanup nil))

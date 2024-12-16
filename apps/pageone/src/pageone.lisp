@@ -15,7 +15,9 @@
 
 (defun get-yyyy-mm-dd (&optional yyyy mm dd)
   (if (and yyyy mm dd)
-      (format nil "~a-~a-~a" yyyy mm dd)
+      (format nil "~a-~a-~a" yyyy
+	      	(if (< mm 10) (format nil "0~a" mm) mm)
+		(if (< dd 10) (format nil "0~a" dd) dd))
       (multiple-value-bind (second minute hour date month year day-of-week dst-p tz)
 	  (decode-universal-time (get-universal-time))
 	(format nil "~a-~a-~a" year
@@ -234,7 +236,7 @@
   (daily-scrap))
 
 ;;; db access functions.
-
+(ensure-directories-exist (format nil "~a/common-lisp/ninx/apps/pageone/db/" (uiop:getenv "HOME")))
 (defparameter *db* (connect  (format nil  "~a/common-lisp/ninx/apps/pageone/db/pageone.db" (uiop:getenv "HOME"))))
 
 (test start-tests
@@ -416,11 +418,11 @@
     ;; when we have < 10 papers, we have reached the end, don't send a timestamp, other send the timestamp of the 10th.
     (jzon:stringify
      (if papers
-	 (loop for paper in papers
-	       collect
-	       (hash-create (list "data" (list (list "name" (second paper))
-					       (list "id" (first paper))
-					       (list "date" (third paper))))))
+	 (hash-create (list (list "data" (loop for paper in papers
+					       collect
+					       (hash-create (list (list "name" (second paper))
+								  (list "id" (first paper))
+								  (list "date" (third paper))))))))
 	 (hash-create (list (list "data" nil)))))))
 
 (define-easy-handler (get-image-route
@@ -480,7 +482,7 @@
 
 ;;;;;; AVB ROUTES.
 
-(defparameter *avb-host* "10.0.2.2:8443")
+(defparameter *avb-host* "127.0.0.1:8443")
 
 (define-easy-handler (pageone-index-avb :uri (define-matching-functions "^/$" *avb-host*)
 					:host *avb-host*
@@ -553,11 +555,11 @@
     ;; when we have < 10 papers, we have reached the end, don't send a timestamp, other send the timestamp of the 10th.
     (jzon:stringify
      (if papers
-	 (loop for paper in papers
-	       collect
-	       (hash-create (list (list "data" (list (list "name" (second paper))
-						     (list "id" (first paper))
-						     (list "date" (third paper)))))))
+	 (hash-create (list (list "data" (loop for paper in papers
+					       collect
+					       (hash-create (list (list "name" (second paper))
+								  (list "id" (first paper))
+								  (list "date" (third paper))))))))
 	 (hash-create (list (list "data" nil)))))))
 
 (define-easy-handler (get-image-route-avb
