@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "845798034487",
+    "project_id": "pageone-6bca6",
+    "storage_bucket": "pageone-6bca6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845798034487:android:b7b37cd9a30d572fe3c3b2",
+        "android_client_info": {
+          "package_name": "xyz.ninx.pageone"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUkKNFe0H1epFyVHVSd7hZWVm-6NqroUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

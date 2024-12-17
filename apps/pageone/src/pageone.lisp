@@ -415,8 +415,9 @@
     (page)
   (incr-image-requests)
   (setf (header-out "access-control-allow-origin") "*")
+  (setf (header-out "access-control-allow-methods") "*")
+  (setf (content-type*) "application/json")
   (let ((papers (get-images (cond ((stringp page) (parse-integer page)) (t page)))))
-    (setf (content-type*) "application/json")
     ;; when we have < 10 papers, we have reached the end, don't send a timestamp, other send the timestamp of the 10th.
     (jzon:stringify
      (if papers

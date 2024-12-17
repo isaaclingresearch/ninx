@@ -6,6 +6,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'dart:io';
 import 'package:flutter/services.dart';
 
@@ -16,6 +19,9 @@ final baseURL = dev ? '127.0.0.1:8443' : 'pageone.ninx.xyz';
 String? currentDate;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   MobileAds.instance.initialize();
 
   if (dev) {
@@ -430,7 +436,6 @@ class _PageOneAdState extends State<PageOneAd> {
   void loadAd() {
     _nativeAd = NativeAd(
       adUnitId: _adUnitId,
-      // Factory ID registered by your native ad factory implementation.
       factoryId: 'adFactoryExample',
       listener: NativeAdListener(
         onAdLoaded: (ad) {
@@ -439,75 +444,27 @@ class _PageOneAdState extends State<PageOneAd> {
           });
         },
         onAdFailedToLoad: (ad, error) {
-          // Dispose the ad here to free resources.
-               debugPrint('$NativeAd failed to load: $error');
-        ad.dispose();
+          debugPrint('$NativeAd failed to load: $error');
+          ad.dispose();
         },
       ),
       request: const AdRequest(),
-      // Optional: Pass custom options to your native ad factory implementation.
-      //     customOptions: {'custom-option-1', 'custom-value-1'}
     );
     _nativeAd?.load();
   }
 
-
-   /// Loads a native ad.
-  // void loadAd() {
-  //   _nativeAd = NativeAd(
-  //       adUnitId: _adUnitId,
-  //         factoryId: 'adFactoryExample',
-  //       listener: NativeAdListener(
-  //         onAdLoaded: (ad) {
-  //           debugPrint('$NativeAd loaded.');
-  //           setState(() {
-  //             _nativeAdIsLoaded = true;
-  //           });
-  //         },
-  //         onAdFailedToLoad: (ad, error) {
-  //           // Dispose the ad here to free resources.
-  //           debugPrint('$NativeAd failed to load: $error');
-  //           ad.dispose();
-  //         },
-  //       ),
-  //       request: const AdRequest(),
-  //       // Styling
-  //       nativeTemplateStyle: NativeTemplateStyle(
-  //           // Required: Choose a template.
-  //           templateType: TemplateType.medium,
-  //           // Optional: Customize the ad's style.
-  //           mainBackgroundColor: Colors.purple,
-  //           cornerRadius: 10.0,
-  //           callToActionTextStyle: NativeTemplateTextStyle(
-  //               textColor: Colors.cyan,
-  //               backgroundColor: Colors.red,
-  //               style: NativeTemplateFontStyle.monospace,
-  //               size: 16.0),
-  //           primaryTextStyle: NativeTemplateTextStyle(
-  //               textColor: Colors.red,
-  //               backgroundColor: Colors.cyan,
-  //               style: NativeTemplateFontStyle.italic,
-  //               size: 16.0),
-  //           secondaryTextStyle: NativeTemplateTextStyle(
-  //               textColor: Colors.green,
-  //               backgroundColor: Colors.black,
-  //               style: NativeTemplateFontStyle.bold,
-  //               size: 16.0),
-  //           tertiaryTextStyle: NativeTemplateTextStyle(
-  //               textColor: Colors.brown,
-  //               backgroundColor: Colors.amber,
-  //               style: NativeTemplateFontStyle.normal,
-  //               size: 16.0)))
-  //     ..load();
-  // }
+ @override
+  void initState() {
+    loadAd();
+    super.initState();
+  }
   
   @override
   Widget build(BuildContext context) {
-    loadAd();
     Widget errorWidget = dev ? Text('No money for you') : SizedBox.shrink(); 
     if (_nativeAdIsLoaded && _nativeAd != null) {
       return SizedBox(
-          height: 320,
+          height: 100,
           width: MediaQuery.of(context).size.width,
           child: AdWidget(ad: _nativeAd!));
     } else {

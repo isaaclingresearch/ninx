@@ -4,49 +4,28 @@ import { FlatList } from "react-native-bidirectional-infinite-scroll";
 
 const Img = ({ image }) => {
   return (
-    <Image source={{uri: `https://10.0.2.2:8433/get-image?id=${image.id}`}} />
+    <Image source={{uri: `https://pageone.ninx:8433/get-image?id=${image.id}`}} />
   );
 }
+
 export default function Index() {
   
   const [page, setPage] = useState(1);
   const [listData, setListData] = useState([]);
 
-  // useEffect(() => {
-  //   try {
-  //   const getInitialImages = async () => {
-  //     const response = await fetch('https://pageone.ninx:8433/get-images?page=1');
-  //     const initialImages = await response.json();
-  //     if (initialImages == []) return;
-  //     setListData(initialImages.data || []);
-  //   };
-  //   } catch (e){
-  //     console.log(e)
-  //   }
-
-  //   getInitialImages();
-  // }, []);
-
   useEffect(() => {
     const getInitialImages = async () => {
+      console.log('testing\n');
       try {
-	const response = await fetch('https://10.0.2.2:8433/get-images?page=1');
-
-	if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-	}
-
+	const response = await fetch('https://192.168.230.20:8433/get-images?page=1');
 	const initialImages = await response.json();
-
-	// Check if `initialImages.data` is empty
 	if (!initialImages.data || initialImages.data.length === 0) {
-          console.log("No images found");
           return;
+	}else{
+	  setListData(initialImages.data);
 	}
-
-	setListData(initialImages.data);
       } catch (error) {
-	console.error("Error fetching initial images:", error);
+	console.log("Error fetching initial images:", error);
       }
     };
 
@@ -72,7 +51,7 @@ export default function Index() {
   return (
     <FlatList
       data={listData}
-      renderItem={({ item }) => <Img image={item} />}
+      renderItem={Img}
       keyExtractor={(item) => item.id}
       onStartReached={onStartReached} // required, should return a promise
       onEndReached={onEndReached} // required, should return a promise
