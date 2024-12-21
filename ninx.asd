@@ -35,9 +35,10 @@
 	       (:module "apps/ninx"
 		:components ((:file "package")
 			     (:file "ninx")))
-	       (:module "apps/gero/src"
+	       (:module "apps/cenna/src"
 			:components ((:file "package")
-				     (:file "postgres.gero.lisp")))
+				     (:file "postgres.cenna")
+				     (:file "cenna")))
 	       (:file "server"))
   :build-operation "program-op" ;; leave as is
   :build-pathname "ninx"
