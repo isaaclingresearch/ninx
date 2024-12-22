@@ -243,8 +243,7 @@
   "Retrieves the current occupation for a user."
   (car (conn (*db-string*)
 	 (query (:limit (:order-by (:select '* :from 'user_occupations
-				    :where (:= 'user-id user-id)
-				    )
+				    :where (:= 'user-id user-id))
 				   (:desc 'valid-from))
 			1)))))
 
@@ -259,8 +258,7 @@
   "Retrieves the occupation history for a user."
   (conn (*db-string*)
 	(query (:order-by (:select '* :from 'user_occupations
-				   :where (:= 'user-id user-id)
-				   )
+				   :where (:= 'user-id user-id))
 			  'valid-from))))
 
 (test get-user-occupation-history-test
@@ -307,8 +305,7 @@
   "Retrieves the location history for a user."
   (conn (*db-string*)
 	(query (:order-by (:select '* :from 'user_locations
-				   :where (:= 'user-id user-id)
-				   )
+				   :where (:= 'user-id user-id))
 			  'valid-from))))
 
 (test get-user-location-history-test
@@ -339,8 +336,7 @@
   "Retrieves the current contact information for a user (latest entry)."
   (car (conn (*db-string*)
 	 (query (:limit (:order-by (:select '* :from 'user_contacts
-				    :where (:= 'user-id user-id)
-				    )
+				    :where (:= 'user-id user-id))
 				   (:desc 'valid-from))
 			1)))))
 
@@ -356,8 +352,7 @@
   "Retrieves the contact history for a user."
   (conn (*db-string*)
 	(query (:order-by (:select '* :from 'user_contacts
-				   :where (:= 'user-id user-id)
-				   )
+				   :where (:= 'user-id user-id))
 			  'valid-from))))
 
 (test get-user-contact-history-test
@@ -391,8 +386,7 @@
   "Retrieves the current next of kin information for a user (latest entry)."
   (car (conn (*db-string*)
 	 (query (:limit (:order-by (:select '* :from 'user_next_of_kin
-				    :where (:= 'user-id user-id)
-				    )
+				    :where (:= 'user-id user-id))
 				   (:desc 'valid-from))
 			1)))))
 
@@ -408,8 +402,7 @@
   "Retrieves the next of kin history for a user."
   (conn (*db-string*)
 	(query (:order-by (:select '* :from 'user_next_of_kin
-				   :where (:= 'user-id user-id)
-			)
+				   :where (:= 'user-id user-id))
 			  'valid-from))))
 
 (test get-user-next-of-kin-history-test
@@ -456,8 +449,7 @@
   "Retrieves the gender identity history for a user."
   (conn (*db-string*)
 	(query (:order-by (:select '* :from 'user_genders
-				   :where (:= 'user-id user-id)
-				  )
+				   :where (:= 'user-id user-id))
 			  'valid-from))))
 
 (test get-user-gender-history-test

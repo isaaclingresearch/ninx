@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
+import 'dart:ffi';
+import 'dart:io';
+
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:country_picker/country_picker.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
+import 'package:path/path.dart';
+import 'package:sqlite3/open.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 void main() {
+  open.overrideFor(OperatingSystem.linux, _openOnLinux);
+  final db = sqlite3.openInMemory();
   runApp(const Cenna());
+  db.dispose();
+}
+
+DynamicLibrary _openOnLinux() {
+  final scriptDir = File(Platform.script.toFilePath()).parent;
+  final libraryNextToScript = File(join(scriptDir.path, 'sqlite3.so'));
+  return DynamicLibrary.open(libraryNextToScript.path);
 }
 
 class Cenna extends StatelessWidget {
