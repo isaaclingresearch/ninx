@@ -109,6 +109,19 @@ class _DemographicsFormState extends State<DemographicsForm> {
     }
   }
 
+  // this function will check if data has been saved and then it will skip to the page without data.
+  void _skipToPgae() async {
+      final directory = Platform.isIOS
+        ? await getLibraryDirectory()
+        : await getApplicationDocumentsDirectory();
+    String path = '${directory.path}cenna.db';
+    final db = sqlite3.open(path);
+    final query = db.prepare('''select value from demographices where demographic=?''');
+    final fullName = query.execute(['full-name']);
+    if (fullName){
+      currentIndex = 1;
+    }
+  }
   void _saveToDb(int page) async {
     final directory = Platform.isIOS
         ? await getLibraryDirectory()
