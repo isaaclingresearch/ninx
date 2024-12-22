@@ -1,2 +1,2 @@
 (defpackage :cenna
-  (:use :cl :postmodern :fiveam))
+  (:use :cl :postmodern :fiveam :local-time))

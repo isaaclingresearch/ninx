@@ -21,9 +21,9 @@
 	       ;; 		     (:file "decklm.postgres")
 	       ;; 		     (:file "decklm")
 	       ;; 		     ))
-	       (:module "apps/pageone/src"
-		:components ((:file "package")
-			     (:file "pageone")))
+	       ;; (:module "apps/pageone/src"
+	       ;; 	:components ((:file "package")
+	       ;; 		     (:file "pageone")))
 	       ;; (:module "apps/spotpdf"
 	       ;; 	:components ((:file "package")
 	       ;; 		     (:file "spotpdf")
@@ -37,7 +37,7 @@
 			     (:file "ninx")))
 	       (:module "apps/cenna/src"
 			:components ((:file "package")
-				     (:file "postgres.cenna")
+				     (:file "cenna.postgres")
 				     (:file "cenna")))
 	       (:file "server"))
   :build-operation "program-op" ;; leave as is

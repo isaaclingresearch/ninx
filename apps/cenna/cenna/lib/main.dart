@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:country_picker/country_picker.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 
 void main() {
   runApp(const Cenna());
@@ -34,15 +37,26 @@ class _DemographicsFormState extends State<DemographicsForm> {
   final TextEditingController _fullNameController = TextEditingController();
   String? _selectedSex; // This will hold "Male" or "Female"
   String? _selectedGender;
+  String? _selectedRace;
+  String? _selectedEducation;
   DateTime? _selectedDate; // This will hold the selected date
 
   // Controllers for Page 2
-  final TextEditingController _page2Controller1 = TextEditingController();
-  final TextEditingController _page2Controller2 = TextEditingController();
+  final TextEditingController _countryController = TextEditingController();
+  Country? _selectedCountry;
+  final TextEditingController _countryOfResidenceController =
+      TextEditingController();
+  Country? _selectedCountryOfResidence;
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _occupationController = TextEditingController();
 
   // Controllers for Page 3
-  final TextEditingController _page3Controller1 = TextEditingController();
-  final TextEditingController _page3Controller2 = TextEditingController();
+  PhoneNumber? _phoneNumber;
+  PhoneNumber? _nextOfKinPhoneNumber;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _nextOfKinNameController = TextEditingController();
+ final TextEditingController _nextOfKinEmailController = TextEditingController();
+ final TextEditingController _nextOfKinRelationshipController = TextEditingController();
 
   // Controllers for Page 4
   final TextEditingController _page4Controller1 = TextEditingController();
@@ -95,13 +109,22 @@ class _DemographicsFormState extends State<DemographicsForm> {
                 'fullname': _fullNameController.text,
                 'sex': _selectedSex,
                 'gender': _selectedGender,
+                'education': _selectedEducation,
+                'race': _selectedRace,
                 'date-of-birth': _selectedDate != null
-                    ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
+                    ? DateFormat('yyyy-MM-dd').format(_selectedDate!)
                     : '',
-                'page21': _page2Controller1.text,
-                'page22': _page2Controller2.text,
-                'page31': _page3Controller1.text,
-                'page3': _page3Controller2.text,
+                'country-of-birth': _selectedCountry?.displayName,
+                'country-of-residence':
+                    _selectedCountryOfResidence?.displayName,
+                'city-of-residence': _cityController.text,
+                'occupation': _occupationController.text,
+                'phone-number': _phoneNumber,
+                'email': _emailController.text,
+                'next-of-kin-name': _nextOfKinNameController.text,
+                'next-of-kin-relationship': _nextOfKinRelationshipController.text,
+                'next-of-kin-email': _nextOfKinEmailController.text,
+                'next-of-kin-phone-number': _nextOfKinPhoneNumber,
                 'page41': _page4Controller1.text,
                 'page42': _page4Controller2.text
               },
@@ -121,17 +144,18 @@ class _DemographicsFormState extends State<DemographicsForm> {
     switch (pageIndex) {
       case 0:
         title = 'Why Identification Data?';
-        content = 'We need to know who you are and how to address you. Some diseases are sex specific, some are age related.';
+        content =
+            'We need to know who you are and how to address you. Some diseases are sex or age or race specific and/or related.';
         break;
       case 1:
-        title = 'Why Page 2 Data?';
+        title = 'Why Location and residence data?';
         content =
-            'The data on Page 2 helps us gather specific details relevant to your experience and needs.';
+            'Disease is affected by where you were born, where you live and the work you do.';
         break;
       case 2:
-        title = 'Why Page 3 Data?';
+        title = 'Why contact data?';
         content =
-            'Information from Page 3 is used for analysis and to tailor our services to your preferences.';
+            'We need to be able to reach to pass information in one form or another.';
         break;
       case 3:
         title = 'Why Page 4 Data?';
@@ -281,7 +305,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                                 _selectDate(context), // Open date picker on tap
                             controller: TextEditingController(
                               text: _selectedDate != null
-                                  ? DateFormat('dd-MM-yyyy')
+                                  ? DateFormat('yyyy-MM-dd')
                                       .format(_selectedDate!)
                                   : '', // Format and display date
                             ),
@@ -298,6 +322,91 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             },
                           ),
                         ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: 'Race/Ethnicity',
+                            ),
+                            value: _selectedRace, // Currently selected value
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedRace = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select a race';
+                              }
+                              return null;
+                            },
+                            items: const <DropdownMenuItem<String>>[
+                              DropdownMenuItem<String>(
+                                value: 'African American/Black',
+                                child: Text('African American/Black'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Asian',
+                                child: Text('Asian'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Hispanic/Latino',
+                                child: Text('Hispanic/Latino'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Indiginous American',
+                                child: Text('Indiginous American'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'White',
+                                child: Text('White'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: 'Highest Education',
+                            ),
+                            value:
+                                _selectedEducation, // Currently selected value
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedEducation = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select your highest education level';
+                              }
+                              return null;
+                            },
+                            items: const <DropdownMenuItem<String>>[
+                              DropdownMenuItem<String>(
+                                value: 'Less than high school',
+                                child: Text('Less than high school'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'High school',
+                                child: Text('High school'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Undergraduate degree',
+                                child: Text('Undergraduate degree'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Masters degree',
+                                child: Text('Masters degree'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'PhD',
+                                child: Text('PhD'),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -312,7 +421,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Page 2 Entries'),
+                            const Text('Residence and Work'),
                             TextButton(
                               onPressed: () => _showWhyThisDialog(1),
                               child: const Text('Why this?'),
@@ -321,13 +430,89 @@ class _DemographicsFormState extends State<DemographicsForm> {
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Column(
+                            children: [
+                              InkWell(
+                                // Use InkWell for visual feedback on tap
+                                onTap: () {
+                                  showCountryPicker(
+                                    context: context,
+                                    showPhoneCode: false,
+                                    onSelect: (Country country) {
+                                      setState(() {
+                                        _selectedCountry = country;
+                                        _countryController.text = country
+                                            .displayName; // Display country name
+                                      });
+                                    },
+                                  );
+                                },
+                                child: IgnorePointer(
+                                  // Prevents direct text input
+                                  child: TextFormField(
+                                    controller: _countryController,
+                                    decoration: const InputDecoration(
+                                        labelText:
+                                            'Select Country of Birth'), // Changed label
+                                    validator: (value) {
+                                      if (_selectedCountry == null) {
+                                        return 'Please select your country of birth';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Column(
+                            children: [
+                              InkWell(
+                                // Use InkWell for visual feedback on tap
+                                onTap: () {
+                                  showCountryPicker(
+                                    context: context,
+                                    showPhoneCode: false,
+                                    onSelect: (Country country) {
+                                      setState(() {
+                                        _selectedCountryOfResidence = country;
+                                        _countryOfResidenceController.text = country
+                                            .displayName; // Display country name
+                                      });
+                                    },
+                                  );
+                                },
+                                child: IgnorePointer(
+                                  // Prevents direct text input
+                                  child: TextFormField(
+                                    controller: _countryOfResidenceController,
+                                    decoration: const InputDecoration(
+                                        labelText:
+                                            'Select current country of residence'), // Changed label
+                                    validator: (value) {
+                                      if (_selectedCountryOfResidence == null) {
+                                        return 'Please select your current country of residence';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: TextFormField(
-                            controller: _page2Controller1,
-                            decoration:
-                                const InputDecoration(labelText: 'Entry 1'),
+                            controller: _cityController,
+                            decoration: const InputDecoration(
+                                labelText: 'City of residence'),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter some text';
+                                return 'Please enter your current city, state, or district of residence.';
                               }
                               return null;
                             },
@@ -336,12 +521,12 @@ class _DemographicsFormState extends State<DemographicsForm> {
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: TextFormField(
-                            controller: _page2Controller2,
+                            controller: _occupationController,
                             decoration:
-                                const InputDecoration(labelText: 'Entry 2'),
+                                const InputDecoration(labelText: 'Occupation'),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter some text';
+                                return 'Please enter your current occupation.';
                               }
                               return null;
                             },
@@ -361,7 +546,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Page 3 Entries'),
+                            const Text('Contacts'),
                             TextButton(
                               onPressed: () => _showWhyThisDialog(2),
                               child: const Text('Why this?'),
@@ -370,13 +555,23 @@ class _DemographicsFormState extends State<DemographicsForm> {
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: TextFormField(
-                            controller: _page3Controller1,
-                            decoration:
-                                const InputDecoration(labelText: 'Entry 1'),
+                          child: IntlPhoneField(
+                            decoration: const InputDecoration(
+                              labelText: 'Phone Number',
+                              border: OutlineInputBorder(),
+                            ),
+                            initialCountryCode:
+                                'UG', // Optional: Set an initial country code
+                            onChanged: (phone) {
+                              setState(() {
+                                _phoneNumber = phone;
+                              });
+                            },
+                            onCountryChanged: (country) {},
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter some text';
+                              if (_phoneNumber == null ||
+                                  _phoneNumber!.number.isEmpty) {
+                                return 'Please enter a phone number';
                               }
                               return null;
                             },
@@ -385,18 +580,85 @@ class _DemographicsFormState extends State<DemographicsForm> {
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: TextFormField(
-                            controller: _page3Controller2,
+                            controller: _emailController,
                             decoration:
-                                const InputDecoration(labelText: 'Entry 2'),
+                                const InputDecoration(labelText: 'Email'),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter some text';
+                                return 'Please enter your email';
                               }
                               return null;
                             },
                           ),
                         ),
-                      ],
+                       Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: TextFormField(
+                            controller: _nextOfKinNameController,
+                            decoration:
+                                const InputDecoration(labelText: 'Next of Kin Name'),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your next of kin';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                       Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: TextFormField(
+                            controller: _nextOfKinRelationshipController,
+                            decoration:
+                                const InputDecoration(labelText: 'Relationship with next of kin'),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your relationship with the next of kin';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                                                Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: IntlPhoneField(
+                            decoration: const InputDecoration(
+                              labelText: 'Next of Kin\'s Phone Number',
+                              border: OutlineInputBorder(),
+                            ),
+                            initialCountryCode:
+                                'UG', // Optional: Set an initial country code
+                            onChanged: (phone) {
+                              setState(() {
+                                _nextOfKinPhoneNumber = phone;
+                              });
+                            },
+                            onCountryChanged: (country) {},
+                            validator: (value) {
+                              if (_nextOfKinPhoneNumber == null ||
+                                  _nextOfKinPhoneNumber!.number.isEmpty) {
+                                return 'Please enter your next of kin\'s phone number';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: TextFormField(
+                            controller: _nextOfKinEmailController,
+                            decoration:
+                                const InputDecoration(labelText: 'Next of Kin\'s Email'),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your next of kin\'s email';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                     ],
                     ),
                   ),
                 ),
@@ -491,10 +753,14 @@ class _DemographicsFormState extends State<DemographicsForm> {
   void dispose() {
     _pageController.dispose();
     _fullNameController.dispose();
-    _page2Controller1.dispose();
-    _page2Controller2.dispose();
-    _page3Controller1.dispose();
-    _page3Controller2.dispose();
+    _countryController.dispose();
+    _countryOfResidenceController.dispose();
+    _cityController.dispose();
+    _occupationController.dispose();
+    _emailController.dispose();
+    _nextOfKinEmailController.dispose();
+    _nextOfKinNameController.dispose();
+    _nextOfKinRelationshipController.dispose();
     _page4Controller1.dispose();
     _page4Controller2.dispose();
     super.dispose();
