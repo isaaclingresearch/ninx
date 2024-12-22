@@ -1,4 +1,5 @@
 # Miscellaneous
+libsqlite3.so.0
 *.class
 *.log
 *.pyc

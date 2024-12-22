@@ -8,7 +8,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
 import 'package:path/path.dart';
 import 'package:sqlite3/open.dart';
-import 'package:sqlite3/sqlite3.dart';
+import 'package:sqlite3/sqlite3.dart' hide Row;
 import 'package:path_provider/path_provider.dart';
 
  
@@ -35,7 +35,7 @@ void main() async {
 
 DynamicLibrary _openOnLinux() {
   final scriptDir = File(Platform.script.toFilePath()).parent;
-  final libraryNextToScript = File(join(scriptDir.path, 'sqlite3.so'));
+  final libraryNextToScript = File(join(scriptDir.path, 'libsqlite3.so.0'));
   return DynamicLibrary.open(libraryNextToScript.path);
 }
 
@@ -115,14 +115,13 @@ class _DemographicsFormState extends State<DemographicsForm> {
         : await getApplicationDocumentsDirectory();
     String path = '${directory.path}cenna.db';
     final db = sqlite3.open(path);
-    final query =  db.prepare('''insert into demographics (demographic, value) values (?, ?)''');
+    final query =  db.prepare('''insert into demographics (demographic, value) values (?, ?) on conflict ignore ''');
     switch (page) {
       case 0:
        query
         ..execute(['full-name',_fullNameController.text])
         ..execute(['sex', _selectedSex])
-        ..execute(['date-of-birth', _selectedDate])
-        ..execute(['country-of-origin', _selectedCountry])
+        ..execute(['date-of-birth', DateFormat('yyyy-MM-dd').format(_selectedDate!)])
         ..execute(['level-of-education', _selectedEducation])
         ..execute(['race', _selectedRace])
         ..execute(['gender', _selectedGender]);
@@ -192,8 +191,6 @@ class _DemographicsFormState extends State<DemographicsForm> {
                 'next-of-kin-relationship': _nextOfKinRelationshipController.text,
                 'next-of-kin-email': _nextOfKinEmailController.text,
                 'next-of-kin-phone-number': _nextOfKinPhoneNumber,
-                'page41': _page4Controller1.text,
-                'page42': _page4Controller2.text
               },
             ),
           ));
@@ -231,7 +228,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
         break;
     }
     showDialog(
-      context: context,
+      context: this.context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(title),
@@ -266,7 +263,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (i) {
-                _saveToDb(i--);
+                _saveToDb(i - 1);
                 setState(() {
                   currentIndex = i;
                 });
@@ -728,55 +725,6 @@ class _DemographicsFormState extends State<DemographicsForm> {
                           ),
                         ),
                      ],
-                    ),
-                  ),
-                ),
-                // Page 4
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Form(
-                    key: _formKeys[3],
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Page 4 Entries'),
-                            TextButton(
-                              onPressed: () => _showWhyThisDialog(3),
-                              child: const Text('Why this?'),
-                            ),
-                          ],
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: TextFormField(
-                            controller: _page4Controller1,
-                            decoration:
-                                const InputDecoration(labelText: 'Entry 1'),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter some text';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: TextFormField(
-                            controller: _page4Controller2,
-                            decoration:
-                                const InputDecoration(labelText: 'Entry 2'),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter some text';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
