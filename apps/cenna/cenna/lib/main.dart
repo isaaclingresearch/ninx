@@ -9,10 +9,26 @@ import 'package:intl_phone_field/phone_number.dart';
 import 'package:path/path.dart';
 import 'package:sqlite3/open.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:path_provider/path_provider.dart';
 
-void main() {
+ 
+void main() async {
   open.overrideFor(OperatingSystem.linux, _openOnLinux);
-  final db = sqlite3.openInMemory();
+  final directory = Platform.isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
+  String path = '${directory.path}cenna.db';
+  final db = sqlite3.open(path);
+  // create tables
+  db.execute('''
+    CREATE TABLE IF NOT EXISTS system_variables (
+      variable text primary key,
+      value text,
+      set_date text default CURRENT_TIMESTAMP);
+
+    CREATE TABLE IF NOT EXISTS demographics (
+      demographic text primary key,
+      value text,
+      set_date text default CURRENT_TIMESTAMP);
+    ''');
   runApp(const Cenna());
   db.dispose();
 }
@@ -93,6 +109,42 @@ class _DemographicsFormState extends State<DemographicsForm> {
     }
   }
 
+  void _saveToDb(int page) async {
+    final directory = Platform.isIOS
+        ? await getLibraryDirectory()
+        : await getApplicationDocumentsDirectory();
+    String path = '${directory.path}cenna.db';
+    final db = sqlite3.open(path);
+    final query =  db.prepare('''insert into demographics (demographic, value) values (?, ?)''');
+    switch (page) {
+      case 0:
+       query
+        ..execute(['full-name',_fullNameController.text])
+        ..execute(['sex', _selectedSex])
+        ..execute(['date-of-birth', _selectedDate])
+        ..execute(['country-of-origin', _selectedCountry])
+        ..execute(['level-of-education', _selectedEducation])
+        ..execute(['race', _selectedRace])
+        ..execute(['gender', _selectedGender]);
+      break;
+      case 1:
+        query
+        ..execute(['country-of-origin', _selectedCountry])
+        ..execute(['country-of-residence', _selectedCountryOfResidence])
+        ..execute(['city', _cityController.text])
+        ..execute(['occupation', _occupationController.text]);
+        break;
+        case 2:
+        query
+        ..execute(['email', _emailController.text])
+        ..execute(['telephone-number', _phoneNumber])
+        ..execute(['next-of-kin-name', _nextOfKinNameController.text])
+        ..execute(['next-of-kin-email', _nextOfKinEmailController.text])
+        ..execute(['next-of-kin-relationship', _nextOfKinRelationshipController.text])
+        ..execute(['next-of-kin-telehone', _nextOfKinPhoneNumber]);
+    }
+    db.dispose();
+  }
   void _goToPreviousPage() {
     _pageController.previousPage(
       duration: const Duration(milliseconds: 300),
@@ -114,7 +166,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
         demographicsValid = false;
       }
     }
-
+   
     if (demographicsValid) {
       Navigator.push(
           context,
@@ -213,9 +265,12 @@ class _DemographicsFormState extends State<DemographicsForm> {
             child: PageView(
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
-              onPageChanged: (i) => setState(() {
-                currentIndex = i;
-              }),
+              onPageChanged: (i) {
+                _saveToDb(i--);
+                setState(() {
+                  currentIndex = i;
+                });
+              },
               children: [
                 // Page 1
                 Padding(
@@ -224,8 +279,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                     key: _formKeys[0],
                     child: Column(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Identification'),
                             TextButton(
