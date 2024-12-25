@@ -116,7 +116,7 @@ Must be called before any other functions."
   (fdb-db-option-transaction-include-port-in-address 505)
   (fdb-db-option-transaction-bypass-unreadable 700))
 
-(defcenum fdb-tr-options
+(defcenum fdb-transaction-option
   (:fdb-tr-option-causal-write-risky 10)
   (:fdb-tr-option-causal-read-risky 20)
   (:fdb-tr-option-causal-read-disable 21)
@@ -194,7 +194,7 @@ Must be called before any other functions."
 (defcfun ("fdb_network_set_option" fdb-network-set-option) fdb-error-t
   "Called to set network options. If the given option is documented as taking a parameter, you must also pass a pointer to the parameter value and the parameter value’s length. If the option is documented as taking an Int parameter, value must point to a signed 64-bit integer (little-endian), and value_length must be 8. This memory only needs to be valid until fdb_network_set_option() returns."
   (option fdb-network-option)
-  (value :pointer)
+  (value (:pointer :uint8))
   (value-length :int))
 
 (defcfun "fdb_setup_network" fdb-error-t
@@ -223,6 +223,7 @@ This function will not return until fdb_stop_network() is called by you or a ser
 (defctype fdb-cluster :pointer)
 (defctype fdb-database :pointer)
 (defctype fdb-transaction :pointer)
+(defctype fdb-tenant :pointer)
 
 (defcfun ("fdb_future_cancel" fdb-future-cancel) :void
   "Cancels an FDBFuture object."
@@ -257,57 +258,57 @@ This function will not return until fdb_stop_network() is called by you or a ser
 (defcfun ("fdb_future_get_int64" fdb-future-get-int64) fdb-error-t
   "Extracts an int64 value from a future."
   (future fdb-future)
-  (out :pointer))
+  (out (:pointer :int64)))
 
 (defcfun ("fdb_future_get_double" fdb-future-get-double) fdb-error-t
   "Extracts a double value from a future."
   (future fdb-future)
-  (out :pointer))
+  (out (:pointer :double)))
 
 (defcfun ("fdb_future_get_key" fdb-future-get-key) fdb-error-t
   "Extracts a key (byte string) from a future."
   (future fdb-future)
-  (out-key :pointer)
-  (out-key-length :pointer))
+  (out-key (:pointer (:pointer :uint8)))
+  (out-key-length (:pointer :int)))
 
 (defcfun ("fdb_future_get_value" fdb-future-get-value) fdb-error-t
   "Extracts a value (byte string) from a future, indicating if the key was present."
   (future fdb-future)
-  (out-present :pointer)
-  (out-value :pointer)
-  (out-value-length :pointer))
+  (out-present (:pointer fdb-bool-t))
+  (out-value (:pointer (:pointer :uint8)))
+  (out-value-length (:pointer :int)))
 
 (defcfun ("fdb_future_get_string_array" fdb-future-get-string-array) fdb-error-t
   "Extracts an array of strings from a future."
   (future fdb-future)
-  (out-strings :pointer)
-  (out-count :pointer))
+  (out-strings (:pointer (:pointer (:pointer :char))))
+  (out-count (:pointer :int)))
+
+(defcstruct fdb-key-value
+  (key :pointer)
+  (key-length :int)
+  (value :pointer)
+  (value-length :int))
 
 (defcfun ("fdb_future_get_keyvalue_array" fdb-future-get-keyvalue-array) fdb-error-t
   "Extracts an array of key-value pairs from a future."
   (future fdb-future)
-  (out-kv :pointer)
-  (out-count :pointer)
-  (out-more :pointer))
+  (out-kv (:pointer (:pointer (:struct fdb-key-value))))
+  (out-count (:pointer :int))
+  (out-more (:pointer fdb-bool-t)))
 
 (defcfun ("fdb_future_get_key_array" fdb-future-get-key-array) fdb-error-t
   "Extracts an array of keys from a future"
-  (f fdb-future)
-  (out-key-array :pointer)
-  (out-count :pointer))
-
-(defcstruct fdb-key-value
-  (:key :pointer)
-  (:key-length :int)
-  (:value :pointer)
-  (:value-length :int))
+  (future fdb-future)
+  (out-key-array (:pointer (:pointer :uint8)))
+  (out-count (:pointer :int)))
 
 ;;; Database
 
 (defcfun ("fdb_create_database" fdb-create-database) fdb-error-t
   "Creates a new database connection. For internal use, prefer connect-db."
   (cluster-file-path :string)
-  (out-database :pointer))
+  (out-database (:pointer fdb-database)))
 
 
 (defcfun ("fdb_database_destroy" fdb-database-destroy) :void
@@ -318,21 +319,59 @@ This function will not return until fdb_stop_network() is called by you or a ser
   "Sets a database option. For internal use."
   (database fdb-database)
   (option fdb-database-option)
-  (value :pointer)
+  (value (:pointer :uint8))
   (value-length :int))
+
+(defcfun "fdb_tenant_open_tenant" fdb-error-t
+  "Opens a tenant on the given database. All transactions created by this tenant will operate on the tenant’s key-space. The caller assumes ownership of the FDBTenant object and must destroy it with fdb_tenant_destroy()."
+  (database fdb-database)
+  (tenant-name (:pointer :uint8))
+  (tenant-name-length :int)
+  (out-tenant (:pointer (:pointer fdb-tenant))))
 
 (defcfun ("fdb_database_create_transaction" fdb-database-create-transaction) fdb-error-t
   "Creates a new transaction on the given database."
   (database fdb-database)
-  (out-transaction :pointer))
+  (out-transaction (:pointer (:pointer fdb-transaction))))
 
 (defcfun "fdb_database_reboot_worker" fdb-future
   "Reboot the specified process in the database."
   (database fdb-database)
-  (address :pointer)
+  (address (:pointer :uint8))
   (address-length :int)
   (check fdb-bool-t)
   (duration :int))
+
+(defcfun "fdb_database_force_recovery_with_data_loss" fdb-future
+  "Force the database to recover into the given datacenter."
+  (database fdb-database)
+  (dc-id (:pointer :uint8))
+  (dcid-length :int))
+
+(defcfun "fdb_database_create_snapshot" fdb-future
+  "Create a snapshot of the database."
+  (database fdb-database)
+  (snapshot-command (:pointer :uint8))
+  (snapshot-length-command :int))
+
+(defcfun "fdb_database_get_main_thread_busyness" :double
+  "Returns a value where 0 indicates that the client is idle and 1 (or larger) indicates that the client is saturated. By default, this value is updated every second."
+  (database fdb-database))
+
+(defcfun "fdb_database_get_client_status" fdb-future
+  "Returns a JSON string containing database client-side status information. At the top level the report describes the status of the Multi-Version Client database - its initialization state, the protocol version, the available client versions."
+  (db fdb-database))
+
+;;; tenant
+(defcfun "fdb_tenant_destroy" :void
+  "Destroys an FDBTenant object. It must be called exactly once for each successful call to fdb_database_create_tenant(). This function only destroys a handle to the tenant – the tenant and its data will be fine!"
+  (tenant fdb-tenant))
+
+(defcfun "fdb_tenant_create_transaction" fdb-error-t
+  "Creates a new transaction on the given tenant. This transaction will operate within the tenant’s key-space and cannot access data outside the tenant. The caller assumes ownership of the FDBTransaction object and must destroy it with fdb_transaction_destroy()"
+  (tenant fdb-tenant)
+  (out-transaction (:pointer fdb-transaction)))
+
 
 ;;; Transactions
 
@@ -343,8 +382,8 @@ This function will not return until fdb_stop_network() is called by you or a ser
 (defcfun ("fdb_transaction_set_option" fdb-transaction-set-option) fdb-error-t
   "Sets a transaction option."
   (transaction fdb-transaction)
-  (option fdb-tr-options)
-  (value :pointer)
+  (option fdb-transaction-option)
+  (value (:pointer :uint8))
   (value-length :int))
 
 (defcfun ("fdb_transaction_set_read_version" fdb-transaction-set-read-version) :void
@@ -359,14 +398,31 @@ This function will not return until fdb_stop_network() is called by you or a ser
 (defcfun ("fdb_transaction_get" fdb-transaction-get) fdb-future
   "Reads a value from the database within a transaction."
   (transaction fdb-transaction)
-  (key-name :pointer)
+  (key-name (:pointer :uint8))
   (key-name-length :int)
   (snapshot fdb-bool-t))
+
+(defcfun ("fdb_transaction_get_estimated_range_size_bytes" fdb-transaction-get-estimated-range-size-bytes) fdb-future
+  "Returns an FDBFuture which will be set to the estimated size of the key range."
+  (tr fdb-transaction)
+  (begin-key-name (:pointer :uint8))
+  (begin-key-name-length :int)
+  (end-key-name (:pointer :uint8))
+  (end-key-name-length :int))
+
+(defcfun ("fdb_transaction_get_range_split_points" fdb-transaction-get-range-split-points) fdb-future
+  "Returns a list of keys that can be used to split the given range into (roughly) equally sized chunks based on chunk_size."
+  (tr fdb-transaction)
+  (begin-key-name (:pointer :uint8))
+  (begin-key-name-length :int)
+  (end-key-name (:pointer :uint8))
+  (end-key-name-length :int)
+  (chunk-size :int64))
 
 (defcfun ("fdb_transaction_get_key" fdb-transaction-get-key) fdb-future
   "Resolves a key selector to a key within a transaction."
   (transaction fdb-transaction)
-  (key-name :pointer)
+  (key-name (:pointer :uint8))
   (key-name-length :int)
   (or-equal fdb-bool-t)
   (offset :int)
@@ -375,17 +431,17 @@ This function will not return until fdb_stop_network() is called by you or a ser
 (defcfun ("fdb_transaction_get_addresses_for_key" fdb-transaction-get-addresses-for-key) fdb-future
   "Gets the addresses of storage servers responsible for a key."
   (transaction fdb-transaction)
-  (key-name :pointer)
+  (key-name (:pointer :uint8))
   (key-name-length :int))
 
 (defcfun ("fdb_transaction_get_range" fdb-transaction-get-range) fdb-future
   "Reads a range of key-value pairs from the database within a transaction."
   (transaction fdb-transaction)
-  (begin-key-name :pointer)
+  (begin-key-name (:pointer :uint8))
   (begin-key-name-length :int)
   (begin-or-equal fdb-bool-t)
   (begin-offset :int)
-  (end-key-name :pointer)
+  (end-key-name (:pointer :uint8))
   (end-key-name-length :int)
   (end-or-equal fdb-bool-t)
   (end-offset :int)
@@ -399,31 +455,31 @@ This function will not return until fdb_stop_network() is called by you or a ser
 (defcfun ("fdb_transaction_set" fdb-transaction-set) :void
     "Sets a key-value pair in the database within a transaction."
   (transaction fdb-transaction)
-  (key-name :pointer)
+  (key-name (:pointer :uint8))
   (key-name-length :int)
-  (value :pointer)
+  (value (:pointer :uint8))
   (value-length :int))
 
 (defcfun ("fdb_transaction_clear" fdb-transaction-clear) :void
   "Clears a key from the database within a transaction."
   (transaction fdb-transaction)
-  (key-name :pointer)
+  (key-name (:pointer :uint8))
   (key-name-length :int))
 
 (defcfun ("fdb_transaction_clear_range" fdb-transaction-clear-range) :void
   "Clears a range of keys from the database within a transaction."
   (transaction fdb-transaction)
-  (begin-key-name :pointer)
+  (begin-key-name (:pointer :uint8))
   (begin-key-name-length :int)
-  (end-key-name :pointer)
+  (end-key-name (:pointer :uint8))
   (end-key-name-length :int))
 
 (defcfun ("fdb_transaction_atomic_op" fdb-transaction-atomic-op) :void
   "Performs an atomic operation on a key within a transaction."
   (transaction fdb-transaction)
-  (key-name :pointer)
+  (key-name (:pointer :uint8))
   (key-name-length :int)
-  (param :pointer)
+  (param (:pointer :uint8))
   (param-length :int)
   (operation-type fdb-mutation-type))
 
@@ -434,7 +490,15 @@ This function will not return until fdb_stop_network() is called by you or a ser
 (defcfun ("fdb_transaction_get_committed_version" fdb-transaction-get-committed-version) fdb-error-t
   "Gets the committed version of a transaction."
   (transaction fdb-transaction)
-  (out-version :pointer))
+  (out-version (:pointer :int64)))
+
+(defcfun "fdb_transaction_get_tag_throttled_duration" fdb-future
+  "Returns an FDBFuture which will be set to the time (in seconds) that the transaction was throttled by the tag throttler in the returned future. You must first wait for the FDBFuture to be ready, check for errors, call fdb_future_get_double() to extract the duration, and then destroy the FDBFuture with fdb_future_destroy()."
+  (transaction fdb-transaction))
+
+(defcfun "fdb_transaction_get_total_cost" fdb-future
+  "Returns an FDBFuture which will be set to the cost of the transaction so far (in bytes) in the returned future, as computed by the tag throttler, and used for tag throttling if throughput quotas are specified. You must first wait for the FDBFuture to be ready, check for errors, call fdb_future_get_int64() to extract the cost, and then destroy the FDBFuture with fdb_future_destroy()"
+  (transaction fdb-transaction))
 
 (defcfun ("fdb_transaction_get_approximate_size" fdb-transaction-get-approximate-size) fdb-future
   "Returns an FDBFuture which will be set to the approximate transaction size so far."
@@ -466,32 +530,8 @@ This function will not return until fdb_stop_network() is called by you or a ser
 (defcfun ("fdb_transaction_add_conflict_range" fdb-transaction-add-conflict-range) fdb-error-t
   "Adds a conflict range to a transaction."
   (transaction fdb-transaction)
-  (begin-key-name :pointer)
+  (begin-key-name (:pointer :uint8))
   (begin-key-name-length :int)
-  (end-key-name :pointer)
+  (end-key-name (:pointer :uint8))
   (end-key-name-length :int)
   (type fdb-conflict-range-type))
-
-(defcfun ("fdb_transaction_get_estimated_range_size_bytes" fdb-transaction-get-estimated-range-size-bytes) fdb-future
-  "Returns an FDBFuture which will be set to the estimated size of the key range."
-  (tr fdb-transaction)
-  (begin-key-name :pointer)
-  (begin-key-name-length :int)
-  (end-key-name :pointer)
-  (end-key-name-length :int))
-
-(defcfun ("fdb_transaction_get_range_split_points" fdb-transaction-get-range-split-points) fdb-future
-  "Returns a list of keys that can be used to split the given range into (roughly) equally sized chunks based on chunk_size."
-  (tr fdb-transaction)
-  (begin-key-name :pointer)
-  (begin-key-name-length :int)
-  (end-key-name :pointer)
-  (end-key-name-length :int)
-  (chunk-size :int64))
-
-(defcstruct %fdb-keyvalue
-  "Represents a key-value pair in FDB."
-  (key :pointer)
-  (key-length :int)
-  (value :pointer)
-  (value-length :int))

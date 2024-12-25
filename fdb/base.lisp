@@ -146,8 +146,8 @@ Returns the value and a boolean indicating if the key was present."
   "Blocks until the future is ready, then extracts an array of key-value pairs."
   (check-error (fdb-future-block-until-ready future))
   (with-foreign-objects ((kv-ptr :pointer)
-                         (count-ptr :int)
-                         (more-ptr fdb-bool-t))
+                         (count-ptr :pointer)
+                         (more-ptr :pointer))
     (check-error (fdb-future-get-keyvalue-array future kv-ptr count-ptr more-ptr))
     (let* ((count (mem-ref count-ptr :int))
            (more (if (plusp (mem-ref more-ptr 'fdb-bool-t)) t nil))
@@ -171,30 +171,37 @@ Returns the value and a boolean indicating if the key was present."
                             collect (foreign-string-to-lisp key))))
       key-array)))
 
-(defun transaction-get-range (transaction begin-key end-key &key (limit 0) (target-bytes 0) (mode :iterator) (iteration 0) (snapshot nil) (reverse nil))
+(defun transaction-get-range (transaction begin-key end-key &key (limit 0) (target-bytes 0) (mode :iterator) (iteration 0) (snapshot nil) (reverse nil) (begin-or-equal t) (begin-offset 0) (end-or-equal t) (end-offset 0))
   "Gets a range of key-value pairs from a transaction.
    Returns a list of (key . value) pairs and a boolean indicating if more data is available."
-  (with-foreign-string ((c-begin-key begin-key-len) begin-key)
-    (with-foreign-string ((c-end-key end-key-len) end-key)
-      (let ((future (fdb-transaction-get-range transaction
-                                               c-begin-key begin-key-len t 0 ; Assuming first greater or equal
-                                               c-end-key end-key-len nil 0   ; Assuming last less than
-                                               limit
-                                               target-bytes
-                                               (ecase mode
-                                                 (:iterator :fdb-streaming-mode-iterator)
-                                                 (:small :fdb-streaming-mode-small)
-                                                 (:medium :fdb-streaming-mode-medium)
-                                                 (:large :fdb-streaming-mode-large)
-                                                 (:serial :fdb-streaming-mode-serial)
-                                                 (:want-all :fdb-streaming-mode-want-all)
-                                                 (:exact :fdb-streaming-mode-exact))
-                                               iteration
-                                               snapshot
-                                               reverse)))
-        (multiple-value-bind (kv-array more) (block-and-get-keyvalue-array future)
-          (fdb-future-destroy future)
-          (values kv-array more))))))
+  (let* ((*begin-key (foreign-string-alloc begin-key))
+	 (begin-key-len (foreign-funcall "strlen" :pointer *begin-key :int))
+	 (*end-key (foreign-string-alloc end-key))
+	 (end-key-len (foreign-funcall "strlen" :pointer *end-key :int))
+	 (future (fdb-transaction-get-range transaction
+					    *begin-key
+					    begin-key-len
+					    (convert-to-foreign begin-or-equal :boolean)
+					    begin-offset
+					    *end-key end-key-len
+					    (convert-to-foreign end-or-equal :boolean)
+					    end-offset
+					    limit
+					    target-bytes
+					    (ecase mode
+					      (:iterator :fdb-streaming-mode-iterator)
+					      (:small :fdb-streaming-mode-small)
+					      (:medium :fdb-streaming-mode-medium)
+					      (:large :fdb-streaming-mode-large)
+					      (:serial :fdb-streaming-mode-serial)
+					      (:want-all :fdb-streaming-mode-want-all)
+					      (:exact :fdb-streaming-mode-exact))
+					    iteration
+					    (convert-to-foreign snapshot :boolean)
+					    (convert-to-foreign reverse :boolean))))
+    (multiple-value-bind (kv-array more) (block-and-get-keyvalue-array future)
+      (fdb-future-destroy future)
+      (values kv-array more))))
 
 (defun transaction-commit (transaction)
   "Commits a transaction. Returns true on success, signals an error on failure."
@@ -220,7 +227,7 @@ Returns the value and a boolean indicating if the key was present."
           (fdb-error (c)
             (if (transaction-on-error ,transaction-var (fdb-error-code c))
                 (progn (fdb-transaction-reset ,transaction-var)
-		       (format t "called ~%~%~%")
+		       (format t "called ~a~%~%~%" (list (fdb-error-code c) c))
                        (go retry-transaction))
                 (error c)))))
      (transaction-commit ,transaction-var)
@@ -303,3 +310,8 @@ Returns the value and a boolean indicating if the key was present."
   "Gets the value associated with a key from the database. Uses the global *db* connection."
   (with-transaction (tr *db*)
      (transaction-get tr key)))
+
+(defun fdb-get-range (start stop)
+  "get a range from start to stop"
+  (with-transaction (tr *db*)
+    (transaction-get-range tr start stop)))
