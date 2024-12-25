@@ -11,11 +11,12 @@ import 'package:sqlite3/open.dart';
 import 'package:sqlite3/sqlite3.dart' hide Row;
 import 'package:path_provider/path_provider.dart';
 
- 
 void main() async {
   open.overrideFor(OperatingSystem.linux, _openOnLinux);
-  final directory = Platform.isIOS ? await getLibraryDirectory() : await getApplicationDocumentsDirectory();
-  String path = '${directory.path}cenna.db';
+  final directory = Platform.isIOS
+      ? await getLibraryDirectory()
+      : await getApplicationDocumentsDirectory();
+  String path = '${directory.path}cenna1.db';
   final db = sqlite3.open(path);
   // create tables
   db.execute('''
@@ -64,6 +65,131 @@ class _DemographicsFormState extends State<DemographicsForm> {
   final List<GlobalKey<FormState>> _formKeys =
       List.generate(4, (_) => GlobalKey<FormState>());
 
+      late Directory directory;
+      late String dbPath;
+
+      
+  @override
+  void initState() {
+    super.initState();
+    _initializeDirectory();
+  }
+
+  Future<void> _initializeDirectory() async {
+    final dir = await (Platform.isIOS 
+        ? getLibraryDirectory() 
+        : getApplicationDocumentsDirectory());
+    setState(() {
+      directory = dir; // Assign the directory after fetching it
+      dbPath = '${dir.path}cenna1.db';
+    });
+}    
+  // this will return a saved variable to use it to repopulate the forms
+  String _getSavedValue(String val) {
+    final db = sqlite3.open(dbPath);
+    final query =
+        db.prepare('''select value from demographics where demographic=?''');
+    final ResultSet entry = query.select([val]);
+    if (entry.isEmpty) {
+      return '';
+    } else {
+      final value = entry[0]['value'];
+      return (value == null) ? '' : value;
+    }
+  }
+
+  // intialisevalues
+  void _initialiseValues () {
+   final fullName = _getSavedValue('full-name');
+   final sex= _getSavedValue('sex'); // This will hold "Male" or "Female"
+   final gender = _getSavedValue('gender');
+   final race = _getSavedValue('race');
+   final levelOfEducation = _getSavedValue('level-of-education');
+   final dateOfBirth = _getSavedValue('date-of-birth');
+   final countryOfOrigin = _getSavedValue('country-of-origin');
+   final countryOfResidence = _getSavedValue('country-of-residence');
+   final cityOfResidence = _getSavedValue('city-of-residence');
+   final occupation = _getSavedValue('occupation');
+   
+    setState((){
+        if (fullName != '') {
+          _fullNameController.text = fullName;
+        }
+        if (sex != ''){
+          _selectedSex = sex;
+        }
+        if (gender != ''){_selectedGender = gender;}
+        if (race != ''){_selectedRace = race;}
+        if (levelOfEducation != ''){_selectedEducation = levelOfEducation;}
+        if (dateOfBirth != '') {_selectedDate = DateFormat('yyyy-MM-dd').parse(dateOfBirth);}
+        if (occupation != ''){_occupationController.text = occupation;}
+        if (cityOfResidence != ''){_cityController.text = cityOfResidence;}
+        if (countryOfResidence != ''){_selectedCountryOfResidence = Country.parse(countryOfResidence);}
+        if(countryOfOrigin != ''){_selectedCountry = Country.parse(countryOfOrigin);}
+        
+    });
+
+  }
+  // this function will check if data has been saved and then it will skip to the page without data.
+  void _skipToPage() {
+    final db = sqlite3.open(dbPath);
+    final query =
+        db.prepare('''select value from demographics where demographic=?''');
+    final ResultSet fullName = query.select(['full-name']);
+    final ResultSet occupation = query.select(['occupation']);
+    print('$fullName-$occupation');
+    if (fullName == []) {
+      return;
+    }
+    if (occupation != []) {
+      setState(() {currentIndex = 2;});
+    }
+  }
+
+  void _saveToDb(int page) async {
+    print('page: $page\n\n');
+    final directory = Platform.isIOS
+        ? await getLibraryDirectory()
+        : await getApplicationDocumentsDirectory();
+    String path = '${directory.path}cenna.db';
+    final db = sqlite3.open(path);
+    final query = db.prepare(
+        '''insert or replace into demographics (demographic, value) values (?, ?) ''');
+    switch (page) {
+      case 0:
+        query
+          ..execute(['full-name', _fullNameController.text])
+          ..execute(['sex', _selectedSex])
+          ..execute([
+            'date-of-birth',
+            DateFormat('yyyy-MM-dd').format(_selectedDate!)
+          ])
+          ..execute(['level-of-education', _selectedEducation])
+          ..execute(['race', _selectedRace])
+          ..execute(['gender', _selectedGender]);
+        break;
+      case 1:
+        query
+          ..execute(['country-of-origin', _selectedCountry.toString()])
+          ..execute(['country-of-residence', _selectedCountryOfResidence.toString()])
+          ..execute(['city', _cityController.text])
+          ..execute(['occupation', _occupationController.text]);
+        break;
+      case 2:
+        query
+          ..execute(['email', _emailController.text])
+          ..execute(['telephone-number', _phoneNumber])
+          ..execute(['next-of-kin-name', _nextOfKinNameController.text])
+          ..execute(['next-of-kin-email', _nextOfKinEmailController.text])
+          ..execute([
+            'next-of-kin-relationship',
+            _nextOfKinRelationshipController.text
+          ])
+          ..execute(['next-of-kin-telehone', _nextOfKinPhoneNumber]);
+    }
+    db.dispose();
+  }
+
   // Controllers for Page 1
   final TextEditingController _fullNameController = TextEditingController();
   String? _selectedSex; // This will hold "Male" or "Female"
@@ -85,9 +211,12 @@ class _DemographicsFormState extends State<DemographicsForm> {
   PhoneNumber? _phoneNumber;
   PhoneNumber? _nextOfKinPhoneNumber;
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _nextOfKinNameController = TextEditingController();
- final TextEditingController _nextOfKinEmailController = TextEditingController();
- final TextEditingController _nextOfKinRelationshipController = TextEditingController();
+  final TextEditingController _nextOfKinNameController =
+      TextEditingController();
+  final TextEditingController _nextOfKinEmailController =
+      TextEditingController();
+  final TextEditingController _nextOfKinRelationshipController =
+      TextEditingController();
 
   // Controllers for Page 4
   final TextEditingController _page4Controller1 = TextEditingController();
@@ -109,54 +238,6 @@ class _DemographicsFormState extends State<DemographicsForm> {
     }
   }
 
-  // this function will check if data has been saved and then it will skip to the page without data.
-  void _skipToPgae() async {
-      final directory = Platform.isIOS
-        ? await getLibraryDirectory()
-        : await getApplicationDocumentsDirectory();
-    String path = '${directory.path}cenna.db';
-    final db = sqlite3.open(path);
-    final query = db.prepare('''select value from demographices where demographic=?''');
-    final fullName = query.execute(['full-name']);
-    if (fullName){
-      currentIndex = 1;
-    }
-  }
-  void _saveToDb(int page) async {
-    final directory = Platform.isIOS
-        ? await getLibraryDirectory()
-        : await getApplicationDocumentsDirectory();
-    String path = '${directory.path}cenna.db';
-    final db = sqlite3.open(path);
-    final query =  db.prepare('''insert into demographics (demographic, value) values (?, ?) on conflict ignore ''');
-    switch (page) {
-      case 0:
-       query
-        ..execute(['full-name',_fullNameController.text])
-        ..execute(['sex', _selectedSex])
-        ..execute(['date-of-birth', DateFormat('yyyy-MM-dd').format(_selectedDate!)])
-        ..execute(['level-of-education', _selectedEducation])
-        ..execute(['race', _selectedRace])
-        ..execute(['gender', _selectedGender]);
-      break;
-      case 1:
-        query
-        ..execute(['country-of-origin', _selectedCountry])
-        ..execute(['country-of-residence', _selectedCountryOfResidence])
-        ..execute(['city', _cityController.text])
-        ..execute(['occupation', _occupationController.text]);
-        break;
-        case 2:
-        query
-        ..execute(['email', _emailController.text])
-        ..execute(['telephone-number', _phoneNumber])
-        ..execute(['next-of-kin-name', _nextOfKinNameController.text])
-        ..execute(['next-of-kin-email', _nextOfKinEmailController.text])
-        ..execute(['next-of-kin-relationship', _nextOfKinRelationshipController.text])
-        ..execute(['next-of-kin-telehone', _nextOfKinPhoneNumber]);
-    }
-    db.dispose();
-  }
   void _goToPreviousPage() {
     _pageController.previousPage(
       duration: const Duration(milliseconds: 300),
@@ -178,7 +259,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
         demographicsValid = false;
       }
     }
-   
+
     if (demographicsValid) {
       Navigator.push(
           context,
@@ -201,7 +282,8 @@ class _DemographicsFormState extends State<DemographicsForm> {
                 'phone-number': _phoneNumber,
                 'email': _emailController.text,
                 'next-of-kin-name': _nextOfKinNameController.text,
-                'next-of-kin-relationship': _nextOfKinRelationshipController.text,
+                'next-of-kin-relationship':
+                    _nextOfKinRelationshipController.text,
                 'next-of-kin-email': _nextOfKinEmailController.text,
                 'next-of-kin-phone-number': _nextOfKinPhoneNumber,
               },
@@ -261,6 +343,10 @@ class _DemographicsFormState extends State<DemographicsForm> {
 
   @override
   Widget build(BuildContext context) {
+    _initializeDirectory();
+    _skipToPage();
+    _initialiseValues();
+    
     return Scaffold(
       appBar: AppBar(title: const Text('Demographics')),
       body: Column(
@@ -276,7 +362,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (i) {
-                _saveToDb(i - 1);
+                _saveToDb(currentIndex);
                 setState(() {
                   currentIndex = i;
                 });
@@ -289,7 +375,8 @@ class _DemographicsFormState extends State<DemographicsForm> {
                     key: _formKeys[0],
                     child: Column(
                       children: [
-                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Identification'),
                             TextButton(
@@ -670,12 +757,12 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             },
                           ),
                         ),
-                       Padding(
+                        Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: TextFormField(
                             controller: _nextOfKinNameController,
-                            decoration:
-                                const InputDecoration(labelText: 'Next of Kin Name'),
+                            decoration: const InputDecoration(
+                                labelText: 'Next of Kin Name'),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your next of kin';
@@ -684,12 +771,12 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             },
                           ),
                         ),
-                       Padding(
+                        Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: TextFormField(
                             controller: _nextOfKinRelationshipController,
-                            decoration:
-                                const InputDecoration(labelText: 'Relationship with next of kin'),
+                            decoration: const InputDecoration(
+                                labelText: 'Relationship with next of kin'),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your relationship with the next of kin';
@@ -698,7 +785,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             },
                           ),
                         ),
-                                                Padding(
+                        Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: IntlPhoneField(
                             decoration: const InputDecoration(
@@ -722,13 +809,12 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             },
                           ),
                         ),
-
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: TextFormField(
                             controller: _nextOfKinEmailController,
-                            decoration:
-                                const InputDecoration(labelText: 'Next of Kin\'s Email'),
+                            decoration: const InputDecoration(
+                                labelText: 'Next of Kin\'s Email'),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your next of kin\'s email';
@@ -737,7 +823,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             },
                           ),
                         ),
-                     ],
+                      ],
                     ),
                   ),
                 ),

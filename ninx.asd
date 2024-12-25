@@ -7,7 +7,11 @@
   :version "0.1.0"
   :depends-on (:postmodern :str :com.inuoe.jzon :hunchentoot :hunchensocket :drakma :cl-who :cl-css :cl-base64 :frugal-uuid :trivia :flexi-streams :parenscript :paren-async :paren6 :local-time :cl-hash-util :trivial-mimes :zstd :cl-ppcre :cl-smtp :sb-rt :py4cl2 :cl-maxminddb :sqlite :cl-html-parse :cl-pass :cl-mime-from-string :zippy :chronicity :sento :ironclad :fiveam :sento :cffi)
 ;; :cl-pdf :cl-pdf-parser :cl-typesetting
-  :components ((:file "package")
+  :components ((:module "fdb"
+			:components ((:file "package")
+				     (:file "c_api")
+				     (:file "base")))
+	       (:file "package")
 	       (:file "config")
 	       ;; (:module "apps/decklm/src"
 	       ;; 	:components ((:file "package")
