@@ -7,14 +7,8 @@
 (use-foreign-library libfdb)
 
 ;;; Configuration
-(defvar *api-version* 630
+(defvar *api-version* 730
   "The API version to use when connecting to FoundationDB.")
-
-(defvar *cluster-file* "/etc/foundationdb/fdb.cluster"
-  "Default path to the cluster file.")
-
-(defvar *db* nil
-  "The current database connection.")
 
 ;;; Error Handling
 
@@ -289,6 +283,7 @@ This function will not return until fdb_stop_network() is called by you or a ser
   (key-length :int)
   (value :pointer)
   (value-length :int))
+
 
 (defcfun ("fdb_future_get_keyvalue_array" fdb-future-get-keyvalue-array) fdb-error-t
   "Extracts an array of key-value pairs from a future."

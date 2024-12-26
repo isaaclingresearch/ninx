@@ -5,7 +5,7 @@
 (defvar *foreign-encoding* :utf-8)
 
 ;;; Configuration
-(defvar *api-version* 630
+(defvar *api-version* 730
   "The API version to use when connecting to FoundationDB.")
 
 (defvar *cluster-file* "/etc/foundationdb/fdb.cluster"
@@ -144,15 +144,20 @@ Returns the value and a boolean indicating if the key was present."
 
 (defun block-and-get-keyvalue-array (future)
   "Blocks until the future is ready, then extracts an array of key-value pairs."
+  (format t "error ~%")
   (check-error (fdb-future-block-until-ready future))
-  (with-foreign-objects ((kv-ptr :pointer)
-                         (count-ptr :pointer)
-                         (more-ptr :pointer))
-    (check-error (fdb-future-get-keyvalue-array future kv-ptr count-ptr more-ptr))
-    (let* ((count (mem-ref count-ptr :int))
-           (more (if (plusp (mem-ref more-ptr 'fdb-bool-t)) t nil))
+  (format t "error 1~%")
+  (with-foreign-objects ((*kv '(:pointer (:struct fdb-key-value)))
+                         (*count :int)
+                         (*more 'fdb-bool-t))
+    (format t "error: 2 ~a~a~a~a~%" future *kv *count *more)
+    (check-error (fdb-future-get-keyvalue-array future *kv *count *more))
+;;    (check-error (fdb-future-block-until-ready future))
+    (format t "error 3~%")
+    (let* ((count (mem-ref *count :int))
+           (more (if (plusp (mem-ref *more 'fdb-bool-t)) t nil))
            (kv-array (loop for i below count
-                           for kv-struct = (mem-aptr (mem-ref kv-ptr :pointer) '(:struct fdb-key-value) i)
+                           for kv-struct = (mem-aptr (mem-ref *kv :pointer) '(:struct fdb-key-value) i)
                            collect (cons (foreign-string-to-lisp (foreign-slot-value kv-struct '(:struct fdb-key-value) 'key)
                                                                  :count (foreign-slot-value kv-struct '(:struct fdb-key-value) 'key-length))
                                          (foreign-string-to-lisp (foreign-slot-value kv-struct '(:struct fdb-key-value) 'value)
@@ -162,16 +167,18 @@ Returns the value and a boolean indicating if the key was present."
 (defun block-and-get-key-array (future)
   "Blocks until the future is ready, then extracts an array of keys."
   (check-error (fdb-future-block-until-ready future))
-  (with-foreign-objects ((key-array-ptr :pointer)
-                         (count-ptr :int))
-    (check-error (fdb-future-get-key-array future key-array-ptr count-ptr))
-    (let* ((count (mem-ref count-ptr :int))
+  (let* ((*key-array (foreign-alloc :string))
+	 (*count (foreign-alloc :int)))
+    (check-error (fdb-future-get-key-array future *key-array *count))
+    (let* ((count (mem-ref *count :int))
            (key-array (loop for i below count
-                            for key = (mem-aptr (mem-ref key-array-ptr :pointer) :pointer i)
+                            for key = (mem-aptr (mem-ref *key-array :pointer) :pointer i)
                             collect (foreign-string-to-lisp key))))
-      key-array)))
+      key-array)
+    (foreign-free *key-array)
+    (foreign-free *count)))
 
-(defun transaction-get-range (transaction begin-key end-key &key (limit 0) (target-bytes 0) (mode :iterator) (iteration 0) (snapshot nil) (reverse nil) (begin-or-equal t) (begin-offset 0) (end-or-equal t) (end-offset 0))
+(defun transaction-get-range (transaction begin-key end-key &key (limit 0) (target-bytes 0) (mode :fdb-streaming-mode-iterator) (iteration 0) (snapshot nil) (reverse nil) (begin-or-equal t) (begin-offset 0) (end-or-equal t) (end-offset 0))
   "Gets a range of key-value pairs from a transaction.
    Returns a list of (key . value) pairs and a boolean indicating if more data is available."
   (let* ((*begin-key (foreign-string-alloc begin-key))
@@ -183,24 +190,20 @@ Returns the value and a boolean indicating if the key was present."
 					    begin-key-len
 					    (convert-to-foreign begin-or-equal :boolean)
 					    begin-offset
-					    *end-key end-key-len
+					    *end-key
+					    end-key-len
 					    (convert-to-foreign end-or-equal :boolean)
 					    end-offset
 					    limit
 					    target-bytes
-					    (ecase mode
-					      (:iterator :fdb-streaming-mode-iterator)
-					      (:small :fdb-streaming-mode-small)
-					      (:medium :fdb-streaming-mode-medium)
-					      (:large :fdb-streaming-mode-large)
-					      (:serial :fdb-streaming-mode-serial)
-					      (:want-all :fdb-streaming-mode-want-all)
-					      (:exact :fdb-streaming-mode-exact))
+					    mode
 					    iteration
 					    (convert-to-foreign snapshot :boolean)
 					    (convert-to-foreign reverse :boolean))))
-    (multiple-value-bind (kv-array more) (block-and-get-keyvalue-array future)
+    (multiple-value-bind (kv-array more) (block-and-get-key-array future)
       (fdb-future-destroy future)
+      (foreign-string-free *begin-key)
+      (foreign-string-free *end-key)
       (values kv-array more))))
 
 (defun transaction-commit (transaction)
@@ -226,9 +229,10 @@ Returns the value and a boolean indicating if the key was present."
         (handler-case (setq results (list ,@body))
           (fdb-error (c)
             (if (transaction-on-error ,transaction-var (fdb-error-code c))
-                (progn (fdb-transaction-reset ,transaction-var)
-		       (format t "called ~a~%~%~%" (list (fdb-error-code c) c))
-                       (go retry-transaction))
+		(format t "called ~a~%~%~%" (list (fdb-error-code c) c))
+		;; (progn (fdb-transaction-reset ,transaction-var)
+		;;        (format t "called ~a~%~%~%" (list (fdb-error-code c) c))
+                ;;        (go retry-transaction))
                 (error c)))))
      (transaction-commit ,transaction-var)
      (fdb-transaction-destroy ,transaction-var)
@@ -309,7 +313,7 @@ Returns the value and a boolean indicating if the key was present."
 (defun fdb-get (key)
   "Gets the value associated with a key from the database. Uses the global *db* connection."
   (with-transaction (tr *db*)
-     (transaction-get tr key)))
+    (transaction-get tr key)))
 
 (defun fdb-get-range (start stop)
   "get a range from start to stop"
