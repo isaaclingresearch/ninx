@@ -10,25 +10,36 @@ import 'package:path/path.dart';
 import 'package:sqlite3/open.dart';
 import 'package:sqlite3/sqlite3.dart' hide Row;
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
+var uuid = Uuid();
+var dev = false;
+var dbName = dev ? '/cenna${uuid.v4()}.db' : 'cenna.db';
 void main() async {
   open.overrideFor(OperatingSystem.linux, _openOnLinux);
   final directory = Platform.isIOS
       ? await getLibraryDirectory()
       : await getApplicationDocumentsDirectory();
-  String path = '${directory.path}cenna1.db';
+  String path = '${directory.path}$dbName';
   final db = sqlite3.open(path);
   // create tables
-  db.execute('''
+ db.execute('''
     CREATE TABLE IF NOT EXISTS system_variables (
       variable text primary key,
       value text,
       set_date text default CURRENT_TIMESTAMP);
 
+    CREATE TABLE IF NOT EXISTS user_ids (
+      user_id text primary key,
+      created_at default CURRENT_TIMESTAMP);
+
     CREATE TABLE IF NOT EXISTS demographics (
-      demographic text primary key,
-      value text,
-      set_date text default CURRENT_TIMESTAMP);
+      id integer primary key autoincrement,
+      demographic TEXT,
+      value TEXT,
+      user_id TEXT,
+      set_date DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES user_ids(user_id));
     ''');
   runApp(const Cenna());
   db.dispose();
@@ -67,6 +78,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
 
       late Directory directory;
       late String dbPath;
+      late String userId;
 
       
   @override
@@ -81,15 +93,31 @@ class _DemographicsFormState extends State<DemographicsForm> {
         : getApplicationDocumentsDirectory());
     setState(() {
       directory = dir; // Assign the directory after fetching it
-      dbPath = '${dir.path}cenna1.db';
+      dbPath = '${dir.path}$dbName';
+      userId = _getActiveUserId();
     });
 }    
-  // this will return a saved variable to use it to repopulate the forms
+
+// this will return a saved variable to use it to repopulate the forms
+  String _getActiveUserId() {
+    final db = sqlite3.open(dbPath);
+    final query = db.prepare(
+        '''select value from system_variables where variable=?''');
+    final ResultSet entry = query.select(['current_user_id']);
+    if (entry.isEmpty) {
+      return uuid.v4();
+    } else {
+      final value = entry[0]['value'];
+      return (value == null) ? uuid.v4() : value;
+    }
+  }
+
+// this will return a saved variable to use it to repopulate the forms
   String _getSavedValue(String val) {
     final db = sqlite3.open(dbPath);
-    final query =
-        db.prepare('''select value from demographics where demographic=?''');
-    final ResultSet entry = query.select([val]);
+    final query = db.prepare(
+        '''select value from demographics where demographic=? AND user_id = ?''');
+    final ResultSet entry = query.select([val, userId]);
     if (entry.isEmpty) {
       return '';
     } else {
@@ -97,7 +125,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
       return (value == null) ? '' : value;
     }
   }
-
+ 
   // intialisevalues
   void _initialiseValues () {
    final fullName = _getSavedValue('full-name');
@@ -110,7 +138,12 @@ class _DemographicsFormState extends State<DemographicsForm> {
    final countryOfResidence = _getSavedValue('country-of-residence');
    final cityOfResidence = _getSavedValue('city-of-residence');
    final occupation = _getSavedValue('occupation');
-   
+   final telephoneNumber = _getSavedValue('telephone-number');
+   final email = _getSavedValue('email');
+   final nextOfKin = _getSavedValue('next-of-kin');
+   final nextOfKinPhoneNumber = _getSavedValue('next-of-kin-phone-number');
+   final nextOfKinRelationship = _getSavedValue('next-of-kin-relationship');
+   final nextOfKinEmail = _getSavedValue('next-of-kin-email');
     setState((){
         if (fullName != '') {
           _fullNameController.text = fullName;
@@ -124,9 +157,16 @@ class _DemographicsFormState extends State<DemographicsForm> {
         if (dateOfBirth != '') {_selectedDate = DateFormat('yyyy-MM-dd').parse(dateOfBirth);}
         if (occupation != ''){_occupationController.text = occupation;}
         if (cityOfResidence != ''){_cityController.text = cityOfResidence;}
-        if (countryOfResidence != ''){_selectedCountryOfResidence = Country.parse(countryOfResidence);}
-        if(countryOfOrigin != ''){_selectedCountry = Country.parse(countryOfOrigin);}
-        
+        if (countryOfResidence != ''){_selectedCountryOfResidence = CountryParser.parseCountryName(countryOfResidence);
+        _countryOfResidenceController.text = countryOfResidence;}
+        if(countryOfOrigin != ''){_selectedCountry = CountryParser.parseCountryName(countryOfOrigin);
+        _countryController.text = countryOfOrigin;}
+      if (telephoneNumber != ''){_phoneNumber = PhoneNumber.fromCompleteNumber(completeNumber: telephoneNumber);}
+      if (email != ''){_emailController.text = email;}
+      if (nextOfKin != ''){_nextOfKinNameController.text = nextOfKin;}
+      if (nextOfKinPhoneNumber != ''){_nextOfKinPhoneNumber = PhoneNumber.fromCompleteNumber(completeNumber: nextOfKinPhoneNumber);}
+      if (nextOfKinRelationship != ''){_nextOfKinRelationshipController.text = nextOfKinRelationship;}
+      if (nextOfKinEmail != ''){_nextOfKinEmailController.text = nextOfKinEmail;}
     });
 
   }
@@ -134,10 +174,9 @@ class _DemographicsFormState extends State<DemographicsForm> {
   void _skipToPage() {
     final db = sqlite3.open(dbPath);
     final query =
-        db.prepare('''select value from demographics where demographic=?''');
-    final ResultSet fullName = query.select(['full-name']);
-    final ResultSet occupation = query.select(['occupation']);
-    print('$fullName-$occupation');
+        db.prepare('''select value from demographics where demographic=? and user_id=?''');
+    final ResultSet fullName = query.select(['full-name', userId]);
+    final ResultSet occupation = query.select(['occupation', userId]);
     if (fullName == []) {
       return;
     }
@@ -151,41 +190,43 @@ class _DemographicsFormState extends State<DemographicsForm> {
     final directory = Platform.isIOS
         ? await getLibraryDirectory()
         : await getApplicationDocumentsDirectory();
-    String path = '${directory.path}cenna.db';
+    String path = '${directory.path}$dbName';
     final db = sqlite3.open(path);
+    // save the user to allow progress to continue
+    db.prepare('''insert or replace into system_variables (variable, value) values (?, ?)''').execute(['current_user_id', userId]);
     final query = db.prepare(
-        '''insert or replace into demographics (demographic, value) values (?, ?) ''');
+        '''insert or replace into demographics (demographic, value, user_id) values (?, ?, ?) ''');
     switch (page) {
       case 0:
         query
-          ..execute(['full-name', _fullNameController.text])
-          ..execute(['sex', _selectedSex])
+          ..execute(['full-name', _fullNameController.text, userId])
+          ..execute(['sex', _selectedSex, userId])
           ..execute([
             'date-of-birth',
-            DateFormat('yyyy-MM-dd').format(_selectedDate!)
+            DateFormat('yyyy-MM-dd').format(_selectedDate!), userId
           ])
-          ..execute(['level-of-education', _selectedEducation])
-          ..execute(['race', _selectedRace])
-          ..execute(['gender', _selectedGender]);
+          ..execute(['level-of-education', _selectedEducation, userId])
+          ..execute(['race', _selectedRace, userId])
+          ..execute(['gender', _selectedGender, userId]);
         break;
       case 1:
         query
-          ..execute(['country-of-origin', _selectedCountry.toString()])
-          ..execute(['country-of-residence', _selectedCountryOfResidence.toString()])
-          ..execute(['city', _cityController.text])
-          ..execute(['occupation', _occupationController.text]);
+          ..execute(['country-of-origin', _selectedCountry?.name, userId])
+          ..execute(['country-of-residence', _selectedCountryOfResidence?.name, userId])
+          ..execute(['city-of-residence', _cityController.text, userId])
+          ..execute(['occupation', _occupationController.text, userId]);
         break;
       case 2:
         query
-          ..execute(['email', _emailController.text])
-          ..execute(['telephone-number', _phoneNumber])
-          ..execute(['next-of-kin-name', _nextOfKinNameController.text])
-          ..execute(['next-of-kin-email', _nextOfKinEmailController.text])
+          ..execute(['email', _emailController.text, userId])
+          ..execute(['telephone-number', _phoneNumber?.completeNumber, userId])
+          ..execute(['next-of-kin-name', _nextOfKinNameController.text, userId])
+          ..execute(['next-of-kin-email', _nextOfKinEmailController.text, userId])
           ..execute([
             'next-of-kin-relationship',
-            _nextOfKinRelationshipController.text
+            _nextOfKinRelationshipController.text, userId
           ])
-          ..execute(['next-of-kin-telehone', _nextOfKinPhoneNumber]);
+          ..execute(['next-of-kin-telephone-number', _nextOfKinPhoneNumber?.completeNumber, userId]);
     }
     db.dispose();
   }
@@ -344,7 +385,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
   @override
   Widget build(BuildContext context) {
     _initializeDirectory();
-    _skipToPage();
+   // _skipToPage();
     _initialiseValues();
     
     return Scaffold(
@@ -362,7 +403,9 @@ class _DemographicsFormState extends State<DemographicsForm> {
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (i) {
+                print('top\n');
                 _saveToDb(currentIndex);
+                print('current index: $currentIndex\n');
                 setState(() {
                   currentIndex = i;
                 });
@@ -608,7 +651,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                                       setState(() {
                                         _selectedCountry = country;
                                         _countryController.text = country
-                                            .displayName; // Display country name
+                                            .name; // Display country name
                                       });
                                     },
                                   );
@@ -646,7 +689,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                                       setState(() {
                                         _selectedCountryOfResidence = country;
                                         _countryOfResidenceController.text = country
-                                            .displayName; // Display country name
+                                            .name; // Display country name
                                       });
                                     },
                                   );
@@ -842,6 +885,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                 ElevatedButton(
                   onPressed: () {
                     if (currentIndex < _numPages - 1) {
+                      print('first form');
                       if (_formKeys[currentIndex].currentState!.validate()) {
                         _goToNextPage();
                       } else {
@@ -852,6 +896,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                         );
                       }
                     } else {
+                      print('secon-form');
                       _navigateToForm1(context);
                     }
                   },
