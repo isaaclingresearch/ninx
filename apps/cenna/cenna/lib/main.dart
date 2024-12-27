@@ -23,7 +23,7 @@ void main() async {
   String path = '${directory.path}$dbName';
   final db = sqlite3.open(path);
   // create tables
- db.execute('''
+  db.execute('''
     CREATE TABLE IF NOT EXISTS system_variables (
       variable text primary key,
       value text,
@@ -72,15 +72,14 @@ class DemographicsForm extends StatefulWidget {
 class _DemographicsFormState extends State<DemographicsForm> {
   int currentIndex = 0;
   final PageController _pageController = PageController(initialPage: 0);
-  final int _numPages = 4; // Number of pages
+  final int _numPages = 3; // Number of pages
   final List<GlobalKey<FormState>> _formKeys =
       List.generate(4, (_) => GlobalKey<FormState>());
 
-      late Directory directory;
-      late String dbPath;
-      late String userId;
+  late Directory directory;
+  late String dbPath;
+  late String userId;
 
-      
   @override
   void initState() {
     super.initState();
@@ -88,21 +87,21 @@ class _DemographicsFormState extends State<DemographicsForm> {
   }
 
   Future<void> _initializeDirectory() async {
-    final dir = await (Platform.isIOS 
-        ? getLibraryDirectory() 
+    final dir = await (Platform.isIOS
+        ? getLibraryDirectory()
         : getApplicationDocumentsDirectory());
     setState(() {
       directory = dir; // Assign the directory after fetching it
       dbPath = '${dir.path}$dbName';
       userId = _getActiveUserId();
     });
-}    
+  }
 
 // this will return a saved variable to use it to repopulate the forms
   String _getActiveUserId() {
     final db = sqlite3.open(dbPath);
-    final query = db.prepare(
-        '''select value from system_variables where variable=?''');
+    final query =
+        db.prepare('''select value from system_variables where variable=?''');
     final ResultSet entry = query.select(['current_user_id']);
     if (entry.isEmpty) {
       return uuid.v4();
@@ -125,63 +124,96 @@ class _DemographicsFormState extends State<DemographicsForm> {
       return (value == null) ? '' : value;
     }
   }
- 
-  // intialisevalues
-  void _initialiseValues () {
-   final fullName = _getSavedValue('full-name');
-   final sex= _getSavedValue('sex'); // This will hold "Male" or "Female"
-   final gender = _getSavedValue('gender');
-   final race = _getSavedValue('race');
-   final levelOfEducation = _getSavedValue('level-of-education');
-   final dateOfBirth = _getSavedValue('date-of-birth');
-   final countryOfOrigin = _getSavedValue('country-of-origin');
-   final countryOfResidence = _getSavedValue('country-of-residence');
-   final cityOfResidence = _getSavedValue('city-of-residence');
-   final occupation = _getSavedValue('occupation');
-   final telephoneNumber = _getSavedValue('telephone-number');
-   final email = _getSavedValue('email');
-   final nextOfKin = _getSavedValue('next-of-kin');
-   final nextOfKinPhoneNumber = _getSavedValue('next-of-kin-phone-number');
-   final nextOfKinRelationship = _getSavedValue('next-of-kin-relationship');
-   final nextOfKinEmail = _getSavedValue('next-of-kin-email');
-    setState((){
-        if (fullName != '') {
-          _fullNameController.text = fullName;
-        }
-        if (sex != ''){
-          _selectedSex = sex;
-        }
-        if (gender != ''){_selectedGender = gender;}
-        if (race != ''){_selectedRace = race;}
-        if (levelOfEducation != ''){_selectedEducation = levelOfEducation;}
-        if (dateOfBirth != '') {_selectedDate = DateFormat('yyyy-MM-dd').parse(dateOfBirth);}
-        if (occupation != ''){_occupationController.text = occupation;}
-        if (cityOfResidence != ''){_cityController.text = cityOfResidence;}
-        if (countryOfResidence != ''){_selectedCountryOfResidence = CountryParser.parseCountryName(countryOfResidence);
-        _countryOfResidenceController.text = countryOfResidence;}
-        if(countryOfOrigin != ''){_selectedCountry = CountryParser.parseCountryName(countryOfOrigin);
-        _countryController.text = countryOfOrigin;}
-      if (telephoneNumber != ''){_phoneNumber = PhoneNumber.fromCompleteNumber(completeNumber: telephoneNumber);}
-      if (email != ''){_emailController.text = email;}
-      if (nextOfKin != ''){_nextOfKinNameController.text = nextOfKin;}
-      if (nextOfKinPhoneNumber != ''){_nextOfKinPhoneNumber = PhoneNumber.fromCompleteNumber(completeNumber: nextOfKinPhoneNumber);}
-      if (nextOfKinRelationship != ''){_nextOfKinRelationshipController.text = nextOfKinRelationship;}
-      if (nextOfKinEmail != ''){_nextOfKinEmailController.text = nextOfKinEmail;}
-    });
 
+  // intialisevalues
+  void _initialiseValues() {
+    final fullName = _getSavedValue('full-name');
+    final sex = _getSavedValue('sex'); // This will hold "Male" or "Female"
+    final gender = _getSavedValue('gender');
+    final race = _getSavedValue('race');
+    final levelOfEducation = _getSavedValue('level-of-education');
+    final dateOfBirth = _getSavedValue('date-of-birth');
+    final countryOfOrigin = _getSavedValue('country-of-origin');
+    final countryOfResidence = _getSavedValue('country-of-residence');
+    final cityOfResidence = _getSavedValue('city-of-residence');
+    final occupation = _getSavedValue('occupation');
+    final telephoneNumber = _getSavedValue('telephone-number');
+    final email = _getSavedValue('email');
+    final nextOfKin = _getSavedValue('next-of-kin');
+    final nextOfKinPhoneNumber = _getSavedValue('next-of-kin-phone-number');
+    final nextOfKinRelationship = _getSavedValue('next-of-kin-relationship');
+    final nextOfKinEmail = _getSavedValue('next-of-kin-email');
+    setState(() {
+      if (fullName != '') {
+        _fullNameController.text = fullName;
+      }
+      if (sex != '') {
+        _selectedSex = sex;
+      }
+      if (gender != '') {
+        _selectedGender = gender;
+      }
+      if (race != '') {
+        _selectedRace = race;
+      }
+      if (levelOfEducation != '') {
+        _selectedEducation = levelOfEducation;
+      }
+      if (dateOfBirth != '') {
+        _selectedDate = DateFormat('yyyy-MM-dd').parse(dateOfBirth);
+      }
+      if (occupation != '') {
+        _occupationController.text = occupation;
+      }
+      if (cityOfResidence != '') {
+        _cityController.text = cityOfResidence;
+      }
+      if (countryOfResidence != '') {
+        _selectedCountryOfResidence =
+            CountryParser.parseCountryName(countryOfResidence);
+        _countryOfResidenceController.text = countryOfResidence;
+      }
+      if (countryOfOrigin != '') {
+        _selectedCountry = CountryParser.parseCountryName(countryOfOrigin);
+        _countryController.text = countryOfOrigin;
+      }
+      if (telephoneNumber != '') {
+        _phoneNumber =
+            PhoneNumber.fromCompleteNumber(completeNumber: telephoneNumber);
+      }
+      if (email != '') {
+        _emailController.text = email;
+      }
+      if (nextOfKin != '') {
+        _nextOfKinNameController.text = nextOfKin;
+      }
+      if (nextOfKinPhoneNumber != '') {
+        _nextOfKinPhoneNumber = PhoneNumber.fromCompleteNumber(
+            completeNumber: nextOfKinPhoneNumber);
+      }
+      if (nextOfKinRelationship != '') {
+        _nextOfKinRelationshipController.text = nextOfKinRelationship;
+      }
+      if (nextOfKinEmail != '') {
+        _nextOfKinEmailController.text = nextOfKinEmail;
+      }
+    });
   }
+
   // this function will check if data has been saved and then it will skip to the page without data.
   void _skipToPage() {
     final db = sqlite3.open(dbPath);
-    final query =
-        db.prepare('''select value from demographics where demographic=? and user_id=?''');
+    final query = db.prepare(
+        '''select value from demographics where demographic=? and user_id=?''');
     final ResultSet fullName = query.select(['full-name', userId]);
     final ResultSet occupation = query.select(['occupation', userId]);
     if (fullName == []) {
       return;
     }
     if (occupation != []) {
-      setState(() {currentIndex = 2;});
+      setState(() {
+        currentIndex = 2;
+      });
     }
   }
 
@@ -193,7 +225,11 @@ class _DemographicsFormState extends State<DemographicsForm> {
     String path = '${directory.path}$dbName';
     final db = sqlite3.open(path);
     // save the user to allow progress to continue
-    db.prepare('''insert or replace into system_variables (variable, value) values (?, ?)''').execute(['current_user_id', userId]);
+    db.prepare(
+        '''insert or replace into system_variables (variable, value) values (?, ?)''').execute([
+      'current_user_id',
+      userId
+    ]);
     final query = db.prepare(
         '''insert or replace into demographics (demographic, value, user_id) values (?, ?, ?) ''');
     switch (page) {
@@ -203,16 +239,22 @@ class _DemographicsFormState extends State<DemographicsForm> {
           ..execute(['sex', _selectedSex, userId])
           ..execute([
             'date-of-birth',
-            DateFormat('yyyy-MM-dd').format(_selectedDate!), userId
+            DateFormat('yyyy-MM-dd').format(_selectedDate!),
+            userId
           ])
           ..execute(['level-of-education', _selectedEducation, userId])
           ..execute(['race', _selectedRace, userId])
           ..execute(['gender', _selectedGender, userId]);
         break;
       case 1:
+      print(_cityController.text);
         query
           ..execute(['country-of-origin', _selectedCountry?.name, userId])
-          ..execute(['country-of-residence', _selectedCountryOfResidence?.name, userId])
+          ..execute([
+            'country-of-residence',
+            _selectedCountryOfResidence?.name,
+            userId
+          ])
           ..execute(['city-of-residence', _cityController.text, userId])
           ..execute(['occupation', _occupationController.text, userId]);
         break;
@@ -221,12 +263,18 @@ class _DemographicsFormState extends State<DemographicsForm> {
           ..execute(['email', _emailController.text, userId])
           ..execute(['telephone-number', _phoneNumber?.completeNumber, userId])
           ..execute(['next-of-kin-name', _nextOfKinNameController.text, userId])
-          ..execute(['next-of-kin-email', _nextOfKinEmailController.text, userId])
+          ..execute(
+              ['next-of-kin-email', _nextOfKinEmailController.text, userId])
           ..execute([
             'next-of-kin-relationship',
-            _nextOfKinRelationshipController.text, userId
+            _nextOfKinRelationshipController.text,
+            userId
           ])
-          ..execute(['next-of-kin-telephone-number', _nextOfKinPhoneNumber?.completeNumber, userId]);
+          ..execute([
+            'next-of-kin-telephone-number',
+            _nextOfKinPhoneNumber?.completeNumber,
+            userId
+          ]);
     }
     db.dispose();
   }
@@ -385,9 +433,9 @@ class _DemographicsFormState extends State<DemographicsForm> {
   @override
   Widget build(BuildContext context) {
     _initializeDirectory();
-   // _skipToPage();
+    // _skipToPage();
     _initialiseValues();
-    
+
     return Scaffold(
       appBar: AppBar(title: const Text('Demographics')),
       body: Column(
@@ -688,8 +736,9 @@ class _DemographicsFormState extends State<DemographicsForm> {
                                     onSelect: (Country country) {
                                       setState(() {
                                         _selectedCountryOfResidence = country;
-                                        _countryOfResidenceController.text = country
-                                            .name; // Display country name
+                                        _countryOfResidenceController.text =
+                                            country
+                                                .name; // Display country name
                                       });
                                     },
                                   );
