@@ -14,7 +14,7 @@ import 'package:uuid/uuid.dart';
 
 var uuid = Uuid();
 var dev = false;
-var dbName = dev ? '/cenna${uuid.v4()}.db' : 'cenna.db';
+var dbName = dev ? '/cenna${uuid.v4()}.db' : '/cenna.db';
 void main() async {
   open.overrideFor(OperatingSystem.linux, _openOnLinux);
   final directory = Platform.isIOS
@@ -34,11 +34,11 @@ void main() async {
       created_at default CURRENT_TIMESTAMP);
 
     CREATE TABLE IF NOT EXISTS demographics (
-      id integer primary key autoincrement,
       demographic TEXT,
       value TEXT,
       user_id TEXT,
       set_date DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (demographic, user_id)
       FOREIGN KEY (user_id) REFERENCES user_ids(user_id));
     ''');
   runApp(const Cenna());
@@ -63,6 +63,22 @@ class Cenna extends StatelessWidget {
   }
 }
 
+String? validateEmail(String? value) {
+  if (value == null || value.isEmpty) {
+    return 'Please enter an email address.';
+  }
+
+  // Regular expression for email validation
+  final emailRegex = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+
+  if (!emailRegex.hasMatch(value)) {
+    return 'Please enter a valid email address.';
+  }
+
+  return null; // Return null if the email is valid
+}
+
 class DemographicsForm extends StatefulWidget {
   const DemographicsForm({super.key});
   @override
@@ -83,7 +99,9 @@ class _DemographicsFormState extends State<DemographicsForm> {
   @override
   void initState() {
     super.initState();
-    _initializeDirectory();
+    _initializeDirectory().then((_) {
+      _initialiseValues();
+    });
   }
 
   Future<void> _initializeDirectory() async {
@@ -103,6 +121,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
     final query =
         db.prepare('''select value from system_variables where variable=?''');
     final ResultSet entry = query.select(['current_user_id']);
+    query.dispose();
     if (entry.isEmpty) {
       return uuid.v4();
     } else {
@@ -117,12 +136,13 @@ class _DemographicsFormState extends State<DemographicsForm> {
     final query = db.prepare(
         '''select value from demographics where demographic=? AND user_id = ?''');
     final ResultSet entry = query.select([val, userId]);
-    if (entry.isEmpty) {
-      return '';
-    } else {
-      final value = entry[0]['value'];
-      return (value == null) ? '' : value;
+    var finalVal = '';
+    if (entry.isNotEmpty) {
+      finalVal = entry[0]['value'];
     }
+    query.dispose();
+    db.dispose();
+    return finalVal;
   }
 
   // intialisevalues
@@ -139,8 +159,8 @@ class _DemographicsFormState extends State<DemographicsForm> {
     final occupation = _getSavedValue('occupation');
     final telephoneNumber = _getSavedValue('telephone-number');
     final email = _getSavedValue('email');
-    final nextOfKin = _getSavedValue('next-of-kin');
-    final nextOfKinPhoneNumber = _getSavedValue('next-of-kin-phone-number');
+    final nextOfKin = _getSavedValue('next-of-kin-name');
+    final nextOfKinPhoneNumber = _getSavedValue('next-of-kin-telephone-number');
     final nextOfKinRelationship = _getSavedValue('next-of-kin-relationship');
     final nextOfKinEmail = _getSavedValue('next-of-kin-email');
     setState(() {
@@ -247,7 +267,6 @@ class _DemographicsFormState extends State<DemographicsForm> {
           ..execute(['gender', _selectedGender, userId]);
         break;
       case 1:
-      print(_cityController.text);
         query
           ..execute(['country-of-origin', _selectedCountry?.name, userId])
           ..execute([
@@ -259,6 +278,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
           ..execute(['occupation', _occupationController.text, userId]);
         break;
       case 2:
+        print('2 called\n');
         query
           ..execute(['email', _emailController.text, userId])
           ..execute(['telephone-number', _phoneNumber?.completeNumber, userId])
@@ -276,6 +296,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
             userId
           ]);
     }
+    query.dispose();
     db.dispose();
   }
 
@@ -434,7 +455,6 @@ class _DemographicsFormState extends State<DemographicsForm> {
   Widget build(BuildContext context) {
     _initializeDirectory();
     // _skipToPage();
-    _initialiseValues();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Demographics')),
@@ -818,7 +838,8 @@ class _DemographicsFormState extends State<DemographicsForm> {
                               labelText: 'Phone Number',
                               border: OutlineInputBorder(),
                             ),
-                            initialCountryCode:
+                            initialValue: _phoneNumber?.number ?? '',
+                            initialCountryCode: _phoneNumber?.countryISOCode ??
                                 'UG', // Optional: Set an initial country code
                             onChanged: (phone) {
                               setState(() {
@@ -842,10 +863,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             decoration:
                                 const InputDecoration(labelText: 'Email'),
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              return null;
+                              return validateEmail(value);
                             },
                           ),
                         ),
@@ -884,7 +902,9 @@ class _DemographicsFormState extends State<DemographicsForm> {
                               labelText: 'Next of Kin\'s Phone Number',
                               border: OutlineInputBorder(),
                             ),
-                            initialCountryCode:
+                            initialValue: _nextOfKinPhoneNumber?.number ?? '',
+                            initialCountryCode: _nextOfKinPhoneNumber
+                                    ?.countryISOCode ??
                                 'UG', // Optional: Set an initial country code
                             onChanged: (phone) {
                               setState(() {
@@ -908,10 +928,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             decoration: const InputDecoration(
                                 labelText: 'Next of Kin\'s Email'),
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your next of kin\'s email';
-                              }
-                              return null;
+                              return validateEmail(value);
                             },
                           ),
                         ),
@@ -946,6 +963,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                       }
                     } else {
                       print('secon-form');
+                      _saveToDb(currentIndex);
                       _navigateToForm1(context);
                     }
                   },
@@ -973,6 +991,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
     _nextOfKinRelationshipController.dispose();
     _page4Controller1.dispose();
     _page4Controller2.dispose();
+//    db.dispose();
     super.dispose();
   }
 }
