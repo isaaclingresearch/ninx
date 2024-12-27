@@ -70,6 +70,13 @@ Others require ultralisp.
 ### Install python-pptx global
 We require python-pptx to generate the pptx files, install it globally so that it can be used with no env.
 
+### Python
+create a virtual env at ~/common-lisp/ninx/ninx-env and install all the libraries there. use that binary for starting the python.
+use this for all the application.
+```bash
+python3 -m venv ninx-venv
+```
+
 ## Running the server
 Server requires root permissions to run on ports 80 and 443.
 ```bash
