@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:ffi';
 import 'dart:io';
@@ -11,6 +13,7 @@ import 'package:sqlite3/open.dart';
 import 'package:sqlite3/sqlite3.dart' hide Row;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 var uuid = Uuid();
 var dev = false;
@@ -300,6 +303,33 @@ class _DemographicsFormState extends State<DemographicsForm> {
     db.dispose();
   }
 
+  void _saveProfileToServer() async {
+    var client = http.Client();
+    try {
+      var response =
+          await client.post(Uri.https('cenna:8443', '/save-profile'), body: {
+        'email': _emailController.text,
+        'sex-at-birth': _selectedSex,
+        'race': _selectedRace,
+        'occupation': _occupationController.text,
+        'full-name': _fullNameController.text,
+        'telephone-number': _phoneNumber?.completeNumber,
+        'date-of-birth': DateFormat('yyyy-MM-dd').format(_selectedDate!),
+        'gender': _selectedGender,
+        'level-of-education': _selectedEducation,
+        'country-of-origin': _selectedCountry?.name,
+        'country-of-residence': _selectedCountryOfResidence?.name,
+        'next-of-kin-name': _nextOfKinNameController.text,
+        'next-of-kin-email': _nextOfKinEmailController.text,
+        'next-of-kin-relationship': _nextOfKinRelationshipController.text,
+        'next-of-kin-telephone-number': _nextOfKinPhoneNumber?.completeNumber
+      });
+      var id = jsonDecode(response.body)['user-id'];
+      print(id);
+    } finally {
+      client.close();
+    }
+  }
   // Controllers for Page 1
   final TextEditingController _fullNameController = TextEditingController();
   String? _selectedSex; // This will hold "Male" or "Female"
@@ -964,6 +994,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                     } else {
                       print('secon-form');
                       _saveToDb(currentIndex);
+                      _saveProfileToServer();
                       _navigateToForm1(context);
                     }
                   },
