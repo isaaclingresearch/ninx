@@ -31,6 +31,7 @@
   (conn (*db-string*)
     ;; Users table (immutable data)
     ;; all versioned data will depend on the user-id and creation times as the primary key (user-id, created-at)
+    ;; for now, no data can be null, you either fill the data or don't use the service.
 
     (query (:create-table (:if-not-exists 'user-ids)
 			  ((id :type uuid :primary-key t :default (:raw "gen_random_uuid()"))
@@ -59,6 +60,12 @@
     (query (:create-table (:if-not-exists 'gender)
 			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
 			   (gender :type text)
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint")))
+			  (:primary-key user-id created-at)))	
+
+     (query (:create-table (:if-not-exists 'level-of-education)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (level-of-education :type text)
 			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint")))
 			  (:primary-key user-id created-at)))	
 
@@ -113,7 +120,7 @@
 
 (defun delete-tables ()
   "delete all tables"
-  (dolist (table '(user-ids country-of-birth date-of-birth sex-assigned-at-birth full_name occupation marital_status gender contact location next_of_kin race-ethnicity))
+  (dolist (table '(user-ids country-of-birth date-of-birth sex-assigned-at-birth full_name occupation marital_status gender contact level-of-education location next_of_kin race-ethnicity))
     (conn (*db-string*) (query (:drop-table table :cascade)))))
 (test delete-tables (is (null (delete-tables))))
 
@@ -224,6 +231,23 @@
   (conn (*db-string*)
     (query (:select 'gender :from 'gender :where (:= user-id 'user-id)))))
 (test get-gender-all (is (= 1 (length (get-gender-all *test-id*)))))
+
+(defun set-level-of-education (user-id level-of-education)
+  (conn (*db-string*)
+    (query (:insert-into 'level-of-education
+	    :set 'user-id user-id
+	    'level-of-education level-of-education))))
+(test set-level-of-education (is (null (set-level-of-education *test-id* "male"))))
+
+(defun get-level-of-education (user-id)
+  (caar (conn (*db-string*)
+	  (query (:fetch (:order-by (:select 'level-of-education :from 'level-of-education :where (:= user-id 'user-id)) (:desc 'created-at)))))))
+(test get-level-of-education (is (equal "male" (get-level-of-education *test-id*))))
+
+(defun get-level-of-education-all (user-id)
+  (conn (*db-string*)
+    (query (:select 'level-of-education :from 'level-of-education :where (:= user-id 'user-id)))))
+(test get-level-of-education-all (is (= 1 (length (get-level-of-education-all *test-id*)))))
 
 
 (defun set-full-name (user-id full-name)
@@ -350,6 +374,7 @@
 		   'country-of-birth
 		   'full-name
 		   'gender
+		   'level-of-education
 		   'marital-status
 		   'ct.email 'ct.telephone-number
 		   'country 'city 'region
@@ -366,6 +391,8 @@
 		   :on (:= 'fn.user-id 'dob.user-id)
 		   :inner-join  (:as (:select 'gender 'user-id :from 'gender :where (:= 'user-id user-id)) 'gn)
 		   :on (:= 'gn.user-id 'dob.user-id)
+		   :inner-join  (:as (:select 'level-of-education 'user-id :from 'level-of-education :where (:= 'user-id user-id)) 'loe)
+		   :on (:= 'loe.user-id 'dob.user-id)
 		   :inner-join  (:as (:select 'marital-status 'user-id :from 'marital-status :where (:= 'user-id user-id)) 'ms)
 		   :on (:= 'ms.user-id 'dob.user-id)
 		   :inner-join  (:as (:select 'country 'city 'region 'user-id :from 'location :where (:= 'user-id user-id)) 'lc)
@@ -376,7 +403,7 @@
 		   :on (:= 'nok.user-id 'dob.user-id))
 	  :plists))))
 (test get-user-data (is (equal '(:DATE-OF-BIRTH 3124137600 :SEX-ASSIGNED-AT-BIRTH "male" :COUNTRY-OF-BIRTH
-				 "uganda" :FULL-NAME "lubwama" :GENDER "male" :MARITAL-STATUS "uganda" :EMAIL
+				 "uganda" :FULL-NAME "lubwama" :GENDER "male" :LEVEL-OF-EDUCATION "male" :MARITAL-STATUS "uganda" :EMAIL
 				 "test@example.com" :TELEPHONE-NUMBER "123-456-7890" :COUNTRY "USA" :CITY
 				 "Test City" :REGION "Test Region" :NEXT-OF-KIN-NAME "lam"
 				 :NEXT-OF-KIN-RELATIONSHIP "lam" :NEXT-OF-KIN-TELEPHONE-NUMBER "lam"
