@@ -17,13 +17,17 @@ import 'package:http/http.dart' as http;
 
 var uuid = Uuid();
 var dev = false;
-var dbName = dev ? '/cenna${uuid.v4()}.db' : '/cenna.db';
-void main() async {
+Future<String> getDbPath() async {
   open.overrideFor(OperatingSystem.linux, _openOnLinux);
   final directory = Platform.isIOS
       ? await getLibraryDirectory()
       : await getApplicationDocumentsDirectory();
-  String path = '${directory.path}$dbName';
+  return directory.path;
+}
+
+var dbName = dev ? '/cenna${uuid.v4()}.db' : '/cenna.db';
+void main() async {
+  String path = '${await getDbPath()}$dbName';
   final db = sqlite3.open(path);
   // create tables
   db.execute('''
@@ -36,6 +40,18 @@ void main() async {
       user_id text primary key,
       created_at default CURRENT_TIMESTAMP);
 
+    CREATE TABLE IF NOT EXISTS registered_users (
+      user_id text primary key,
+      created_at default CURRENT_TIMESTAMP);
+
+    CREATE TABLE IF NOT EXISTS registered_demographics (
+      demographic TEXT,
+      value TEXT,
+      user_id TEXT,
+      set_date DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (demographic, user_id)
+      FOREIGN KEY (user_id) REFERENCES user_ids(user_id));
+
     CREATE TABLE IF NOT EXISTS demographics (
       demographic TEXT,
       value TEXT,
@@ -44,7 +60,9 @@ void main() async {
       PRIMARY KEY (demographic, user_id)
       FOREIGN KEY (user_id) REFERENCES user_ids(user_id));
     ''');
-  runApp(const Cenna());
+  runApp(Cenna(
+    dbPath: path,
+  ));
   db.dispose();
 }
 
@@ -55,13 +73,57 @@ DynamicLibrary _openOnLinux() {
 }
 
 class Cenna extends StatelessWidget {
-  const Cenna({super.key});
+  final String dbPath;
+  Cenna({super.key, required this.dbPath});
 
+  // check for active user_id, if its in the registered users table, it means it has been saved go to
+  // Home, otherwise, for now go to the demographics with the incomplete user_id
+  String _checkActiveUserType() {
+    final db = sqlite3.open(dbPath);
+    final query =
+        db.prepare('''select value from system_variables where variable=?''');
+    final ResultSet entry = query.select(['current_user_id']);
+    query.dispose();
+    String finalResult = '';
+    if (entry.isEmpty) {
+      finalResult = 'start-registration';
+    } else {
+      final value = entry[0]['value'];
+      if (value != null) {
+        final query1 = db
+            .prepare('''select * from registered_users where user_id=?''');
+        final ResultSet results = query1.select([value]);
+        if (results.isEmpty) {
+          finalResult = 'continue-registration';
+        } else {
+          finalResult = 'go-home';
+        }
+        query1.dispose();
+      }
+    }
+    query.dispose();
+    db.dispose();
+    return finalResult;
+  }
+
+  Widget? home;
   @override
   Widget build(BuildContext context) {
+    var action = _checkActiveUserType();
+    switch (action) {
+      case 'start-registration':
+        home = DemographicsForm();
+        break;
+      case 'continue-registration':
+        home = DemographicsForm();
+        break;
+      case 'go-home':
+        home = Home();
+    }
+
     return MaterialApp(
       title: 'Cenna',
-      home: const DemographicsForm(),
+      home: home,
     );
   }
 }
@@ -125,6 +187,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
         db.prepare('''select value from system_variables where variable=?''');
     final ResultSet entry = query.select(['current_user_id']);
     query.dispose();
+    db.dispose();
     if (entry.isEmpty) {
       return uuid.v4();
     } else {
@@ -166,6 +229,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
     final nextOfKinPhoneNumber = _getSavedValue('next-of-kin-telephone-number');
     final nextOfKinRelationship = _getSavedValue('next-of-kin-relationship');
     final nextOfKinEmail = _getSavedValue('next-of-kin-email');
+    final maritalStatus = _getSavedValue('marital-status');
     setState(() {
       if (fullName != '') {
         _fullNameController.text = fullName;
@@ -178,6 +242,9 @@ class _DemographicsFormState extends State<DemographicsForm> {
       }
       if (race != '') {
         _selectedRace = race;
+      }
+      if (maritalStatus != '') {
+        _selectedMaritalStatus = maritalStatus;
       }
       if (levelOfEducation != '') {
         _selectedEducation = levelOfEducation;
@@ -230,6 +297,8 @@ class _DemographicsFormState extends State<DemographicsForm> {
         '''select value from demographics where demographic=? and user_id=?''');
     final ResultSet fullName = query.select(['full-name', userId]);
     final ResultSet occupation = query.select(['occupation', userId]);
+    query.dispose();
+    db.dispose();
     if (fullName == []) {
       return;
     }
@@ -265,6 +334,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
             DateFormat('yyyy-MM-dd').format(_selectedDate!),
             userId
           ])
+          ..execute(['marital-status', _selectedMaritalStatus, userId])
           ..execute(['level-of-education', _selectedEducation, userId])
           ..execute(['race', _selectedRace, userId])
           ..execute(['gender', _selectedGender, userId]);
@@ -303,39 +373,100 @@ class _DemographicsFormState extends State<DemographicsForm> {
     db.dispose();
   }
 
+  void _saveRegisteredUserToDb(String id) async {
+    final directory = Platform.isIOS
+        ? await getLibraryDirectory()
+        : await getApplicationDocumentsDirectory();
+    String path = '${directory.path}$dbName';
+    final db = sqlite3.open(path);
+    // save the user to allow progress to continue
+    db.prepare(
+        '''insert or replace into system_variables (variable, value) values (?, ?)''').execute([
+      'current_user_id',
+      id
+    ]);
+    db.prepare(
+        '''insert or replace into registered_users (user_id) values (?)''').execute([
+      id
+    ]);
+    final query = db.prepare(
+        '''insert or replace into registered_demographics (demographic, value, user_id) values (?, ?, ?) ''');
+    query
+      ..execute(['full-name', _fullNameController.text, id])
+      ..execute(['sex', _selectedSex, id])
+      ..execute([
+        'date-of-birth',
+        DateFormat('yyyy-MM-dd').format(_selectedDate!),
+        id
+      ])
+      ..execute(['marital-status', _selectedMaritalStatus, id])
+      ..execute(['level-of-education', _selectedEducation, id])
+      ..execute(['race', _selectedRace, id])
+      ..execute(['gender', _selectedGender, id])
+      ..execute(['country-of-origin', _selectedCountry?.name, id])
+      ..execute(['country-of-residence', _selectedCountryOfResidence?.name, id])
+      ..execute(['city-of-residence', _cityController.text, id])
+      ..execute(['occupation', _occupationController.text, id])
+      ..execute(['email', _emailController.text, id])
+      ..execute(['telephone-number', _phoneNumber?.completeNumber, id])
+      ..execute(['next-of-kin-name', _nextOfKinNameController.text, id])
+      ..execute(['next-of-kin-email', _nextOfKinEmailController.text, id])
+      ..execute([
+        'next-of-kin-relationship',
+        _nextOfKinRelationshipController.text,
+        id
+      ])
+      ..execute([
+        'next-of-kin-telephone-number',
+        _nextOfKinPhoneNumber?.completeNumber,
+        id
+      ]);
+    query.dispose();
+    db.dispose();
+  }
+
   void _saveProfileToServer() async {
     var client = http.Client();
     try {
-      var response =
-          await client.post(Uri.https('cenna:8443', '/save-profile'), body: {
-        'email': _emailController.text,
-        'sex-at-birth': _selectedSex,
-        'race': _selectedRace,
-        'occupation': _occupationController.text,
-        'full-name': _fullNameController.text,
-        'telephone-number': _phoneNumber?.completeNumber,
-        'date-of-birth': DateFormat('yyyy-MM-dd').format(_selectedDate!),
-        'gender': _selectedGender,
-        'level-of-education': _selectedEducation,
-        'country-of-origin': _selectedCountry?.name,
-        'country-of-residence': _selectedCountryOfResidence?.name,
-        'next-of-kin-name': _nextOfKinNameController.text,
-        'next-of-kin-email': _nextOfKinEmailController.text,
-        'next-of-kin-relationship': _nextOfKinRelationshipController.text,
-        'next-of-kin-telephone-number': _nextOfKinPhoneNumber?.completeNumber
+      var response = await client
+          .post(Uri.https('cenna:8443', '/save-user-profile'), body: {
+        'profile-json': jsonEncode({
+          'email': _emailController.text,
+          'sex-at-birth': _selectedSex,
+          'race': _selectedRace,
+          'marital-status': _selectedMaritalStatus,
+          'occupation': _occupationController.text,
+          'full-name': _fullNameController.text,
+          'telephone-number': _phoneNumber?.completeNumber,
+          'date-of-birth': DateFormat('yyyy-MM-dd').format(_selectedDate!),
+          'gender': _selectedGender,
+          'level-of-education': _selectedEducation,
+          'country-of-origin': _selectedCountry?.name,
+          'country-of-residence': _selectedCountryOfResidence?.name,
+          'next-of-kin-name': _nextOfKinNameController.text,
+          'next-of-kin-email': _nextOfKinEmailController.text,
+          'next-of-kin-relationship': _nextOfKinRelationshipController.text,
+          'next-of-kin-telephone-number': _nextOfKinPhoneNumber?.completeNumber
+        })
       });
+      print(response.body);
       var id = jsonDecode(response.body)['user-id'];
-      print(id);
+      // when the id is returned, save it and the name to registered-users table.
+      // then save the data to the registered-profiles table
+      // then redirect to home.
+      _saveRegisteredUserToDb(id);
     } finally {
       client.close();
     }
   }
+
   // Controllers for Page 1
   final TextEditingController _fullNameController = TextEditingController();
   String? _selectedSex; // This will hold "Male" or "Female"
   String? _selectedGender;
   String? _selectedRace;
   String? _selectedEducation;
+  String? _selectedMaritalStatus;
   DateTime? _selectedDate; // This will hold the selected date
 
   // Controllers for Page 2
@@ -710,6 +841,45 @@ class _DemographicsFormState extends State<DemographicsForm> {
                               DropdownMenuItem<String>(
                                 value: 'PhD',
                                 child: Text('PhD'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: 'Marital Status',
+                            ),
+                            value:
+                                _selectedMaritalStatus, // Currently selected value
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedMaritalStatus = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select current marital status';
+                              }
+                              return null;
+                            },
+                            items: const <DropdownMenuItem<String>>[
+                              DropdownMenuItem<String>(
+                                value: 'Single',
+                                child: Text('Single'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Married',
+                                child: Text('Married'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Cohabiting',
+                                child: Text('Cohabiting'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Other',
+                                child: Text('Other'),
                               ),
                             ],
                           ),
@@ -1243,5 +1413,17 @@ class _Form2State extends State<Form2> {
     _form2Controller1.dispose();
     _form2Controller2.dispose();
     super.dispose();
+  }
+}
+
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Form 2')),
+      body: const Text('hello'),
+    );
   }
 }

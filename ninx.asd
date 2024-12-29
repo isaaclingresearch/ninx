@@ -38,7 +38,8 @@
 	       (:module "apps/cenna/src"
 			:components ((:file "package")
 				     (:file "cenna.postgres")
-				     (:file "cenna")))
+				     (:file "cenna")
+				     (:file "cenna.api")))
 	       (:file "server"))
   :build-operation "program-op" ;; leave as is
   :build-pathname "ninx"
