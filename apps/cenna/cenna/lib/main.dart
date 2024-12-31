@@ -50,8 +50,15 @@ void main() async {
       user_id TEXT,
       set_date DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (demographic, user_id)
-      FOREIGN KEY (user_id) REFERENCES user_ids(user_id));
+      FOREIGN KEY (user_id) REFERENCES registered_users(user_id));
 
+      CREATE TABLE IF NOT EXISTS history (
+       user_id TEXT,
+       type TEXT,
+       data TEXT,
+       PRIMARY KEY (user_id, type)
+       FOREIGN KEY (user_id) REFERENCES registered_users(user_id));
+       
     CREATE TABLE IF NOT EXISTS demographics (
       demographic TEXT,
       value TEXT,
@@ -1427,3 +1434,53 @@ class Home extends StatelessWidget {
     );
   }
 }
+
+class MedicalHistory extends StatefulWidget {
+  const MedicalHistory({super.key, required this.dbPath});
+
+  final String? dbPath;
+
+  @override
+  State<MedicalHistory> createState() => _MedicalHistoryState();
+}
+
+class _MedicalHistoryState extends State<MedicalHistory> {
+  late Directory directory;
+  late String dbPath;
+  late String userId;
+
+  // this will return a saved variable to use it to repopulate the forms
+  String _getActiveUserId() {
+    final db = sqlite3.open(dbPath);
+    final query =
+        db.prepare('''select value from system_variables where variable=?''');
+    final ResultSet entry = query.select(['current_user_id']);
+    query.dispose();
+    db.dispose();
+    if (entry.isEmpty) {
+      return uuid.v4();
+    } else {
+      final value = entry[0]['value'];
+      return (value == null) ? uuid.v4() : value;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeDirectory().then((_) {
+      _initialiseValues();
+    });
+  }
+
+  Future<void> _initializeDirectory() async {
+    final dir = await (Platform.isIOS
+        ? getLibraryDirectory()
+        : getApplicationDocumentsDirectory());
+    setState(() {
+      directory = dir; // Assign the directory after fetching it
+      dbPath = '${dir.path}$dbName';
+      userId = _getActiveUserId();
+    });
+  }
+  }

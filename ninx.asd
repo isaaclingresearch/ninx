@@ -9,6 +9,7 @@
 ;; :cl-pdf :cl-pdf-parser :cl-typesetting
   :components ((:file "package")
 	       (:file "config")
+	       (:file "leetcode")
 	       ;; (:module "apps/decklm/src"
 	       ;; 	:components ((:file "package")
 	       ;; 		     (:file "decklm.pdf")
@@ -30,8 +31,8 @@
 	       ;; 		     (:file "spotpdf.app")
 	       ;; 		     (:file "spotpdf.tests")))
 	       (:module "apps/blog"
-		:components ((:file "ninx")
-			     (:file "blog")))
+			:components ((:file "ninx")
+				     (:file "blog")))
 	       (:module "apps/ninx"
 		:components ((:file "package")
 			     (:file "ninx")))
