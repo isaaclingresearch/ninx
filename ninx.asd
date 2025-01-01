@@ -9,7 +9,6 @@
 ;; :cl-pdf :cl-pdf-parser :cl-typesetting
   :components ((:file "package")
 	       (:file "config")
-	       (:file "leetcode")
 	       ;; (:module "apps/decklm/src"
 	       ;; 	:components ((:file "package")
 	       ;; 		     (:file "decklm.pdf")
@@ -39,6 +38,7 @@
 	       (:module "apps/cenna/src"
 			:components ((:file "package")
 				     (:file "cenna.postgres")
+				     (:file "cenna.llms")
 				     (:file "cenna")
 				     (:file "cenna.api")))
 	       (:file "server"))

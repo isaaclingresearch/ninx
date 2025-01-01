@@ -19,7 +19,8 @@
     (create-database database :owner role)
     (when create-tables
       (change-toplevel-database role database password "localhost")
-      (create-tables))))
+      (create-tables))
+    (initialise-chat-types)))
 
 (defparameter *db-string* "cenna" "This is the database name currently in use, we need this to reduce code and make tests work.")
 (test initialise-db
@@ -114,6 +115,26 @@
 			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint")))
 			  (:primary-key user-id created-at)))
 
+    #|
+       while storing chats, is it important to separate the chats according to the type
+       say like medical-history-chats, surgical-history-chats. i think it is.
+       the messages too will have a different table referencing the parent table.
+       i feel like maybe i shouldn't separate the types, just indicate the type it is.
+    |#					
+    (query (:create-table (:if-not-exists 'chat-type) 
+			  ((id :type serial :primary-key t)
+			   (type :type text :unique t))))
+    (query (:create-table (:if-not-exists 'chats)
+			  ((id :type uuid :primary-key t :default (:raw "gen_random_uuid()"))
+			   (user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (chat-type :type integer :references ((chat-type id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint")))))
+    (query (:create-table (:if-not-exists 'chat-messages)
+			  ((chat-id :type uuid :references ((chats id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (sender :type :boolean);; sender is 0 for model 1 for user
+			   (message :type text))
+			  (:primary-key chat-id created-at)))
     ))
 
 (test create-tables (is (null (create-tables))))
@@ -409,6 +430,44 @@
 				 :NEXT-OF-KIN-RELATIONSHIP "lam" :NEXT-OF-KIN-TELEPHONE-NUMBER "lam"
 				 :NEXT-OF-KIN-EMAIL "lam")
 			       (get-user-data *test-id*))))
+
+;;;; CHATS
+(defun set-chat-type (type)
+  (caar (conn (*db-string*)
+	      (query (:insert-into 'chat-type :set 'type type
+				   :on-conflict-do-nothing
+				   :returning 'id)))))
+(test set-chat (is (integerp (set-chat-type "test"))))
+;; initialise all table types
+(defun initialise-chat-types ()
+  (dolist (name (list "medical history" "surgical history" "family history" "social history" "presenting complaint" "history of presenting complaint"))
+    (set-chat-type name)))
+(test intialise-chat-types (is (null (initialise-chat-types))))
+
+(defun get-chat-type (type)
+  (caar (conn (*db-string*)
+	      (query (:select 'id :from 'chat-type :where (:= 'type type))))))
+(test get-chat-type (is (integerp (get-chat-type "medical history"))))
+
+(defun create-chat (user-id chat-type &aux (chat-id (get-chat-type chat-type)))
+  (caar (conn (*db-string*)
+	      (query (:insert-into 'chats :set 'user-id user-id 'chat-type chat-id
+				   :returning 'id)))))
+(defparameter *test-chat* nil)
+(test create-chat (is (not (null (let ((id (create-chat *test-id* "medical history")))
+		       (setq *test-chat* id)
+		       id)))))
+
+(defun set-message (chat-id sender message &aux (sender-id (if (string= sender "user") t nil)))
+  (conn (*db-string*)
+	(query (:insert-into 'chat-messages :set 'sender sender-id 'chat-id chat-id 'message message))))
+(test set-message (is (null (set-message *test-chat* "user" "test"))))
+
+(defun get-chat-messages (chat-id)
+  (conn (*db-string*)
+    (query (:order-by (:select 'sender 'message :from 'chat-messages :where (:= 'chat-id chat-id))
+		      'created-at))))
+(test get-chat-message (is (equal 1 (length (get-chat-messages *test-chat*)))))
 
 ;; last test returns to decklm db
 (test return-to-decklm-db (is (equal "cenna"

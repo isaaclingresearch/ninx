@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:country_picker/country_picker.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -14,6 +15,11 @@ import 'package:sqlite3/sqlite3.dart' hide Row;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
+import 'package:multi_select_flutter/multi_select_flutter.dart';
+import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+
+part 'history.dart';
 
 var uuid = Uuid();
 var dev = false;
@@ -97,8 +103,8 @@ class Cenna extends StatelessWidget {
     } else {
       final value = entry[0]['value'];
       if (value != null) {
-        final query1 = db
-            .prepare('''select * from registered_users where user_id=?''');
+        final query1 =
+            db.prepare('''select * from registered_users where user_id=?''');
         final ResultSet results = query1.select([value]);
         if (results.isEmpty) {
           finalResult = 'continue-registration';
@@ -130,7 +136,7 @@ class Cenna extends StatelessWidget {
 
     return MaterialApp(
       title: 'Cenna',
-      home: home,
+      home: AllergiesForm(),
     );
   }
 }
@@ -1434,53 +1440,3 @@ class Home extends StatelessWidget {
     );
   }
 }
-
-class MedicalHistory extends StatefulWidget {
-  const MedicalHistory({super.key, required this.dbPath});
-
-  final String? dbPath;
-
-  @override
-  State<MedicalHistory> createState() => _MedicalHistoryState();
-}
-
-class _MedicalHistoryState extends State<MedicalHistory> {
-  late Directory directory;
-  late String dbPath;
-  late String userId;
-
-  // this will return a saved variable to use it to repopulate the forms
-  String _getActiveUserId() {
-    final db = sqlite3.open(dbPath);
-    final query =
-        db.prepare('''select value from system_variables where variable=?''');
-    final ResultSet entry = query.select(['current_user_id']);
-    query.dispose();
-    db.dispose();
-    if (entry.isEmpty) {
-      return uuid.v4();
-    } else {
-      final value = entry[0]['value'];
-      return (value == null) ? uuid.v4() : value;
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeDirectory().then((_) {
-      _initialiseValues();
-    });
-  }
-
-  Future<void> _initializeDirectory() async {
-    final dir = await (Platform.isIOS
-        ? getLibraryDirectory()
-        : getApplicationDocumentsDirectory());
-    setState(() {
-      directory = dir; // Assign the directory after fetching it
-      dbPath = '${dir.path}$dbName';
-      userId = _getActiveUserId();
-    });
-  }
-  }
