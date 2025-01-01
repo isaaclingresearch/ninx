@@ -15,6 +15,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
   int _allergyCount = 0;
   final PageController _pageController = PageController(initialPage: 0);
   List<List<TextEditingController>> _detailsControllers = [];
+  List<double> _severityValues = []; // List to store severity values
 
   @override
   void initState() {
@@ -30,6 +31,8 @@ class _AllergiesFormState extends State<AllergiesForm> {
           _allergyCount = count;
           _detailsControllers = List.generate(_allergyCount,
               (_) => List.generate(3, (_) => TextEditingController()));
+          // Initialize severity values for each allergy
+          _severityValues = List.generate(_allergyCount, (_) => 5.0);
         });
       }
     }
@@ -47,17 +50,63 @@ class _AllergiesFormState extends State<AllergiesForm> {
     super.dispose();
   }
 
-  List<Widget> _makeDetailChildren() {
+  void _removeAllergy(int index, BuildContext context) {
+    setState(() {
+      // Dispose the controllers for the removed allergy
+      for (var controller in _detailsControllers[index]) {
+        controller.dispose();
+      }
+
+      // Remove the controllers, severity value, and the allergy group
+      _detailsControllers.removeAt(index);
+      _severityValues.removeAt(index);
+      _allergyCount--;
+
+      // Update the allergy count in the count controller
+      _countController.text = _allergyCount.toString();
+    });
+    //when all allergies are deleted.
+    if (_allergyCount == 0) {
+      _navigateToChronicDiseaseForm(context);
+    }
+  }
+
+  void _addAllergy() {
+    setState(() {
+      _allergyCount++;
+      // Create new controllers for the added allergy
+      _detailsControllers
+          .add(List.generate(3, (_) => TextEditingController()));
+      // Initialize severity value for the new allergy
+      _severityValues.add(5.0);
+
+      // Update the allergy count in the count controller
+      _countController.text = _allergyCount.toString();
+    });
+  }
+
+  List<Widget> _makeDetailChildren(BuildContext context) {
     return [
       for (int i = 0; i < _allergyCount; i++) ...[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Allergy ${i + 1}'),
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () => _removeAllergy(i, context),
+            ),
+          ],
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: TextFormField(
             controller: _detailsControllers[i][0],
-            decoration: const InputDecoration(labelText: 'Allergy Name'),
+            decoration: const InputDecoration(
+                labelText: 'Allergic to: Forexample Pollen'),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter the allergy name.';
+                return 'Please enter what you are allergic to.';
               }
               return null;
             },
@@ -65,22 +114,34 @@ class _AllergiesFormState extends State<AllergiesForm> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: TextFormField(
-            controller: _detailsControllers[i][1],
-            decoration: const InputDecoration(labelText: 'Severity'),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter the severity.';
-              }
-              return null;
-            },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Severity: ${_severityValues[i].round()}'),
+              Slider(
+                value: _severityValues[i],
+                min: 1.0,
+                max: 10.0,
+                divisions: 9,
+                label: _severityValues[i].round().toString(),
+                onChanged: (value) {
+                  setState(() {
+                    _severityValues[i] = value;
+                  });
+                },
+              ),
+            ],
           ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: TextFormField(
             controller: _detailsControllers[i][2],
-            decoration: const InputDecoration(labelText: 'Reaction'),
+            minLines: 2,
+            maxLines: 5,
+            keyboardType: TextInputType.multiline,
+            decoration:
+                const InputDecoration(labelText: 'Reaction: What happens?'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter the reaction.';
@@ -115,7 +176,22 @@ class _AllergiesFormState extends State<AllergiesForm> {
         ));
   }
 
-  void _handleNextButtonPressed(BuildContext context) {}
+  void _submitAllergies(context) {
+    // Print all allergy details
+    for (int i = 0; i < _allergyCount; i++) {
+      String allergy = _detailsControllers[i][0].text;
+      double severity = _severityValues[i];
+      String reaction = _detailsControllers[i][2].text;
+
+      print("Allergy ${i + 1}:");
+      print("  Allergic to: $allergy");
+      print("  Severity: $severity");
+      print("  Reaction: $reaction");
+    }
+
+    // Navigate to Chronic Diseases form
+    _navigateToChronicDiseaseForm(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +235,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
               Form(
                   key: _detailsKey,
                   child: Column(
-                    children: _makeDetailChildren(),
+                    children: _makeDetailChildren(context),
                   )),
             ],
           )),
@@ -172,6 +248,11 @@ class _AllergiesFormState extends State<AllergiesForm> {
                   onPressed: _currentIndex > 0 ? _goToPreviousPage : null,
                   child: const Icon(Icons.arrow_back),
                 ),
+                if (_currentIndex == 1)
+                  ElevatedButton(
+                    onPressed: _addAllergy,
+                    child: const Icon(Icons.add),
+                  ),
                 ElevatedButton(
                   onPressed: () {
                     if (_currentIndex == 0) {
@@ -193,9 +274,8 @@ class _AllergiesFormState extends State<AllergiesForm> {
                         );
                       }
                     } else if (_currentIndex == 1) {
-                      // Handle validation for the second page if needed
                       if (_detailsKey.currentState!.validate()) {
-                        // Navigate to the next screen or perform other actions
+                        _submitAllergies(context);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -214,7 +294,6 @@ class _AllergiesFormState extends State<AllergiesForm> {
         ]));
   }
 }
-
 class ChronicDiseasesForm extends StatefulWidget {
   const ChronicDiseasesForm({super.key});
 
