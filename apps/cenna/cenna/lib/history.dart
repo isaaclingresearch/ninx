@@ -17,6 +17,19 @@ class _AllergiesFormState extends State<AllergiesForm> {
   List<List<TextEditingController>> _detailsControllers = [];
   List<double> _severityValues = []; // List to store severity values
 
+  void _saveToDb() {
+    var data = [
+      for (int i = 0; i < _allergyCount; i++) ...[{
+        'name': _detailsControllers[i][0].text,
+        'severity': _severityValues[i],
+        'details': _detailsControllers[i][2].text
+      }]
+    ];
+    final db = DbHandle();
+    db.setAllergyHistory(db.getCurrentUserId(), jsonEncode(data));
+    db.close();
+  }
+
   @override
   void initState() {
     super.initState();
