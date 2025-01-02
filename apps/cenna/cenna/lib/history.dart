@@ -16,18 +16,19 @@ class _AllergiesFormState extends State<AllergiesForm> {
   final PageController _pageController = PageController(initialPage: 0);
   List<List<TextEditingController>> _detailsControllers = [];
   List<double> _severityValues = []; // List to store severity values
+  DbHandle db = DbHandle();
 
   void _saveToDb() {
     var data = [
-      for (int i = 0; i < _allergyCount; i++) ...[{
-        'name': _detailsControllers[i][0].text,
-        'severity': _severityValues[i],
-        'details': _detailsControllers[i][2].text
-      }]
+      for (int i = 0; i < _allergyCount; i++) ...[
+        {
+          'name': _detailsControllers[i][0].text,
+          'severity': _severityValues[i],
+          'details': _detailsControllers[i][2].text
+        }
+      ]
     ];
-    final db = DbHandle();
     db.setAllergyHistory(db.getCurrentUserId(), jsonEncode(data));
-    db.close();
   }
 
   @override
@@ -55,6 +56,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
   void dispose() {
     _countController.dispose();
     _pageController.dispose();
+    db.close();
     for (var group in _detailsControllers) {
       for (var controller in group) {
         controller.dispose();
@@ -88,8 +90,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
     setState(() {
       _allergyCount++;
       // Create new controllers for the added allergy
-      _detailsControllers
-          .add(List.generate(3, (_) => TextEditingController()));
+      _detailsControllers.add(List.generate(3, (_) => TextEditingController()));
       // Initialize severity value for the new allergy
       _severityValues.add(5.0);
 
@@ -189,23 +190,6 @@ class _AllergiesFormState extends State<AllergiesForm> {
         ));
   }
 
-  void _submitAllergies(context) {
-    // Print all allergy details
-    for (int i = 0; i < _allergyCount; i++) {
-      String allergy = _detailsControllers[i][0].text;
-      double severity = _severityValues[i];
-      String reaction = _detailsControllers[i][2].text;
-
-      print("Allergy ${i + 1}:");
-      print("  Allergic to: $allergy");
-      print("  Severity: $severity");
-      print("  Reaction: $reaction");
-    }
-
-    // Navigate to Chronic Diseases form
-    _navigateToChronicDiseaseForm(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -288,7 +272,8 @@ class _AllergiesFormState extends State<AllergiesForm> {
                       }
                     } else if (_currentIndex == 1) {
                       if (_detailsKey.currentState!.validate()) {
-                        _submitAllergies(context);
+                        _saveToDb();
+                          _navigateToChronicDiseaseForm(context);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -307,6 +292,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
         ]));
   }
 }
+
 class ChronicDiseasesForm extends StatefulWidget {
   const ChronicDiseasesForm({super.key});
 

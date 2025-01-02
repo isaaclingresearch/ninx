@@ -114,7 +114,7 @@ class DbHandle {
     return result.isEmpty ? null : result[0]['value'];
   }
 
-  DemographicsData getInitialDemograhics(userId) {
+  DemographicsData getInitialDemographics(userId) {
     var nextOfKin = NextOfKinData(
       email: getDemographic(userId, 'next-of-kin-email') ?? '',
       name: getDemographic(userId, 'next-of-kin-name') ?? '',

@@ -25,6 +25,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
     });
   }
 
+  
   // intialisevalues
   void _initialiseValues() {
     DemographicsData data = db.getInitialDemographics(userId);
@@ -100,7 +101,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
     }
   }
 
-  void _saveToDb(int page) async {
+  void _savePageToDb(int page) async {
     print('page: $page\n\n');
     // save the user to allow progress to continue
     db.setCurrentUserId(userId);
@@ -346,7 +347,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
               physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (i) {
                 print('top\n');
-                _saveToDb(currentIndex);
+                _savePageToDb(currentIndex);
                 print('current index: $currentIndex\n');
                 setState(() {
                   currentIndex = i;
@@ -876,7 +877,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                       }
                     } else {
                       print('secon-form');
-                      _saveToDb(currentIndex);
+                      _savePageToDb(currentIndex);
                       _saveProfileToServer();
                       _navigateToForm1(context);
                     }
