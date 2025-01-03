@@ -143,7 +143,7 @@
 			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
 			   (reason-for-admission :type text)
 			   (duration-of-stay :type text)
-			   (date-of-start :type 'timestamp-without-time-zone)
+			   (date-of-admission :type 'timestamp-without-time-zone)
 			   (activities-done :type text)
 			   (complicaitons :type text)
 			   (medications :type text))
@@ -500,6 +500,16 @@
   (conn (*db-string*)
     (query (:select 'name 'severity 'description 'management 'complications 'date-of-start' :from 'chronic-disease where (:= 'user-id user-id)))))
 (test get-chronic-disease (is (equal 1 (length (get-chronic-disease *test-id*)))))
+
+(defun set-admission (user-id reason-for-admission duration-of-stay activities-done complications medications date-of-admission)
+  (conn (*db-string*)
+    (query (:insert-into 'admissions :set 'user-id user-id 'reason-for-admission reason-for-admission 'date-of-admission date-of-admission 'activities-done activities-done 'complications complications 'medications medications 'duration-of-stay duration-of-stay))))
+(test set-admission (is (null (set-admission *test-id* "reason" "2000" "none" "none" "none" "1900-01-01"))))
+
+(defun get-admission (user_id)
+  (conn (*db-string*)
+    (query (:select 'reason-for-admission 'date-of-admission 'activities-done 'complications 'medications 'duration-of-stay :from 'admissions :where (:= 'user-id user-id)))))
+(test get-admission (is (equal 1 (length (get-admission *test-id*)))))
 
 ;;;; CHATS
 (defun set-chat-type (type)

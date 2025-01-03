@@ -35,3 +35,4 @@
 		   (gethash "management" i)
 		   (gethash "date-of-start" i))))
   (jzon:stringify (hash-create '(("result" "success")))))
+
