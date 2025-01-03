@@ -117,7 +117,7 @@
 
     ;; allergies, an allergy has a name, like what you're allergic too, a severity, a description of what happens, and year when it started,
     ;; it also has how you're handling it, including medication.
-    (query (:create-table (:if-not-exists 'allegy)
+    (query (:create-table (:if-not-exists 'allergy)
 			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
 			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
 			   (name :type text)
@@ -476,13 +476,37 @@
 				 :NEXT-OF-KIN-RELATIONSHIP "lam" :NEXT-OF-KIN-TELEPHONE-NUMBER "lam"
 				 :NEXT-OF-KIN-EMAIL "lam")
 			       (get-user-data *test-id*))))
+;; HISTORY
+
+(defun set-allergy (user-id name severity description management date-of-start)
+  (conn (*db-string*)
+    (query (:insert-into 'allergy :set 'user-id user-id 'date-of-start date-of-start 'name name
+			 'description description 'management management 'severity severity))))
+(test set-allergy (is (null (set-allergy *test-id* "name" 1.0 "test" "test" "1900-01-01"))))
+
+(defun get-allergy (user-id)
+  (conn (*db-string*)
+    (query (:select 'name 'description 'management 'severity 'date-of-start :from 'allergy :where (:= 'user-id user-id))
+	   :plist)))
+(test get-allergy (is (equal 1 (length (get-allergy *test-id*)))))
+
+(defun set-chronic-disease (user-id name severity description management complications date-of-start)
+  (conn (*db-string*)
+    (query
+     (:insert-into 'chronic-disease :set 'user-id user-id 'name name 'severity severity 'description description 'management management 'complications complications 'date-of-start date-of-start))))
+(test set-chronic-disease (is (null (set-chronic-disease *test-id* "name" "severity" "description" "management" "complications" "1900-01-01"))))
+
+(defun get-chronic-disease (user-id)
+  (conn (*db-string*)
+    (query (:select 'name 'severity 'description 'management 'complications 'date-of-start' :from 'chronic-disease where (:= 'user-id user-id)))))
+(test get-chronic-disease (is (equal 1 (length (get-chronic-disease *test-id*)))))
 
 ;;;; CHATS
 (defun set-chat-type (type)
   (caar (conn (*db-string*)
-	      (query (:insert-into 'chat-type :set 'type type
-				   :on-conflict-do-nothing
-				   :returning 'id)))))
+	  (query (:insert-into 'chat-type :set 'type type
+			       :on-conflict-do-nothing
+			       :returning 'id)))))
 (test set-chat (is (integerp (set-chat-type "test"))))
 ;; initialise all table types
 (defun initialise-chat-types ()
