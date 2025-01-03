@@ -187,7 +187,7 @@ class DbHandle {
 
   void setHistory(userId, type, history) {
     final query = db.prepare(
-        '''insert or replace into history (user_id, history, data) values (?, ?, ?)''');
+        '''insert or replace into history (user_id, type, data) values (?, ?, ?)''');
     query.execute([userId, type, history]);
     query.dispose();
   }

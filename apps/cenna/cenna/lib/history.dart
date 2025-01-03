@@ -1,5 +1,51 @@
 part of 'main.dart';
 
+class AllergyData {
+  final String name;
+  final double severity;
+  final String details;
+  final String management;
+  final DateTime startDate;
+
+  AllergyData({
+    required this.name,
+    required this.severity,
+    required this.details,
+    required this.management,
+    required this.startDate,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'severity': severity,
+      'details': details,
+      'management': management,
+      'start-date': DateFormat('yyyy-mm-dd').format(startDate),
+    };
+  }
+
+  static void saveToDb(List<AllergyData> data) {
+    DbHandle db = DbHandle();
+    db.setAllergyHistory(
+        db.getCurrentUserId(), jsonEncode(data.map((e) => e.toMap()).toList()));
+    db.close();
+  }
+
+  static Future<void> saveToServer(List<AllergyData> data) async {
+    Api api = Api();
+    try {
+      await api.saveHistory(
+          'allergy', jsonEncode(data.map((e) => e.toMap()).toList()));
+    } catch (error) {
+      print('Error saving to server: $error');
+      rethrow; // Re-throw the error to propagate it further
+    } finally {
+      api.close();
+    }
+  }
+}
+
 class AllergiesForm extends StatefulWidget {
   const AllergiesForm({super.key});
 
@@ -18,21 +64,6 @@ class _AllergiesFormState extends State<AllergiesForm> {
   List<double> _severityValues = []; // List to store severity values
   late DbHandle db;
   List<DateTime?> _startDates = [];
-  
-  void _saveToDb() {
-    var data = [
-      for (int i = 0; i < _allergyCount; i++) ...[
-        {
-          'name': _detailsControllers[i][0].text,
-          'severity': _severityValues[i],
-          'details': _detailsControllers[i][1].text,
-          'management': _detailsControllers[i][2].text,
-          'date-of-start': DateFormat('yyyy-mm-dd').format(_startDates[i]!),
-        }
-      ]
-    ];
-    db.setAllergyHistory(db.getCurrentUserId(), jsonEncode(data));
-  }
 
   @override
   void initState() {
@@ -107,11 +138,11 @@ class _AllergiesFormState extends State<AllergiesForm> {
     });
   }
 
-   Future<void> _selectDate(BuildContext context, int index) async {
+  Future<void> _selectDate(BuildContext context, int index) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate:
-          _startDates[index] ?? DateTime.now(), // Show today if no date selected
+      initialDate: _startDates[index] ??
+          DateTime.now(), // Show today if no date selected
       firstDate: DateTime(1900), // Adjust range as needed
       lastDate: DateTime.now(),
     );
@@ -172,7 +203,6 @@ class _AllergiesFormState extends State<AllergiesForm> {
             },
           ),
         ),
-
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
@@ -211,15 +241,15 @@ class _AllergiesFormState extends State<AllergiesForm> {
             },
           ),
         ),
-          Padding(
+        Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: TextFormField(
             controller: _detailsControllers[i][2],
             minLines: 2,
             maxLines: 5,
             keyboardType: TextInputType.multiline,
-            decoration:
-                const InputDecoration(labelText: 'Management: How are you treating it?'),
+            decoration: const InputDecoration(
+                labelText: 'Management: How are you treating it?'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter the management.';
@@ -228,7 +258,6 @@ class _AllergiesFormState extends State<AllergiesForm> {
             },
           ),
         ),
-    
       ]
     ];
   }
@@ -316,7 +345,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
                     child: const Icon(Icons.add),
                   ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_currentIndex == 0) {
                       if (_key.currentState!.validate()) {
                         setState(() {
@@ -337,8 +366,32 @@ class _AllergiesFormState extends State<AllergiesForm> {
                       }
                     } else if (_currentIndex == 1) {
                       if (_detailsKey.currentState!.validate()) {
-                        _saveToDb();
+                        List<AllergyData> data = [
+                          for (int i = 0; i < _allergyCount; i++) ...[
+                            AllergyData(
+                              name: _detailsControllers[i][0].text,
+                              severity: _severityValues[i],
+                              details: _detailsControllers[i][1].text,
+                              management: _detailsControllers[i][2].text,
+                              startDate: _startDates[i]!,
+                            ),
+                          ]
+                        ];
+                        AllergyData.saveToDb(data);
+                        try {
+                          await AllergyData.saveToServer(data);
+                          if (!context.mounted) return;
+                          print('Data saved successfully');
                           _navigateToChronicDiseaseForm(context);
+                        } catch (error) {
+                          print('Error: $error');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to save data: $error'),
+                            ),
+                          );
+                          return; // Prevent navigation on error
+                        }         
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

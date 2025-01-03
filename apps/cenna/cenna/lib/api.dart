@@ -24,7 +24,22 @@ class Api {
       db.setRegisteredUserId(id);
       db.setCurrentUserId(id);
       db.close();
-    } finally {
+    } finally {}
+  }
+
+  Future<String> saveHistory(String type, String data) async {
+    try {
+      var response = await client.post(Uri.https('cenna:8443', '/save-history'),
+          body: {'type': type, 'data': data});
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['result'];
+      } else {
+        throw HttpException(
+            'Failed to save history: Status ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 }
