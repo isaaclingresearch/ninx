@@ -28,46 +28,58 @@ var uuid = Uuid();
 var dev = false;
 
 var dbName = dev ? '/cenna${uuid.v4()}.db' : '/cenna.db';
-void main() async {
-  final db = DbHandle();
-  db.createTables();
-  runApp(Cenna(
-    dbPath: path,
-  ));
-  db.close();
+String dbPath = '';
+
+DynamicLibrary _openOnLinux() {
+  final scriptDir = File(Platform.script.toFilePath()).parent;
+  final libraryNextToScript = File(join(scriptDir.path, 'libsqlite3.so.0'));
+  return DynamicLibrary.open(libraryNextToScript.path);
 }
 
-class Cenna extends StatelessWidget {
-  final String dbPath;
-  Cenna({super.key, required this.dbPath});
+void main() async {
+  open.overrideFor(OperatingSystem.linux, _openOnLinux);
+  final directory = Platform.isIOS
+      ? await getLibraryDirectory()
+      : await getApplicationDocumentsDirectory();
+  dbPath = '${directory.path}$dbName';
+  runApp(Cenna());
+}
+
+class Cenna extends StatefulWidget {
+  const Cenna({super.key});
+
+  @override
+  State<Cenna> createState() => _Cenna();
+}
+
+class _Cenna extends State<Cenna> {
+  late DbHandle db;
+
+  @override
+  initState() {
+    super.initState();
+    db = DbHandle();
+    db.createTables();
+  }
+
+  @override
+  void dispose() {
+    db.close();
+    super.dispose();
+  }
 
   // check for active user_id, if its in the registered users table, it means it has been saved go to
   // Home, otherwise, for now go to the demographics with the incomplete user_id
   String _checkActiveUserType() {
-    final db = sqlite3.open(dbPath);
-    final query =
-        db.prepare('''select value from system_variables where variable=?''');
-    final ResultSet entry = query.select(['current_user_id']);
-    query.dispose();
+    String? activeId = db.getCurrentUserId();
     String finalResult = '';
-    if (entry.isEmpty) {
+    if (activeId == null) {
       finalResult = 'start-registration';
+    } else if (db.isUserIdRegistered(activeId)) {
+      finalResult = 'go-home';
     } else {
-      final value = entry[0]['value'];
-      if (value != null) {
-        final query1 =
-            db.prepare('''select * from registered_users where user_id=?''');
-        final ResultSet results = query1.select([value]);
-        if (results.isEmpty) {
-          finalResult = 'continue-registration';
-        } else {
-          finalResult = 'go-home';
-        }
-        query1.dispose();
-      }
+      finalResult = 'continue-registration';
     }
-    query.dispose();
-    db.dispose();
     return finalResult;
   }
 

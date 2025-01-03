@@ -115,11 +115,57 @@
 			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint")))
 			  (:primary-key user-id created-at)))
 
+    ;; allergies, an allergy has a name, like what you're allergic too, a severity, a description of what happens, and year when it started,
+    ;; it also has how you're handling it, including medication.
+    (query (:create-table (:if-not-exists 'allegy)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (name :type text)
+			   (severity :type double)
+			   (description :type text)
+			   (date-of-start :type 'timestamp-without-time-zone)
+			   (management :type text))
+			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'chronic-disease)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (name :type text)
+			   (severity :type double)
+			   (description :type text)
+			   (date-of-start :type 'timestamp-without-time-zone)
+			   (management :type text)
+			   (complications :type text))
+			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'admissions)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (reason-for-admission :type text)
+			   (duration-of-stay :type text)
+			   (date-of-start :type 'timestamp-without-time-zone)
+			   (activities-done :type text)
+			   (complicaitons :type text)
+			   (medications :type text))
+			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'medications)
+			  ((user_id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (name :type text)
+			   (reason :type text)
+			   (method-of-starting :type text)
+			   (dosage :type text)
+			   (date-of-start :type 'timestamp-without-time-zone)
+			   (duration-of-taking :type text)
+			   (complaints-about-drug :type text))
+			  (:primary-key user-id created-at)))
+
     #|
-       while storing chats, is it important to separate the chats according to the type
-       say like medical-history-chats, surgical-history-chats. i think it is.
-       the messages too will have a different table referencing the parent table.
-       i feel like maybe i shouldn't separate the types, just indicate the type it is.
+    while storing chats, is it important to separate the chats according to the type ; ; ; ; ; ; ; ; ; ;
+    say like medical-history-chats, surgical-history-chats. i think it is. ; ; ; ; ; ; ; ; ; ;
+    the messages too will have a different table referencing the parent table. ; ; ; ; ; ; ; ; ; ;
+    i feel like maybe i shouldn't separate the types, just indicate the type it is. ; ; ; ; ; ; ; ; ; ;
     |#					
     (query (:create-table (:if-not-exists 'chat-type) 
 			  ((id :type serial :primary-key t)

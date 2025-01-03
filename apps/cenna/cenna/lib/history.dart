@@ -16,15 +16,18 @@ class _AllergiesFormState extends State<AllergiesForm> {
   final PageController _pageController = PageController(initialPage: 0);
   List<List<TextEditingController>> _detailsControllers = [];
   List<double> _severityValues = []; // List to store severity values
-  DbHandle db = DbHandle();
-
+  late DbHandle db;
+  List<DateTime?> _startDates = [];
+  
   void _saveToDb() {
     var data = [
       for (int i = 0; i < _allergyCount; i++) ...[
         {
           'name': _detailsControllers[i][0].text,
           'severity': _severityValues[i],
-          'details': _detailsControllers[i][2].text
+          'details': _detailsControllers[i][1].text,
+          'management': _detailsControllers[i][2].text,
+          'date-of-start': DateFormat('yyyy-mm-dd').format(_startDates[i]!),
         }
       ]
     ];
@@ -34,6 +37,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
   @override
   void initState() {
     super.initState();
+    db = DbHandle();
     _countController.addListener(_onCountChanged);
   }
 
@@ -47,6 +51,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
               (_) => List.generate(3, (_) => TextEditingController()));
           // Initialize severity values for each allergy
           _severityValues = List.generate(_allergyCount, (_) => 5.0);
+          _startDates = List.generate(_allergyCount, (_) => null);
         });
       }
     }
@@ -76,6 +81,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
       _detailsControllers.removeAt(index);
       _severityValues.removeAt(index);
       _allergyCount--;
+      _startDates.removeAt(index);
 
       // Update the allergy count in the count controller
       _countController.text = _allergyCount.toString();
@@ -93,10 +99,28 @@ class _AllergiesFormState extends State<AllergiesForm> {
       _detailsControllers.add(List.generate(3, (_) => TextEditingController()));
       // Initialize severity value for the new allergy
       _severityValues.add(5.0);
+      // Add a DateTime object
+      _startDates.add(null);
 
       // Update the allergy count in the count controller
       _countController.text = _allergyCount.toString();
     });
+  }
+
+   Future<void> _selectDate(BuildContext context, int index) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate:
+          _startDates[index] ?? DateTime.now(), // Show today if no date selected
+      firstDate: DateTime(1900), // Adjust range as needed
+      lastDate: DateTime.now(),
+    );
+
+    if (pickedDate != null && pickedDate != _startDates[index]) {
+      setState(() {
+        _startDates[index] = pickedDate;
+      });
+    }
   }
 
   List<Widget> _makeDetailChildren(BuildContext context) {
@@ -128,6 +152,29 @@ class _AllergiesFormState extends State<AllergiesForm> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: TextFormField(
+            readOnly: true, // Prevent manual editing
+            onTap: () => _selectDate(context, i), // Open date picker on tap
+            controller: TextEditingController(
+              text: _startDates[i] != null
+                  ? DateFormat('yyyy-MM-dd').format(_startDates[i]!)
+                  : '', // Format and display date
+            ),
+            decoration: const InputDecoration(
+              labelText: 'When did it start?',
+              suffixIcon: Icon(Icons.calendar_today), // Add a calendar icon
+            ),
+            validator: (value) {
+              if (_startDates[i] == null) {
+                return 'Please select a date';
+              }
+              return null;
+            },
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -150,7 +197,7 @@ class _AllergiesFormState extends State<AllergiesForm> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: TextFormField(
-            controller: _detailsControllers[i][2],
+            controller: _detailsControllers[i][1],
             minLines: 2,
             maxLines: 5,
             keyboardType: TextInputType.multiline,
@@ -164,6 +211,24 @@ class _AllergiesFormState extends State<AllergiesForm> {
             },
           ),
         ),
+          Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: TextFormField(
+            controller: _detailsControllers[i][2],
+            minLines: 2,
+            maxLines: 5,
+            keyboardType: TextInputType.multiline,
+            decoration:
+                const InputDecoration(labelText: 'Management: How are you treating it?'),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter the management.';
+              }
+              return null;
+            },
+          ),
+        ),
+    
       ]
     ];
   }

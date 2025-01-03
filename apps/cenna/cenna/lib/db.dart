@@ -1,19 +1,9 @@
 part of 'main.dart';
 
-DynamicLibrary _openOnLinux() {
-  final scriptDir = File(Platform.script.toFilePath()).parent;
-  final libraryNextToScript = File(join(scriptDir.path, 'libsqlite3.so.0'));
-  return DynamicLibrary.open(libraryNextToScript.path);
-}
-
 class DbHandle {
   late Database db;
-  _initialiseDb() async {
-    final directory = Platform.isIOS
-        ? await getLibraryDirectory()
-        : await getApplicationDocumentsDirectory();
-    String path = '${directory.path}$dbName';
-    db = sqlite3.open(path);
+  _initialiseDb() {
+    db = sqlite3.open(dbPath);
   }
 
   DbHandle() {
@@ -63,7 +53,7 @@ class DbHandle {
       FOREIGN KEY (user_id) REFERENCES user_ids(user_id));
 
       CREATE TABLE IF NOT EXISTS next_of_kin (
-      id primary key autoincrement,
+      id integer primary key autoincrement,
       name text,
       email text,
       telephone_number text,
