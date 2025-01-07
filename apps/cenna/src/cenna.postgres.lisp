@@ -64,7 +64,7 @@
 			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint")))
 			  (:primary-key user-id created-at)))	
 
-     (query (:create-table (:if-not-exists 'level-of-education)
+    (query (:create-table (:if-not-exists 'level-of-education)
 			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
 			   (level-of-education :type text)
 			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint")))
@@ -156,10 +156,12 @@
 			   (reason :type text)
 			   (method-of-starting :type text)
 			   (dosage :type text)
+			   (frequency :type text)
 			   (date-of-start :type 'timestamp-without-time-zone)
-			   (duration-of-taking :type text)
+			   (duration-of-taking :type integer)
 			   (complaints-about-drug :type text))
 			  (:primary-key user-id created-at)))
+    
 
     (query (:create-table (:if-not-exists 'operations)
 			  ((user_id :type uuid :references ((user-ids id) :cascade :cascade))
@@ -186,11 +188,19 @@
 			   (date-of-traffic-accident :type 'timestamp-without-time-zone)
 			   (complications :type text))
 			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'family-chronic-disease)
+			  ((user_id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (name :type text)
+			   (relationship-with-family-member :type text)
+			   (details :type text))
+			  (:primary-key user-id created-at)))
     #|
-    while storing chats, is it important to separate the chats according to the type ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-    say like medical-history-chats, surgical-history-chats. i think it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-    the messages too will have a different table referencing the parent table. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-    i feel like maybe i shouldn't separate the types, just indicate the type it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    while storing chats, is it important to separate the chats according to the type ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    say like medical-history-chats, surgical-history-chats. i think it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    the messages too will have a different table referencing the parent table. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    i feel like maybe i shouldn't separate the types, just indicate the type it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
     |#					
     (query (:create-table (:if-not-exists 'chat-type) 
 			  ((id :type serial :primary-key t)
@@ -536,6 +546,16 @@
     (query (:select 'reason-for-admission 'date-of-admission 'activities-done 'complications 'medications 'duration-of-stay :from 'admissions :where (:= 'user-id user-id)))))
 (test get-admission (is (equal 1 (length (get-admission *test-id*)))))
 
+(defun set-medication (user-id name reason method-of-starting dosage frequency date-of-start duration-of-taking complaints-about-drug)
+  (conn (*db-string*)
+    (query (:insert-into 'medication :set 'user-id user-id 'name name 'reason reason 'method-of-starting method-of-starting 'dosage dosage 'frequency frequency 'date-of-start date-of-start 'duration-of-taking duration-of-taking 'complaints-about-drug complaints-about-drug))))
+(test set-medication (is (null (set-medication *test-id* "test" "test" "test" "test" "test" "test" "test" "test"))))
+
+(defun get-medication (user-id)
+  (conn (*db-string*)
+    (query (:select 'name 'reason 'method-of-starting 'dosage 'frequency 'date-of-start 'duration-of-taking 'complaints-about-drug :from 'medications :where (:= 'user-id user-id)))))
+(test get-medication (is (equal 1 (length (get-medication *test-id*)))))
+
 (defun set-operation (user-id reason operation date-of-operation complications)
   (conn (*db-string*)
     (query (:insert-into 'operation :set 'user-id user-id 'reason reason 'operation operation 'complications complications 'date-of-operation date-of-operation))))
@@ -569,6 +589,16 @@
 	   :plist)))
 (test get-traffic-accident (is (equal 1 (length (get-traffic-accident *test-id*)))))
 
+(defun set-family-chronic-disease (user-id name details relationship-with-family-member)
+  (conn (*db-string*)
+    (query (:insert-into 'family-chronic-disease :set 'user-id user-id 'details details 'relationship-with-family-member relationship-with-family-member 'name name))))
+(test (is (null (set-family-chronic-disease *test-id* "test" "test" "test"))))
+
+(defun get-family-chronic-disease (user-id)
+  (conn (*db-string*)
+    (query (:select 'name 'details 'relationship-with-family-member :from 'family-chronic-disease :where (:= 'user-id user-id)) :plist)))
+(test (is (equal 1 (length (get-family-chronic-disease *test-id*)))))
+
 ;;;; CHATS
 (defun set-chat-type (type)
   (caar (conn (*db-string*)
@@ -584,21 +614,21 @@
 
 (defun get-chat-type (type)
   (caar (conn (*db-string*)
-	      (query (:select 'id :from 'chat-type :where (:= 'type type))))))
+	  (query (:select 'id :from 'chat-type :where (:= 'type type))))))
 (test get-chat-type (is (integerp (get-chat-type "medical history"))))
 
 (defun create-chat (user-id chat-type &aux (chat-id (get-chat-type chat-type)))
   (caar (conn (*db-string*)
-	      (query (:insert-into 'chats :set 'user-id user-id 'chat-type chat-id
-				   :returning 'id)))))
+	  (query (:insert-into 'chats :set 'user-id user-id 'chat-type chat-id
+			       :returning 'id)))))
 (defparameter *test-chat* nil)
 (test create-chat (is (not (null (let ((id (create-chat *test-id* "medical history")))
-		       (setq *test-chat* id)
-		       id)))))
+				   (setq *test-chat* id)
+				   id)))))
 
 (defun set-message (chat-id sender message &aux (sender-id (if (string= sender "user") t nil)))
   (conn (*db-string*)
-	(query (:insert-into 'chat-messages :set 'sender sender-id 'chat-id chat-id 'message message))))
+    (query (:insert-into 'chat-messages :set 'sender sender-id 'chat-id chat-id 'message message))))
 (test set-message (is (null (set-message *test-chat* "user" "test"))))
 
 (defun get-chat-messages (chat-id)

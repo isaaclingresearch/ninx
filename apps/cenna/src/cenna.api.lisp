@@ -36,21 +36,39 @@
 		   (gethash "date-of-start" i))))
   (jzon:stringify (hash-create '(("result" "success")))))
 
+(define-easy-handler (cenna-save-medication-history :uri (define-matching-functions "^/save-medication-history$" *cenna-host*)
+					      :host *cenna-host*
+					      :default-request-type :post
+					      :acceptor-names '(ninx::ninx)) (json-data)
+  (let* ((data (jzon:parse json-data))
+	 (user-id (gethash "user-id" data))
+	 (medications (gethash "medications" data)))
+    (dolist (i medications)
+      (set-medication user-id
+		      (gethash "name" i)
+		      (gethash "reason" i)
+		      (gethash "method-of-starting" i)
+		      (gethash "dosage" i)
+		      (gethash "frequency" i)
+		      (gethash "date-of-start" i)
+		      (gethash "duration-of-taking" i)
+		      (gethash "complaints-about-drug" i)))))
+
 (define-easy-handler (cenna-save-chronic-disease-history :uri (define-matching-functions "^/save-chronic-disease-history$" *cenna-host*)
-					  :host *cenna-host*
-					  :default-request-type :post
-					  :acceptor-names '(ninx::ninx)) (json-data)
+							 :host *cenna-host*
+							 :default-request-type :post
+							 :acceptor-names '(ninx::ninx)) (json-data)
   (let* ((data (jzon:parse json-data))
 	 (user-id (gethash "user-id" data))
 	 (chronic-diseases (gethash "chronic-diseases" data)))
     (dolist (i chronic-diseases)
       (set-chronic-disease user-id
-		   (gethash "name" i)
-		   (gethash "seevrity" i)
-		   (gethash "description" i)
-		   (gethash "management" i)
-		   (gethash "complications" i)
-		   (gethash "date-of-start" i)))))
+			   (gethash "name" i)
+			   (gethash "seevrity" i)
+			   (gethash "description" i)
+			   (gethash "management" i)
+			   (gethash "complications" i)
+			   (gethash "date-of-start" i)))))
 
 (define-easy-handler (cenna-save-allergy-history :uri (define-matching-functions "^/save-allergy-history$" *cenna-host*)
 					      :host *cenna-host*
@@ -109,3 +127,17 @@
 			    (gethash "description" i)
 			    (gethash "date-of-accident" i)
 			    (gethash "complications" i)))))
+
+
+(define-easy-handler (cenna-family-chronic-disease-history :uri (define-matching-functions "^/save-family-chronic-disease-history$" *cenna-host*)
+					      :host *cenna-host*
+					      :default-request-type :post
+					      :acceptor-names '(ninx::ninx)) (json-data)
+  (let* ((data (jzon:parse json-data))
+	 (user-id (gethash "user-id" data))
+	 (diseases (gethash "diseases" data)))
+    (dolist (i diseases)
+      (set-family-chronic-disease user-id
+				  (gethash "name" i)
+				  (gethash "details" i)
+				  (gethash "relationship-with-family-member" i)))))

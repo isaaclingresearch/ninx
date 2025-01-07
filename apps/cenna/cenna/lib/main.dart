@@ -22,7 +22,6 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 part 'api.dart';
 part 'db.dart';
 part 'demographics.dart';
-part 'history.dart';
 
 // history parts
 part 'history/traffic_accidents.dart';
@@ -31,6 +30,8 @@ part 'history/operation.dart';
 part 'history/admission.dart';
 part 'history/chronic_disease.dart';
 part 'history/allergy.dart';
+part 'history/medication.dart';
+part 'history/family_chronic_disease.dart';
 
 var uuid = Uuid();
 var dev = false;

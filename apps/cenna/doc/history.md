@@ -1,13 +1,14 @@
 For me to capture the history, i need to capture a lot of information. 
-[] Past medical history
-	[] Chronic disease
-	[] Admissions
-	[] Allergies
-	[] Medications
+[x] Past medical history
+	[x] Chronic disease
+	[x] Admissions
+	[x] Allergies
+	[x] Medications
 [] Past surgical history
-	[] Surgeries
+	[x] Surgeries
 	[] Fractures
-	[] Blood transfusions
+	[x] Blood transfusions
+	[x] Accidents
 [] Family history
 	[] Chronic disease
 	[] Allergies
