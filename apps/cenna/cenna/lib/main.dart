@@ -32,6 +32,7 @@ part 'history/chronic_disease.dart';
 part 'history/allergy.dart';
 part 'history/medication.dart';
 part 'history/family_chronic_disease.dart';
+part 'history/social_history.dart';
 
 var uuid = Uuid();
 var dev = false;

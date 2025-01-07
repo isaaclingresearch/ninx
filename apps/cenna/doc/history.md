@@ -10,7 +10,7 @@ For me to capture the history, i need to capture a lot of information.
 	[x] Blood transfusions
 	[x] Accidents
 [] Family history
-	[] Chronic disease
+	[x] Chronic disease
 	[] Allergies
 	[] Unexplained similar deaths
 [] Social history

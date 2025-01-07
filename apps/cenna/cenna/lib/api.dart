@@ -42,6 +42,21 @@ class Api {
       rethrow;
     }
   }
+  Future<String> saveSocialHistory(String userId, String data) async {
+    try {
+      var response = await client.post(Uri.https('cenna:8443', '/save-social-history'),
+        body: {'user-id': userId, 'history': data});
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['result'];
+      } else {
+        throw HttpException(
+          'Failed to save allergy history: Status ${response.statusCode}, Body: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   Future<String> saveChronicDisease(String userId, String data) async {
     try {

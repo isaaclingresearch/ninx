@@ -280,6 +280,14 @@ class DbHandle {
     return getHistory(userId, 'religion');
   }
 
+   void setSocialHistory(userId, data) {
+    setHistory(userId, 'social history', data);
+  }
+
+  String? getSocialHistory(userId) {
+    return getHistory(userId, 'social history');
+  }
+
   void setDrugsHistory(userId, data) {
     setHistory(userId, 'drugs', data);
   }
