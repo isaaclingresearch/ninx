@@ -75,6 +75,54 @@ class Api {
     }
   }
 
+    Future<String> saveOperation(String userId, String data) async {
+    try {
+      var response = await client.post(Uri.https('cenna:8443', '/save-operation-history'),
+          body: {'user-id': userId, 'operations': data});
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['result'];
+      } else {
+        throw HttpException(
+            'Failed to save admission history: Status ${response.statusCode}, Body: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+    Future<String> saveTransfusion(String userId, String data) async {
+    try {
+      var response = await client.post(Uri.https('cenna:8443', '/save-transfusion-history'),
+          body: {'user-id': userId, 'transfusions': data});
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['result'];
+      } else {
+        throw HttpException(
+            'Failed to save admission history: Status ${response.statusCode}, Body: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+      Future<String> saveTrafficAccident(String userId, String data) async {
+    try {
+      var response = await client.post(Uri.https('cenna:8443', '/save-traffic-accident-history'),
+          body: {'user-id': userId, 'accidents': data});
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body)['result'];
+      } else {
+        throw HttpException(
+            'Failed to save admission history: Status ${response.statusCode}, Body: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
 
     Future<String> saveHistory(String type, String data) async {
     try {

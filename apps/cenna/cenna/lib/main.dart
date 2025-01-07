@@ -24,6 +24,14 @@ part 'db.dart';
 part 'demographics.dart';
 part 'history.dart';
 
+// history parts
+part 'history/traffic_accidents.dart';
+part 'history/transfusion.dart';
+part 'history/operation.dart';
+part 'history/admission.dart';
+part 'history/chronic_disease.dart';
+part 'history/allergy.dart';
+
 var uuid = Uuid();
 var dev = false;
 

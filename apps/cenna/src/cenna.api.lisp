@@ -67,3 +67,45 @@
 		     (gethash "complications" i)
 		     (gethash "medications" i)
 		     (gethash "date-of-admission" i)))))
+
+(define-easy-handler (cenna-save-operation-history :uri (define-matching-functions "^/save-operation-history$" *cenna-host*)
+					      :host *cenna-host*
+					      :default-request-type :post
+					      :acceptor-names '(ninx::ninx)) (json-data)
+  (let* ((data (jzon:parse json-data))
+	 (user-id (gethash "user-id" data))
+	 (operations (gethash "operations" data)))
+    (dolist (i operations)
+	     (set-operation user-id
+			    (gethash "reason-for-operation" i)
+			    (gethash "operation" i)
+			    (gethash "date-of-operation" i)
+			    (gethash "complications" i)))))
+
+(define-easy-handler (cenna-save-transfusion-history :uri (define-matching-functions "^/save-transfusion-history$" *cenna-host*)
+					      :host *cenna-host*
+					      :default-request-type :post
+					      :acceptor-names '(ninx::ninx)) (json-data)
+  (let* ((data (jzon:parse json-data))
+	 (user-id (gethash "user-id" data))
+	 (tranfusions (gethash "tranfusions" data)))
+    (dolist (i operations)
+      (set-transfusion user-id
+		       (gethash "reason" data)
+		       (gethash "transfused-with" data)
+		       (gethash "date-of-transfusion" data)
+		       (gethash "complications" data)))))
+
+
+(define-easy-handler (cenna-traffic-accident-history :uri (define-matching-functions "^/save-traffic-accident-history$" *cenna-host*)
+					      :host *cenna-host*
+					      :default-request-type :post
+					      :acceptor-names '(ninx::ninx)) (json-data)
+  (let* ((data (jzon:parse json-data))
+	 (user-id (gethaah "user-id" data))
+	 (accidents (gethash "accidents" data)))
+    (dolist (i accidents)
+      (set-traffic-accident user-id
+			    (gethash "description" i)
+			    (gethash "date-of-accident" i)
+			    (gethash "complications" i)))))

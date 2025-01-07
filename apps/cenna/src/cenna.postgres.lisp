@@ -161,11 +161,36 @@
 			   (complaints-about-drug :type text))
 			  (:primary-key user-id created-at)))
 
+    (query (:create-table (:if-not-exists 'operations)
+			  ((user_id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (reason :type text)
+			   (operation :type text)
+			   (date-of-operation :type 'timestamp-without-time-zone)
+			   (complications :type text))
+			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'tranfusions)
+			  ((user_id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (reason :type text)
+			   (trasfused-with :type text)
+			   (date-of-transfusion :type 'timestamp-without-time-zone)
+			   (complications :type text))
+			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'traffic-accidents)
+			  ((user_id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (description :type text)
+			   (date-of-traffic-accident :type 'timestamp-without-time-zone)
+			   (complications :type text))
+			  (:primary-key user-id created-at)))
     #|
-    while storing chats, is it important to separate the chats according to the type ; ; ; ; ; ; ; ; ; ;
-    say like medical-history-chats, surgical-history-chats. i think it is. ; ; ; ; ; ; ; ; ; ;
-    the messages too will have a different table referencing the parent table. ; ; ; ; ; ; ; ; ; ;
-    i feel like maybe i shouldn't separate the types, just indicate the type it is. ; ; ; ; ; ; ; ; ; ;
+    while storing chats, is it important to separate the chats according to the type ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    say like medical-history-chats, surgical-history-chats. i think it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    the messages too will have a different table referencing the parent table. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    i feel like maybe i shouldn't separate the types, just indicate the type it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
     |#					
     (query (:create-table (:if-not-exists 'chat-type) 
 			  ((id :type serial :primary-key t)
@@ -506,10 +531,43 @@
     (query (:insert-into 'admissions :set 'user-id user-id 'reason-for-admission reason-for-admission 'date-of-admission date-of-admission 'activities-done activities-done 'complications complications 'medications medications 'duration-of-stay duration-of-stay))))
 (test set-admission (is (null (set-admission *test-id* "reason" "2000" "none" "none" "none" "1900-01-01"))))
 
-(defun get-admission (user_id)
+(defun get-admission (user-id)
   (conn (*db-string*)
     (query (:select 'reason-for-admission 'date-of-admission 'activities-done 'complications 'medications 'duration-of-stay :from 'admissions :where (:= 'user-id user-id)))))
 (test get-admission (is (equal 1 (length (get-admission *test-id*)))))
+
+(defun set-operation (user-id reason operation date-of-operation complications)
+  (conn (*db-string*)
+    (query (:insert-into 'operation :set 'user-id user-id 'reason reason 'operation operation 'complications complications 'date-of-operation date-of-operation))))
+(test set-operation (is (null (set-operation *test-id* "test" "test" "1900-01-01" "test"))))
+
+(defun get-operation (user-id)
+  (conn (*db-string*)
+    (query (:select 'reason 'operation 'complications 'date-of-operation :from 'operation :where (:= 'user-id user-id))
+	   :plist)))
+(test get-operation (is (equal 1 (length (get-operation *test-id*)))))
+
+(defun set-transfusion (user-id reason transfused-with date-of-transfusion complications)
+  (conn (*db-string*)
+    (query (:insert-into 'transfusion :set 'user-id user-id 'reason reason 'transfused-with transfused-with 'complications complications 'date-of-transfusion date-of-transfusion))))
+(test set-transfusion (is (null (set-transfusion *test-id* "test" "test" "1900-01-01" "test"))))
+
+(defun get-transfusion (user-id)
+  (conn (*db-string*)
+    (query (:select 'reason 'transfused-with 'complications 'date-of-transfusion :from 'transfusion :where (:= 'user-id user-id))
+	   :plist)))
+(test get-transfusion (is (equal 1 (length (get-transfusion *test-id*)))))
+
+(defun set-traffic-accident (user-id description date-of-traffic-accident complications)
+  (conn (*db-string*)
+    (query (:insert-into 'traffic-accident :set 'user-id user-id 'description description complications complications 'date-of-traffic-accident date-of-traffic-accident))))
+(test set-traffic-accident (is (null (set-traffic-accident *test-id* "test" "test" "1900-01-01" "test"))))
+
+(defun get-traffic-accident (user-id)
+  (conn (*db-string*)
+    (query (:select 'description 'transfused-with 'complications 'date-of-traffic-accident :from 'traffic-accident :where (:= 'user-id user-id))
+	   :plist)))
+(test get-traffic-accident (is (equal 1 (length (get-traffic-accident *test-id*)))))
 
 ;;;; CHATS
 (defun set-chat-type (type)

@@ -248,7 +248,15 @@ class DbHandle {
     return getHistory(userId, 'transfusion');
   }
 
-  void setFractureHistory(userId, data) {
+  void setTrafficAccidentHistory(userId, data) {
+    setHistory(userId, 'traffic accident', data);
+  }
+
+  String? getTrafficAccidentHistory(userId) {
+    return getHistory(userId, 'traffic accident');
+  }
+
+    void setFractureHistory(userId, data) {
     setHistory(userId, 'fracture', data);
   }
 
