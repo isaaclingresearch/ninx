@@ -32,7 +32,10 @@ part 'history/chronic_disease.dart';
 part 'history/allergy.dart';
 part 'history/medication.dart';
 part 'history/family_chronic_disease.dart';
-part 'history/social_history.dart';
+part 'history/alcohol.dart';
+part 'history/smoking.dart';
+part 'history/physical_exercise.dart';
+part 'history/illicit_drugs.dart';
 
 var uuid = Uuid();
 var dev = false;

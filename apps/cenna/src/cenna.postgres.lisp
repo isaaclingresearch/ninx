@@ -57,6 +57,11 @@
 			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
 			   (country-of-birth :type text))
 			  (:primary-key user-id created-at)))
+    (query (:create-table (:if-not-exists 'religion)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (religion :type text))
+			  (:primary-key user-id created-at)))
     
     (query (:create-table (:if-not-exists 'gender)
 			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
@@ -196,11 +201,50 @@
 			   (relationship-with-family-member :type text)
 			   (details :type text))
 			  (:primary-key user-id created-at)))
+
+    ;; social history
+    (query (:create-table (:if-not-exists 'alcohol-history)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (currently-consuming :type boolean)
+			   (type :type text)
+			   (frequency :type text)
+			   (quantity :type integer)
+			   (years-consuming :type integer))
+  			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'smoking-history)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (currently-smoking :type boolean)
+			   (type :type text)
+			   (quantity :type integer)
+			   (years-smoking :type integer)
+			   (quit-year :type integer))
+			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'illicit-drug-history)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (type :type text)
+			   (frequency :type text)
+			   (years-using :type integer)
+			   (quit-year :type text))
+			  (:primary-key user-id created-at)))
+
+    (query (:create-table (:if-not-exists 'physical-activity)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (type :type text)
+			   (frequency :type text)
+			   (years-using :type integer)
+			   (intensity :type double))
+			  (:primary-key user-id created-at))) 
     #|
-    while storing chats, is it important to separate the chats according to the type ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-    say like medical-history-chats, surgical-history-chats. i think it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-    the messages too will have a different table referencing the parent table. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
-    i feel like maybe i shouldn't separate the types, just indicate the type it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    while storing chats, is it important to separate the chats according to the type ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    say like medical-history-chats, surgical-history-chats. i think it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    the messages too will have a different table referencing the parent table. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
+    i feel like maybe i shouldn't separate the types, just indicate the type it is. ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ; ;
     |#					
     (query (:create-table (:if-not-exists 'chat-type) 
 			  ((id :type serial :primary-key t)
@@ -312,10 +356,17 @@
 	  (query (:fetch (:order-by (:select 'race-ethnicity :from 'race-ethnicity :where (:= user-id 'user-id)) (:desc 'created-at)))))))
 (test get-race-ethnicity (is (equal "african" (get-race-ethnicity *test-id*))))
 
-(defun get-race-ethnicity-all (user-id)
+(defun set-religion (user-id religion)
   (conn (*db-string*)
-    (query (:select 'race-ethnicity :from 'race-ethnicity :where (:= user-id 'user-id)))))
-(test get-race-ethnicity-all (is (= 1 (length (get-race-ethnicity-all *test-id*)))))
+    (query (:insert-into 'religion
+	    :set 'user-id user-id
+	    'religion religion))))
+(test set-religion (is (null (set-religion *test-id* "moslem"))))
+
+(defun get-religion (user-id)
+  (caar (conn (*db-string*)
+	  (query (:fetch (:order-by (:select 'religion :from 'religion :where (:= user-id 'user-id)) (:desc 'created-at)))))))
+(test get-religion (is (equal "moslem" (get-religion *test-id*))))
 
 (defun set-gender (user-id gender)
   (conn (*db-string*)
@@ -599,12 +650,51 @@
     (query (:select 'name 'details 'relationship-with-family-member :from 'family-chronic-disease :where (:= 'user-id user-id)) :plist)))
 (test (is (equal 1 (length (get-family-chronic-disease *test-id*)))))
 
+(defun set-alcohol (user-id currently-consuming type frequency quantity years-consuming)
+  (conn (*db-string*)
+	(query (:insert-into 'alcohol-history :set 'user-id user-id 'currently-consuming currently-consuming 'frequency frequency 'quantity quantity 'years-consuming years-consuming))))
+(test (is (null (set-alcohol *test-id* "false" "none" "daily" 1 2))))
+
+(defun get-alcohol (user-id)
+  (conn (*db-string*)
+	(query (:select 'currently-consuming 'frequency 'quantity 'years-consuming :from 'alcohol-history :where (:= 'user-id user-id)))))
+(test (is (equal 1 (length (get-alcohol *test-id*)))))
+
+(defun set-smoking (user-id currently-smoking type quantity years-smoking)
+  (conn (*db-string*)
+	(query (:insert-into 'smoking-history :set 'user-id user-id 'currently-smoking currently-smoking 'quantity quantity 'years-smoking years-smoking))))
+(test (is (null (set-smoking *test-id* "false" "none" "daily" 2))))
+
+(defun get-smoking (user-id)
+  (conn (*db-string*)
+	(query (:select 'currently-smoking 'quantity 'years-smoking :from 'smoking-history :where (:= 'user-id user-id)))))
+(test (is (equal 1 (length (get-smoking *test-id*)))))
+
+    (query (:create-table (:if-not-exists 'illicit-drug-history)
+			  ((user-id :type uuid :references ((user-ids id) :cascade :cascade))
+			   (created-at :type bigint :default (:raw "extract(epoch from now())::bigint"))
+			   (type :type text)
+			   (frequency :type text)
+			   (years-using :type integer)
+			   (quit-year :type integer))
+			  (:primary-key user-id created-at)))
+
+(defun set-illicit-drug (user-id type frequency years-using quit-year)
+  (conn (*db-string*)
+	(query (:insert-into 'illicit-drug-history :set 'user-id user-id 'type type 'frequency frequency 'years-using years-using 'quit-year quit-year))))
+(test (is (null (set-illicit-drug *test-id* "1" "1" "1" "1"))))
+
+(defun get-illicit-drug (user-id)
+  (conn (*db-string*)
+	(query (:select 'type 'frequency 'years-using 'quit-year :from 'illicit-drug-history :where (:= 'user-id user-id)))))
+(test (is (equal (length (get-illicit-drug *test-id*)))))
+
 ;;;; CHATS
 (defun set-chat-type (type)
   (caar (conn (*db-string*)
-	  (query (:insert-into 'chat-type :set 'type type
-			       :on-conflict-do-nothing
-			       :returning 'id)))))
+	      (query (:insert-into 'chat-type :set 'type type
+				   :on-conflict-do-nothing
+				   :returning 'id)))))
 (test set-chat (is (integerp (set-chat-type "test"))))
 ;; initialise all table types
 (defun initialise-chat-types ()

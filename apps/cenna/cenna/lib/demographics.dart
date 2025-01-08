@@ -52,6 +52,7 @@ class DemographicsData {
   final String telephoneNumber;
   final DateTime dateOfBirth;
   final String gender;
+  final String religion;
   final String levelOfEducation;
   final String countryOfOrigin;
   final String cityOfResidence;
@@ -73,6 +74,7 @@ class DemographicsData {
     required this.nextOfKin,
     required this.countryOfResidence,
     required this.cityOfResidence,
+    required this.religion,
   });
 
   Map<String, dynamic> toMap() {
@@ -89,6 +91,7 @@ class DemographicsData {
       'level-of-education': levelOfEducation,
       'country-of-origin': countryOfOrigin, // Corrected key name
       'next-of-kin': nextOfKin.toMap(),
+      'religion': religion,
     };
   }
 
@@ -113,6 +116,7 @@ class DemographicsData {
       levelOfEducation: map['level-of-education'],
       countryOfOrigin: map['country-of-origin'], // Corrected key name
       nextOfKin: NextOfKinData.fromMap(map['next-of-kin']),
+      religion: map['religion'],
     );
   }
 
@@ -183,6 +187,9 @@ class _DemographicsFormState extends State<DemographicsForm> {
       }
       if (data.dateOfBirth != DateFormat('yyyy-mm-dd').parse('1800-01-01')) {
         _selectedDate = data.dateOfBirth;
+      }
+      if (data.religion != '') {
+        _selectedReligion = data.religion;
       }
       if (data.occupation != '') {
         _occupationController.text = data.occupation;
@@ -284,6 +291,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
         cityOfResidence: _cityController.text,
         occupation: _occupationController.text,
         email: _emailController.text,
+        religion: _selectedReligion,
         telephoneNumber: _phoneNumber?.completeNumber ?? '',
         nextOfKin: NextOfKinData(
             name: _nextOfKinNameController.text,
@@ -314,6 +322,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
   String? _selectedRace;
   String? _selectedEducation;
   String? _selectedMaritalStatus;
+  String? _selectedReligion;
   DateTime? _selectedDate; // This will hold the selected date
 
   // Controllers for Page 2
@@ -404,6 +413,7 @@ class _DemographicsFormState extends State<DemographicsForm> {
                     _nextOfKinRelationshipController.text,
                 'next-of-kin-email': _nextOfKinEmailController.text,
                 'next-of-kin-phone-number': _nextOfKinPhoneNumber,
+                'religion': _selectedReligion,
               },
             ),
           ));
@@ -581,6 +591,49 @@ class _DemographicsFormState extends State<DemographicsForm> {
                             ],
                           ),
                         ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: DropdownButtonFormField<String>(
+                            decoration: const InputDecoration(
+                              labelText: 'Religion',
+                            ),
+                            value: _selectedReligion, // Currently selected value
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedReligion = newValue;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select your religion, or Atheist';
+                              }
+                              return null;
+                            },
+                            items: const <DropdownMenuItem<String>>[
+                              DropdownMenuItem<String>(
+                                value: 'Atheist',
+                                child: Text('Atheist'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Christian',
+                                child: Text('Christian'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Budhist',
+                                child: Text('Budhist'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Zionist',
+                                child: Text('Zionist'),
+                              ),
+                              DropdownMenuItem<String>(
+                                value: 'Other',
+                                child: Text('Other'),
+                              ),
+                            ],
+                          ),
+                        ),
+
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
                           child: TextFormField(

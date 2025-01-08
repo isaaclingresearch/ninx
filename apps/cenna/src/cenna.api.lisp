@@ -6,6 +6,7 @@
 					  :acceptor-names '(ninx::ninx)) (profile-json)
   (let* ((profile (jzon:parse profile-json))
 	 (user-id (create-user-id)))
+    (set-religion user-id (gethash "religion" profile))
     (set-full-name user-id (gethash "full-name" profile))
     (set-gender user-id (gethash "gender" profile))
     (set-occupation user-id (gethash "occupation" profile))
